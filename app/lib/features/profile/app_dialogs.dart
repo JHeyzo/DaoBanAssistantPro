@@ -39,7 +39,14 @@ void showAppInfoDialog(
   );
 }
 
-const String _changelogZh = 'v0.11.3\n'
+const String _changelogZh = 'v0.11.4\n'
+    '· 闹钟规则引擎：每条闹钟可单独设「值班次日时间」（值班次日改用此时刻，不设则跟平时一样）与「值班当天跳过」（值班当天这条不响）；在班次编辑器里点闹钟行的展开箭头设置\n'
+    '· 删掉「闹钟」页的全局「值班次日闹钟」卡片（只换第一条的逻辑已由按条规则替代）\n'
+    '· 班次结束时间选择器加「次日」开关：跨天的结束时间不再写死，可切回当天\n'
+    '· 法定节假日在日历上改标绿「休」字（与调休「班」统一格式），不再标红\n'
+    '\n'
+
+    'v0.11.3\\n'
     '· 排班模型重做：一天可叠多个班次（如白班+值班同日）；班次新增「工作/值班/休息」语义标记，改名调序不再弄断闹钟与休息规则\n'
     '· 新增「休息规则」：跟随值班（周几值→周几休，可选预设）/ 固定星期 / 不用规则；休息日由规则自动算出，不用手排28天\n'
     '· 模板系统拆除：内置模板库与「我的模板」删除，新建只留「空白模板」+「导入配置文件」，编辑页可「导出配置文件」\n'
@@ -106,17 +113,16 @@ const String _changelogZh = 'v0.11.3\n'
     '· 水带的两端是圆的；跨周时那两头切平（月历里跨周不是相邻的格子，是从最右列跳到下一行的最左列）\n'
     '· 液态玻璃关着的时候，拖选与之前一模一样（逐格淡色方块，一个像素都没动）\n\n'
 
-    'v0.10.17\n'
-    '· 日历上那枚选中的块，点别的日期、再点「今天」时，现在是飞回去的：飞的时候一圈彩色折射光亮起来，形状按飞行的方向拉长、变扁\n'
-    '· 它飞过哪几格，那几格的字就被轻轻挤一下（之前被挤的是终点那一格 —— 块还在半路上，终点就已经先动了）\n'
-    '· 落定之后这些自己收回去，静止时与之前一样\n'
-    '· 拖动那枚块时，形状是「开」出来的，不再一下拉满（与底栏滑块同一套手感）\n\n'
-
-
-        '\n'
 ;
 
-const String _changelogEn = 'v0.11.3\n'
+const String _changelogEn = 'v0.11.4\n'
+    '· Per-alarm duty rules: each alarm can have its own "post-duty time" (used on the day after a duty day; unset = same as usual) and "skip on duty day"; tap the expand arrow on an alarm row in the schedule editor\n'
+    '· Removed the global "post-duty alarm" card from the Alarm tab (replaced by per-alarm rules)\n'
+    '· Shift end-time picker gains a "next day" toggle: overnight end times are no longer sticky\n'
+    '· Legal holidays show a green 休 marker on the calendar (same format as makeup-workday 班), no longer red\n'
+    '\n'
+
+    'v0.11.3\n'
     '· Schedule model rework: multiple shifts per day (e.g. day + duty on the same day); shifts now carry a Work/Duty/Rest semantic tag — renaming or reordering no longer breaks alarms and rest rules\n'
     '· New "Rest rule": follow-duty (which weekday to rest after a duty on a given weekday, with presets) / fixed weekdays / no rule; rest days are computed automatically, no more hand-laying 28 days\n'
     '· Template system removed: built-in library and "My templates" deleted; creating a schedule offers "Blank template" + "Import config file", the editor can "Export config file"\n'
@@ -183,14 +189,6 @@ const String _changelogEn = 'v0.11.3\n'
     '· The band ends are round; where it wraps to the next week the two ends are cut flat (in a month grid a week wrap is not an adjacent cell)\n'
     '· With Liquid Glass off, selection is exactly as before (a pale block per cell, pixel for pixel)\n\n'
 
-    'v0.10.17\n'
-    '· The calendar selection block now flies back when you tap another date and then Today: a prismatic rim lights up on the way, and the shape stretches along its direction of travel\n'
-    '· The days it sweeps over get a slight squeeze (before, the squeeze sat on the destination while the block was still in mid-air)\n'
-    '· All of it settles back once it lands — at rest it looks exactly as before\n'
-    '· While dragging, the shape blooms instead of snapping to full (the same feel as the tab bar pill)\n\n'
-
-
-        '\n'
 ;
 String get appChangelog => L10n.isEn ? _changelogEn : _changelogZh;
 
