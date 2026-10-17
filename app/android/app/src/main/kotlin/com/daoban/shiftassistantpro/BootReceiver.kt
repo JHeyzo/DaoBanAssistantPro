@@ -138,5 +138,12 @@ class BootReceiver : BroadcastReceiver() {
         } catch (e: Exception) {
             AlarmLog.error(context, "BootReceiver: 小组件刷新重排失败: ${e.message}")
         }
+
+        // 系统闹钟 housekeeping：从落盘数据里把还没过的捡回来（ColorOS 适配）。
+        try {
+            HousekeepingReceiver.rescheduleOnBoot(context)
+        } catch (e: Exception) {
+            AlarmLog.error(context, "BootReceiver: housekeeping 重排失败: ${e.message}")
+        }
     }
 }
