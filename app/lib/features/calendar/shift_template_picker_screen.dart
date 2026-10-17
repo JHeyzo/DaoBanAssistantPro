@@ -8,6 +8,7 @@ import '../../core/widgets/glass_action_button.dart';
 import '../../core/widgets/glass_delete_button.dart';
 import '../../core/widgets/glass_dialog.dart';
 import '../../core/widgets/glass_input.dart';
+import '../../core/widgets/glass_pickers.dart';
 import '../../core/widgets/glass_pressable.dart';
 import '../../data/app_repository.dart';
 import '../../domain/schedule_template.dart';
@@ -559,6 +560,19 @@ Future<int?> createScheduleFromTemplatePicker(
   // 按返回键放弃：不建方案
   if (choice == null || !context.mounted) return null;
 
+  // 周期第 1 天对应哪一天：默认今天，可拨到昨天/明天/任意天 —— 值班相位
+  // （如「1 对应的是昨天那次值班」）就靠它对齐。v0.11.2 之前这里写死今天，
+  // 相位只能去编辑器里点「我这组从这个周期开始」挪。
+  // 日期没选 = 放弃：不建方案（与上面「按返回键放弃」同一条）。
+  final today = dateOnly(DateTime.now());
+  final anchorPicked = await showGlassDatePicker(
+    context,
+    initialDate: today,
+    title: L10n.anchorDateTitle,
+  );
+  if (anchorPicked == null || !context.mounted) return null;
+  final anchorDate = dateOnly(anchorPicked);
+
   final d = defaultSchedule();
   // 三选一：内置模板 / 我的模板 / 我自己排（后者缺省到默认四班两倒）。
   final picked = choice.template;
@@ -566,7 +580,7 @@ Future<int?> createScheduleFromTemplatePicker(
   final teamCount = picked?.teamCount ?? mine?.teamCount ?? d.teamCount;
   return ref.read(appRepositoryProvider).saveSchedule(
         name: mine?.name ?? picked?.subtitle ?? L10n.newSchedule,
-        anchorDate: dateOnly(DateTime.now()),
+        anchorDate: anchorDate,
         classes: picked?.classes ?? mine?.classes ?? d.classes,
         cycle: picked?.cycle ?? mine?.cycle ?? d.cycle,
         makeCurrent: makeCurrent,
@@ -576,8 +590,8 @@ Future<int?> createScheduleFromTemplatePicker(
         teamNames: L10n.defaultTeamNames(teamCount),
         // 「我的模板」在保存时已把「我们班组」归一化到第 0 位、错位归零
         // （见 `ScheduleTemplate.fromSchedule`），所以与内置模板同一条约定：
-        // 新方案的「我们班组」从周期第 1 天开始。相位要改，在编辑器里点
-        // 「我这组从这个周期开始」即可。
+        // 新方案的「我们班组」从周期第 1 天开始。周期第 1 天是上面刚选的
+        // [anchorDate]；事后要挪相位，在编辑器里点「我这组从这个周期开始」即可。
         ourTeamIndex: 0,
         teamOffsets: picked?.teamOffsets ?? mine?.teamOffsets ?? d.teamOffsets,
       );

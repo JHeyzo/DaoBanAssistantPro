@@ -73,6 +73,53 @@ class ShiftAlarm {
   String toString() => 'ShiftAlarm($minute${label == null ? '' : ', $label'})';
 }
 
+/// 「值班次日」闹钟规则：前一天是值班班种时，当天班次的第一条联动闹钟
+/// 改用 [minute]（只换第一条 —— 那是起床那条；午休之类的其余各条不动）。
+///
+/// 值班班种按**班次名**认（[dutyClassName]），不按 id —— 季度轮换会重建排班、
+/// 班次 id 会变，名字是每套都沿用的那个。
+class PostDutyAlarmRule {
+  const PostDutyAlarmRule({required this.dutyClassName, required this.minute});
+
+  /// 值班班种的班次名（如「值班」）。
+  final String dutyClassName;
+
+  /// 改用的钟点（自午夜分钟数，如 7*60+45）。
+  final int minute;
+}
+
+/// [date] 的前一天是不是值班（按 [rule] 的班次名认；前一天是休班/无班不算）。
+bool isPostDutyDay(ShiftSource source, DateTime date, PostDutyAlarmRule rule) {
+  final prev = source.shiftOn(DateTime(date.year, date.month, date.day - 1));
+  return prev != null && !prev.isRest && prev.name == rule.dutyClassName;
+}
+
+/// 建议的值班班种名：名字含「值」/duty 的优先，其次跨夜的非休息班次，
+/// 再次第一个非休息班次；都没有返回空串（调用方此时不应启用规则）。
+String suggestDutyClassName(Iterable<ShiftClass> classes) {
+  ShiftClass? fallback;
+  ShiftClass? crossNight;
+  for (final c in classes) {
+    if (c.isRest) continue;
+    fallback ??= c;
+    final n = c.name.toLowerCase();
+    if (n.contains('值') || n.contains('duty')) return c.name;
+    if (crossNight == null && c.endsNextDay) crossNight = c;
+  }
+  return crossNight?.name ?? fallback?.name ?? '';
+}
+
+/// 值班次日规则的默认时刻：第一个开着联动闹钟的非休息班种的第一条闹钟 + 30 分钟
+/// （「比平时多睡半小时」）；没有配闹钟的班种时落回 07:45。
+int defaultPostDutyMinute(Iterable<ShiftClass> classes) {
+  for (final c in classes) {
+    if (!c.isRest && c.alarmEnabled && c.alarms.isNotEmpty) {
+      return (c.alarms.first.minute + 30) % 1440;
+    }
+  }
+  return 7 * 60 + 45;
+}
+
 /// 一个班次最多挂几个联动闹钟。
 ///
 /// **不是产品口味，是原生 id 空间的硬上限**：原生 id 是

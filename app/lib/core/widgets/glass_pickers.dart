@@ -144,6 +144,7 @@ Future<DateTime?> showGlassDatePicker(
   required DateTime initialDate,
   DateTime? firstDate,
   DateTime? lastDate,
+  String? title,
 }) {
   return showGlassSheet<DateTime>(
     context: context,
@@ -152,6 +153,7 @@ Future<DateTime?> showGlassDatePicker(
       initialDate: initialDate,
       firstDate: firstDate ?? DateTime(2000),
       lastDate: lastDate ?? DateTime(2100),
+      title: title,
     ),
   );
 }
@@ -161,10 +163,14 @@ class _GlassDatePickerSheet extends StatefulWidget {
     required this.initialDate,
     required this.firstDate,
     required this.lastDate,
+    this.title,
   });
   final DateTime initialDate;
   final DateTime firstDate;
   final DateTime lastDate;
+
+  /// 弹层顶部的小标题（如「周期第 1 天是几号」）；null 则不显示。
+  final String? title;
 
   @override
   State<_GlassDatePickerSheet> createState() => _GlassDatePickerSheetState();
@@ -253,6 +259,15 @@ class _GlassDatePickerSheetState extends State<_GlassDatePickerSheet> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (widget.title != null) ...[
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    widget.title!,
+                    style: AppTokens.titleStrong,
+                  ),
+                ),
+              ],
               Row(
                 children: [
                   IconButton(
