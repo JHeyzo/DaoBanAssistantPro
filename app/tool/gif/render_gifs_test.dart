@@ -24,7 +24,6 @@ import 'package:shiftassistantpro/core/widgets/glass_check.dart';
 import 'package:shiftassistantpro/core/widgets/glass_segment.dart';
 import 'package:shiftassistantpro/core/widgets/glass_switch.dart';
 import 'package:shiftassistantpro/data/app_repository.dart';
-import 'package:shiftassistantpro/features/alarm/alarm_ringing_screen.dart';
 import 'package:shiftassistantpro/features/calendar/calendar_screen.dart';
 import 'package:shiftassistantpro/features/home/home_shell.dart';
 import 'package:shiftassistantpro/features/profile/app_dialogs.dart';
@@ -395,55 +394,6 @@ void main() {
   //
   //    拍「按住提起 → 跟着手指拉长 → 没到阈值弹回去」一整段。**故意不拖到 0.7**
   //    （阈值）：到了就 `_finish()` 把整页 pop 掉，GIF 结尾会是一片黑。
-  for (final v in _modes) {
-    testWidgets('响铃 · 上滑关闭的玻璃滴 · ${v.suffix}', (WidgetTester tester) async {
-      // 这枚药丸挂在了液态玻璃开关后面（两条档位两棵树），所以必须拨到液态档 ——
-      // 顺带这条也钉住「液态档真的画了东西」：标准档那棵树上没有 `LiquidLens`，
-      // 下面 `find.byType(LiquidLens)` 会当场抛。
-      useLiquidGlassTier();
-      addTearDown(useStandardGlassTier);
-      late TestGesture g;
-      bool released = false;
-      await renderFrames(
-        tester,
-        prefix: 'ring_dismiss_${v.suffix}_',
-        home: const AlarmRingingScreen(label: '早班'),
-        overrides: const <Override>[],
-        brightness: v.brightness,
-        count: 100,
-        step: const Duration(milliseconds: 16),
-        onFrame: (WidgetTester t, int i) async {
-          if (i == 0) {
-            // 位置从树上量，别按算式猜 —— 轨道底边离屏幕底多少是布局说了算的。
-            final Offset c = t.getRect(find.byType(LiquidLens)).center;
-            g = await t.startGesture(c);
-            addTearDown(() {
-              if (released) return Future<void>.value();
-              return g.up();
-            });
-          } else if (i <= 10) {
-            // 按住 ~160ms。**别指望这期间会「提起」** —— 竖向拖动识别器要等手指
-            // 走掉 `kTouchSlop`（18px）才算开始，`onVerticalDragStart` 根本还没跑。
-          } else if (i <= 48) {
-            // 一路往上；⚠️ 前 18px 是空走的，要算进去，否则拖不到六成就松手、
-            // 看不出「跟着手指拉长」。
-            await g.moveBy(const Offset(0, -3.6));
-          } else if (i == 49) {
-            await g.up(); // 没到 0.7 的阈值 → 弹回去
-            released = true;
-          }
-        },
-      );
-    });
-  }
-
-  // ⑧ 日历那枚选中块**飞回去**（v0.10.17）。用户 2026-10-01 的原话：「点击当月的
-  //    其他日期之后，再点『今天』，返回的动画也应该像底部导航栏点击时那样，加上
-  //    该有的光晕，以及『头大尾轻』之类的特效。现在看起来还是以前那种效果。」
-  //
-  //    时间轴：先点到远处那一格（它自己也飞一下）→ 稳住 → 点「今天」飞回来
-  //    （约 14 帧）→ 落定之后彩边还要**渐灭**约 400ms。前后都留着，才看得出
-  //    「动的时候亮、停下来才收」。
   for (final v in _modes) {
     testWidgets('日历 · 点「今天」飞回去 · ${v.suffix}', (WidgetTester tester) async {
       final db = await freshDb();

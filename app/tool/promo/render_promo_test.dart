@@ -19,7 +19,6 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:shiftassistantpro/core/l10n.dart';
 import 'package:shiftassistantpro/data/app_repository.dart';
 import 'package:shiftassistantpro/domain/shift_rotation.dart';
-import 'package:shiftassistantpro/features/alarm/alarm_ringing_screen.dart';
 import 'package:shiftassistantpro/features/calendar/schedule_editor_screen.dart';
 import 'package:shiftassistantpro/features/calendar/shift_template_picker_screen.dart';
 import 'package:shiftassistantpro/features/home/home_shell.dart';
@@ -174,14 +173,6 @@ final List<_Shot> _shots = [
     brightness: Brightness.light,
     size: kVisualSize,
     beforeCapture: (t) => _tapTab(t, Icons.event_note_outlined),
-  ),
-  (
-    slug: '05_ringing',
-    title: '响铃界面',
-    build: (db) async => const AlarmRingingScreen(label: '白班'),
-    brightness: Brightness.light,
-    size: kVisualSize,
-    beforeCapture: null,
   ),
   (
     slug: '06_templates',
