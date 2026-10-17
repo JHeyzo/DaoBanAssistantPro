@@ -72,6 +72,10 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
   /// 班次定义（一个班次只定义一次）。
   List<ShiftClass> _classes = [];
 
+  /// 闹钟行展开状态：key 为 "$classIndex-$alarmIndex"。
+  /// 展开后显示「值班次日时间」与「值班当天跳过」两个按条配置。
+  final Set<String> _expandedAlarms = {};
+
   /// 本方案已设置的按天调整天数（只用于预览上方那行提示）。
   ///
   /// 从 `_load` 读到的领域对象上取，不再查库 —— 覆盖数就在手里，多一次
@@ -725,64 +729,193 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
               for (var k = 0; k < c.alarms.length; k++)
                 Padding(
                   padding: const EdgeInsets.only(top: AppTokens.spaceXs),
-                  child: Row(
-                    key: Key('shift-alarm-row-$index-$k'),
+                  child: Column(
                     children: [
-                      Expanded(
-                        child: _timeChip(
-                          context,
-                          label: L10n.alarmTime,
-                          minutes: c.alarms[k].minute,
-                          // 落在上班前一天的写成「前一天 23:00」：只写钟点会让人
-                          // 读成班次当天，而那正是用户反馈里说的「看不到有这个选项」。
-                          valueText: alarmFallsOnPreviousDay(c, c.alarms[k])
-                              ? L10n.clockPrevDay(
-                                  formatClock(c.alarms[k].minute))
-                              : null,
-                          onPick: (m) {
-                            // `_timeChip` 的 onPick 类型是可空 int（没选就调不到
-                            // 这里），但闹钟必须有个钟点，所以空值直接忽略。
-                            if (m == null) return;
-                            setState(() => _classes[index] =
-                                _editClass(_classes[index], alarms: [
+                      Row(
+                        key: Key('shift-alarm-row-$index-$k'),
+                        children: [
+                          Expanded(
+                            child: _timeChip(
+                              context,
+                              label: L10n.alarmTime,
+                              minutes: c.alarms[k].minute,
+                              // 落在上班前一天的写成「前一天 23:00」：只写钟点会让人
+                              // 读成班次当天，而那正是用户反馈里说的「看不到有这个选项」。
+                              valueText: alarmFallsOnPreviousDay(c, c.alarms[k])
+                                  ? L10n.clockPrevDay(
+                                      formatClock(c.alarms[k].minute))
+                                  : null,
+                              onPick: (m) {
+                                // `_timeChip` 的 onPick 类型是可空 int（没选就调不到
+                                // 这里），但闹钟必须有个钟点，所以空值直接忽略。
+                                if (m == null) return;
+                                setState(() => _classes[index] =
+                                    _editClass(_classes[index], alarms: [
+                                      for (var j = 0; j < c.alarms.length; j++)
+                                        j == k
+                                            ? ShiftAlarm(
+                                                minute: m,
+                                                label: c.alarms[j].label,
+                                                postDutyMinute:
+                                                    c.alarms[j].postDutyMinute,
+                                                skipOnDutyDay:
+                                                    c.alarms[j].skipOnDutyDay,
+                                              )
+                                            : c.alarms[j],
+                                    ]));
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: AppTokens.spaceSm),
+                          SizedBox(
+                            width: _alarmLabelFieldWidth,
+                            child: _AlarmLabelField(
+                              key: Key('shift-alarm-label-$index-$k'),
+                              label: c.alarms[k].label,
+                              onChanged: (v) => setState(
+                                  () => _classes[index] =
+                                      _editClass(_classes[index], alarms: [
+                                        for (var j = 0; j < c.alarms.length; j++)
+                                          j == k
+                                              ? ShiftAlarm(
+                                                  minute: c.alarms[j].minute,
+                                                  label: v,
+                                                  postDutyMinute: c.alarms[j]
+                                                      .postDutyMinute,
+                                                  skipOnDutyDay: c.alarms[j]
+                                                      .skipOnDutyDay,
+                                                )
+                                              : c.alarms[j],
+                                      ])),
+                            ),
+                          ),
+                          const SizedBox(width: AppTokens.spaceXs),
+                          GlassDeleteButton(
+                            compact: true,
+                            onPressed: () => setState(() =>
+                                _classes[index] =
+                                    _editClass(_classes[index], alarms: [
                                   for (var j = 0; j < c.alarms.length; j++)
-                                    j == k
-                                        ? ShiftAlarm(
-                                            minute: m,
-                                            label: c.alarms[j].label)
-                                        : c.alarms[j],
-                                ]));
-                          },
+                                    if (j != k) c.alarms[j],
+                                ])),
+                          ),
+                          // 展开按钮：显示「值班次日时间」与「值班当天跳过」设置。
+                          IconButton(
+                            key: Key('shift-alarm-expand-$index-$k'),
+                            icon: Icon(
+                              _expandedAlarms.contains('$index-$k')
+                                  ? Icons.expand_less_outlined
+                                  : Icons.expand_more_outlined,
+                              size: AppTokens.iconSm,
+                            ),
+                            onPressed: () => setState(() {
+                              final key = '$index-$k';
+                              if (_expandedAlarms.contains(key)) {
+                                _expandedAlarms.remove(key);
+                              } else {
+                                _expandedAlarms.add(key);
+                              }
+                            }),
+                          ),
+                        ],
+                      ),
+                      // 展开的按条设置：值班次日时间 + 值班当天跳过。
+                      if (_expandedAlarms.contains('$index-$k'))
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            top: AppTokens.spaceXs,
+                            left: AppTokens.spaceMd,
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _timeChip(
+                                      context,
+                                      label: '值班次日',
+                                      minutes: c.alarms[k].postDutyMinute,
+                                      valueText: c.alarms[k].postDutyMinute ==
+                                              null
+                                          ? '跟平时一样'
+                                          : null,
+                                      onPick: (m) => setState(() =>
+                                          _classes[index] = _editClass(
+                                              _classes[index],
+                                              alarms: [
+                                                for (var j = 0;
+                                                    j < c.alarms.length;
+                                                    j++)
+                                                  j == k
+                                                      ? ShiftAlarm(
+                                                          minute: c
+                                                              .alarms[j].minute,
+                                                          label: c.alarms[j]
+                                                              .label,
+                                                          postDutyMinute: m,
+                                                          skipOnDutyDay: c
+                                                              .alarms[j]
+                                                              .skipOnDutyDay,
+                                                        )
+                                                      : c.alarms[j],
+                                              ])),
+                                    ),
+                                  ),
+                                  // 清除按钮：把「值班次日时间」设回 null（跟平时一样）。
+                                  if (c.alarms[k].postDutyMinute != null)
+                                    IconButton(
+                                      icon: const Icon(Icons.clear_outlined,
+                                          size: 16),
+                                      onPressed: () => setState(() =>
+                                          _classes[index] = _editClass(
+                                              _classes[index],
+                                              alarms: [
+                                                for (var j = 0;
+                                                    j < c.alarms.length;
+                                                    j++)
+                                                  j == k
+                                                      ? ShiftAlarm(
+                                                          minute: c
+                                                              .alarms[j].minute,
+                                                          label: c.alarms[j]
+                                                              .label,
+                                                          postDutyMinute: null,
+                                                          skipOnDutyDay: c
+                                                              .alarms[j]
+                                                              .skipOnDutyDay,
+                                                        )
+                                                      : c.alarms[j],
+                                              ])),
+                                    ),
+                                  const SizedBox(width: AppTokens.spaceSm),
+                                  const Text('值班当天跳过'),
+                                  GlassSwitch(
+                                    value: c.alarms[k].skipOnDutyDay,
+                                    onChanged: (v) => setState(() =>
+                                        _classes[index] =
+                                            _editClass(_classes[index], alarms: [
+                                              for (var j = 0;
+                                                  j < c.alarms.length;
+                                                  j++)
+                                                j == k
+                                                    ? ShiftAlarm(
+                                                        minute: c
+                                                            .alarms[j].minute,
+                                                        label:
+                                                            c.alarms[j].label,
+                                                        postDutyMinute: c
+                                                            .alarms[j]
+                                                            .postDutyMinute,
+                                                        skipOnDutyDay: v,
+                                                      )
+                                                    : c.alarms[j],
+                                            ])),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: AppTokens.spaceSm),
-                      SizedBox(
-                        width: _alarmLabelFieldWidth,
-                        child: _AlarmLabelField(
-                          key: Key('shift-alarm-label-$index-$k'),
-                          label: c.alarms[k].label,
-                          onChanged: (v) => setState(
-                              () => _classes[index] =
-                                  _editClass(_classes[index], alarms: [
-                                    for (var j = 0; j < c.alarms.length; j++)
-                                      j == k
-                                          ? ShiftAlarm(
-                                              minute: c.alarms[j].minute,
-                                              label: v)
-                                          : c.alarms[j],
-                                  ])),
-                        ),
-                      ),
-                      const SizedBox(width: AppTokens.spaceXs),
-                      GlassDeleteButton(
-                        compact: true,
-                        onPressed: () => setState(() =>
-                            _classes[index] =
-                                _editClass(_classes[index], alarms: [
-                              for (var j = 0; j < c.alarms.length; j++)
-                                if (j != k) c.alarms[j],
-                            ])),
-                      ),
                     ],
                   ),
                 ),
