@@ -392,6 +392,11 @@ void main() {
     await tester.tap(find.text(dupont.title));
     await tester.pumpAndSettle();
 
+    // v0.11.2 起选完模板会先弹「周期第 1 天是几号」：点今天确认走创建路径。
+    expect(find.text(L10n.anchorDateTitle), findsOneWidget);
+    await tester.tap(find.text('${DateTime.now().day}'));
+    await tester.pumpAndSettle();
+
     expect(repo.saveCalls, 1);
     expect(repo.lastScheduleName, dupont.subtitle);
     expect(hasCjk(repo.lastScheduleName), isFalse,
