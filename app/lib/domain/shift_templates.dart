@@ -210,6 +210,17 @@ const _duty = ShiftClassProto(
     role: ShiftRole.duty, startMinute: 8 * 60, endMinute: 32 * 60,
     color: 0xFFFF375F, alarmEnabled: true, alarms: [ShiftAlarm(minute: 7 * 60)]);
 
+// 长白班 + 4 天一值（28 天循环）：白班 08:30-17:00，值班 17:00 → 次日 08:30
+//（回绕式存法：endMinute < startMinute，与 12 小时制夜班模板一致）。
+const _dd28Day = ShiftClassProto(
+    role: ShiftRole.day, startMinute: 8 * 60 + 30, endMinute: 17 * 60,
+    color: 0xFF4C8DFF, alarmEnabled: true, alarms: [ShiftAlarm(minute: 7 * 60 + 30)]);
+const _dd28Duty = ShiftClassProto(
+    role: ShiftRole.duty, startMinute: 17 * 60, endMinute: 8 * 60 + 30,
+    color: 0xFFFF375F, alarmEnabled: true, alarms: [ShiftAlarm(minute: 7 * 60 + 30)]);
+const _dd28Rest = ShiftClassProto(
+    role: ShiftRole.off, isRest: true, color: 0xFF9AA0B4);
+
 // 常白（与 12 小时制白班同名同色，仅时段不同 —— 故复用同一角色）
 const _office = ShiftClassProto(
     role: ShiftRole.day, startMinute: 8 * 60 + 30, endMinute: 17 * 60 + 30,
@@ -397,6 +408,26 @@ const List<ShiftTemplateSpec> shiftTemplateSpecs = [
     cycle: [0, 1, 1, 1],
     teamCount: 4,
     teamOffsets: [0, 1, 2, 3],
+  ),
+  ShiftTemplateSpec(
+    // 长白班 08:30-17:00，每 4 天一次值班（17:00 → 次日 08:30，值班当天白天
+    // 照常上白班），每周休一天（周六/周日，看这周最后一次值班在周几）。
+    // 4 天值班周期 × 7 天周 = 28 天最小循环。周期起始日须锚定周一。
+    id: 'day_duty_28d',
+    title: L10nText('长白班，每 4 天值一次班，每周休一天', 'Day shifts with a duty every 4 days, one day off per week'),
+    subtitle: L10nText('白班 + 值班 · 28 天循环', 'Day + duty · 28-day cycle'),
+    aliases: ['长白班', '值班', '28天', '四天一值', '白班值班', 'day duty', '28-day', 'duty cycle'],
+    groupKey: 'duty',
+    classes: [_dd28Day, _dd28Duty, _dd28Rest],
+    // 0=白班，1=值班，2=休班；第 0 天为周一。
+    // 第1周：一白二白三白四值五白六休日白；第2周：一值二白三白四白五值六白日休；
+    // 第3周：一白二值三白四白五白六值日休；第4周：一白二白三值四白五白六休日值。
+    cycle: [
+      0, 0, 0, 1, 0, 2, 0,
+      1, 0, 0, 0, 1, 0, 2,
+      0, 1, 0, 0, 0, 1, 2,
+      0, 0, 1, 0, 0, 2, 1,
+    ],
   ),
 
   // -------- 常白 --------

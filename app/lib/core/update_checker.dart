@@ -46,7 +46,7 @@ class UpdateCheckResult {
 class UpdateChecker {
   UpdateChecker._();
 
-  static const _owner = 'Alec-WangLi';
+  static const _owner = 'JHeyzo';
   static const _repo = 'DaoBanAssistantPro';
   static const _timeout = Duration(seconds: 8);
 

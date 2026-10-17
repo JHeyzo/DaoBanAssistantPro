@@ -109,6 +109,32 @@ class _AlarmScreenState extends ConsumerState<AlarmScreen>
                 ),
               ),
             ),
+            const SizedBox(height: 8),
+            // 系统闹钟模式说明：App 不再自己响铃，闹钟静默写入系统时钟。
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                padding: const EdgeInsets.all(AppTokens.spaceMd),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(AppTokens.radiusS),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.alarm_outlined,
+                        color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: AppTokens.spaceSm),
+                    Expanded(
+                      child: Text(
+                        '系统闹钟模式：App 每天 00:30 把当天的闹钟静默写入系统时钟，'
+                        '由系统时钟响铃（OPPO 手表可同步）。App 自己不再响铃。',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 12),
             _sectionTitleRow(context, L10n.upcoming30),
             Expanded(child: _shiftAlarmSection(context, chain, shiftAlarms)),
