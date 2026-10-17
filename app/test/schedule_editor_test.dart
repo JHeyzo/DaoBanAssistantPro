@@ -351,8 +351,15 @@ void main() {
     // 第 1 天引用白班（08:30–20:30）
     expect(find.text('08:30 – 20:30'), findsOneWidget);
 
-    // 第 1 天的 chip 换成「夜班」（下标 1）
+    // v0.11.3 起多选：点「夜班」是加上，第 1 天变成 [白班, 夜班]，两行时间都显示。
     await tester.tap(find.byKey(cycleChipKey(0, 1)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('08:30 – 20:30'), findsOneWidget);
+    expect(find.text('20:30 – 次日08:30'), findsOneWidget);
+
+    // 再点「白班」把它去掉，只剩夜班。
+    await tester.tap(find.byKey(cycleChipKey(0, 0)));
     await tester.pumpAndSettle();
 
     expect(find.text('08:30 – 20:30'), findsNothing);
