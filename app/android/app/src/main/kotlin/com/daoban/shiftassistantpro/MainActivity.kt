@@ -63,9 +63,6 @@ class MainActivity : FlutterActivity() {
     private var pendingRingtoneResult: MethodChannel.Result? = null
 
     override fun onDestroy() {
-        // 响铃自停靠这个引用回来撤锁屏标志：Activity 没了就把它清掉，别让它挂着一个
-        // 已经销毁的 Activity（那会把整个 Activity 泄漏到进程结束）。
-        instance = null
         super.onDestroy()
     }
 
@@ -73,8 +70,6 @@ class MainActivity : FlutterActivity() {
         // 关键：必须在 setContentView（super.onCreate 内部）之前设置，锁屏冷启动才能点亮屏幕并显示
         applyShowWhenLocked(intent)
         super.onCreate(savedInstanceState)
-        instance = this
-        handleAlarmIntent(intent)
         handleWidgetIntent(intent)
         // 捕获原生未处理异常（含闹钟 receiver 触发时的崩溃），写入日志文件
         val default = Thread.getDefaultUncaughtExceptionHandler()
@@ -92,8 +87,23 @@ class MainActivity : FlutterActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        handleAlarmIntent(intent)
         handleWidgetIntent(intent)
+    }
+
+    /** MIUI 权限编辑页的 Intent（`miui.intent.action.APP_PERM_EDITOR`）。 */
+    private fun miuiPermissionEditor(): Intent {
+        return Intent("miui.intent.action.APP_PERM_EDITOR").apply {
+            putExtra("extra_pkgname", packageName)
+        }
+    }
+
+    /** 检查 MIUI 权限编辑页是否存在（能否解析到 Activity）。 */
+    private fun miuiPermissionPageAvailable(): Boolean {
+        return try {
+            packageManager.resolveActivity(miuiPermissionEditor(), 0) != null
+        } catch (_: Exception) {
+            false
+        }
     }
 
     private fun applyShowWhenLocked(intent: Intent?) {
