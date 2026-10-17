@@ -887,8 +887,14 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                                                       : c.alarms[j],
                                               ])),
                                     ),
-                                  const SizedBox(width: AppTokens.spaceSm),
+                                ],
+                              ),
+                              const SizedBox(height: AppTokens.spaceXs),
+                              // 「值班当天跳过」单独一行，避免跟时间 chip 挤。
+                              Row(
+                                children: [
                                   const Text('值班当天跳过'),
+                                  const Spacer(),
                                   GlassSwitch(
                                     value: c.alarms[k].skipOnDutyDay,
                                     onChanged: (v) => setState(() =>
