@@ -101,6 +101,9 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
   /// 休息规则（v0.11.3 新增）：跟随值班 / 固定星期 / 不用规则。
   RestRule _restRule = const RestRule();
 
+  /// 值班顺序轮换（v0.12.0 新增）：null = 不轮换。
+  DutyRotation? _dutyRotation;
+
   int _teamCount = 4;
   List<String> _teamNames = ['一班', '二班', '三班', '四班'];
   int _ourTeamIndex = 0;
@@ -158,6 +161,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
         // 深拷贝：内层 List 也要复制，否则编辑器里改一格会污染领域对象。
         _cycle = [for (final day in dd.cycle) List<int>.of(day)];
         _restRule = dd.restRule;
+        _dutyRotation = dd.dutyRotation;
         _teamCount = dd.teamCount;
         _teamNames = List.of(dd.teamNames);
         _ourTeamIndex = dd.ourTeamIndex;
@@ -338,6 +342,8 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                       const SizedBox(height: AppTokens.spaceMd),
                       _restRuleCard(context),
                       const SizedBox(height: AppTokens.spaceMd),
+                      _dutyRotationCard(context),
+                      const SizedBox(height: AppTokens.spaceMd),
                       _crewCard(context),
                       const SizedBox(height: AppTokens.spaceMd),
                     ],
@@ -402,6 +408,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
         classes: _classes,
         cycle: _cycle,
         restRule: _restRule,
+        dutyRotation: _dutyRotation,
         teamCount: _teamCount,
         teamNames: _teamNames,
         ourTeamIndex: _ourTeamIndex,
@@ -1646,6 +1653,150 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
     );
   }
 
+  /// 4.6) 值班顺序轮换（v0.12.0 新增）。
+  ///
+  /// 如 1234→3421→2143→4312 按季度自动切换。切换时机：轮换周期起始日所在的
+  /// 排班周期走完后，在下一排班周期起始日切换（不对齐硬切）。
+  /// 默认关闭（null），老用户不受影响。
+  Widget _dutyRotationCard(BuildContext context) {
+    final muted = AppTokens.inkMuted(context);
+    final enabled = _dutyRotation != null;
+    return GlassTile(
+      padding: EdgeInsets.all(
+          AppLayout.of(context).isNarrow ? AppTokens.spaceMd : AppTokens.spaceLg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  L10n.t('值班顺序轮换', 'Duty order rotation'),
+                  style: AppTokens.titleStrong,
+                ),
+              ),
+              GlassSwitch(
+                value: enabled,
+                onChanged: (v) {
+                  setState(() {
+                    if (v) {
+                      // 默认给一个 4 人季度的模板，用户再改。
+                      _dutyRotation = DutyRotation(
+                        sequence: const ['1234', '3421', '2143', '4312'],
+                        period: RotationPeriod.quarterly,
+                        sequenceStartDate: dateOnly(DateTime.now()),
+                      );
+                    } else {
+                      _dutyRotation = null;
+                    }
+                  });
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTokens.spaceXs),
+          Text(
+            L10n.t(
+              '按周期自动切换值班顺序（如 1234→3421），不用手动建多套排班。周期起始日所在排班走完后自动切。',
+              'Auto-rotate duty order by period (e.g. 1234→3421), no need for multiple schedules.',
+            ),
+            style: AppTokens.hintText.copyWith(color: muted),
+          ),
+          if (enabled) ...[
+            const SizedBox(height: AppTokens.spaceSm),
+            // 轮换序列输入
+            Text(
+              L10n.t('轮换序列（逗号分隔，如 1234,3421）', 'Rotation sequence (comma-separated)'),
+              style: AppTokens.labelText,
+            ),
+            const SizedBox(height: AppTokens.spaceXs),
+            TextField(
+              controller: TextEditingController(
+                text: _dutyRotation!.sequence.join(','),
+              ),
+              decoration: InputDecoration(
+                hintText: '1234,3421,2143,4312',
+                border: const OutlineInputBorder(),
+                isDense: true,
+              ),
+              onChanged: (text) {
+                final seq = text
+                    .split(',')
+                    .map((s) => s.trim())
+                    .where((s) => s.isNotEmpty)
+                    .toList();
+                if (seq.isNotEmpty) {
+                  setState(() {
+                    _dutyRotation = _dutyRotation!.copyWith(sequence: seq);
+                  });
+                }
+              },
+            ),
+            const SizedBox(height: AppTokens.spaceSm),
+            // 轮换周期选择
+            Row(
+              children: [
+                Text(
+                  L10n.t('轮换周期', 'Rotation period'),
+                  style: AppTokens.labelText,
+                ),
+                const SizedBox(width: AppTokens.spaceSm),
+                SegmentedButton<RotationPeriod>(
+                  segments: [
+                    ButtonSegment(
+                      value: RotationPeriod.quarterly,
+                      label: Text(L10n.t('季度', 'Quarterly')),
+                    ),
+                    ButtonSegment(
+                      value: RotationPeriod.monthly,
+                      label: Text(L10n.t('月度', 'Monthly')),
+                    ),
+                  ],
+                  selected: {_dutyRotation!.period},
+                  onSelectionChanged: (set) {
+                    setState(() {
+                      _dutyRotation =
+                          _dutyRotation!.copyWith(period: set.first);
+                    });
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTokens.spaceSm),
+            // 起始日选择
+            Row(
+              children: [
+                Text(
+                  L10n.t('序列起始日', 'Sequence start date'),
+                  style: AppTokens.labelText,
+                ),
+                const SizedBox(width: AppTokens.spaceSm),
+                TextButton(
+                  onPressed: () async {
+                    final picked = await showGlassDatePicker(
+                      context,
+                      initialDate: _dutyRotation!.sequenceStartDate,
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _dutyRotation = _dutyRotation!.copyWith(
+                          sequenceStartDate: dateOnly(picked),
+                        );
+                      });
+                    }
+                  },
+                  child: Text(
+                    L10n.formatDate(_dutyRotation!.sequenceStartDate),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   /// 5) 班组设置（可选）—— 默认折叠。
   Widget _crewCard(BuildContext context) {
     final muted = AppTokens.inkMuted(context);
@@ -2144,6 +2295,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
             classes: _classes,
             cycle: _cycle,
             restRule: _restRule,
+            dutyRotation: _dutyRotation,
             makeCurrent: widget.scheduleId == null,
             teamCount: _teamCount,
             teamNames: _teamNames,
