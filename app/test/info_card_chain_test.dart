@@ -22,7 +22,7 @@ ShiftSchedule _sched(String name, int teamCount) => ShiftSchedule(
             name: '$name-白', abbr: '白', startMinute: 480, endMinute: 1080),
         ShiftClass(name: '$name-休', abbr: '休', isRest: true),
       ],
-      cycle: const [0, 1],
+      cycle: const [[0], [1]],
       teamCount: teamCount,
       teamNames: List.generate(teamCount, (i) => '$name组${i + 1}'),
       teamOffsets: List.generate(teamCount, (i) => i),

@@ -70,7 +70,7 @@ Future<AppDatabase> _pumpAlarmScreen(
         alarms: alarms,
       ),
     ],
-    cycle: const [0], // 每天都是这个班次 —— 断言任意一天都拿得到
+    cycle: const [[0]], // 每天都是这个班次 —— 断言任意一天都拿得到
     makeCurrent: true,
     teamCount: 1,
     teamNames: const ['我'],

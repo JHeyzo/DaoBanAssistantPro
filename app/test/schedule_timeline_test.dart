@@ -40,7 +40,7 @@ Future<AppDatabase> _pump(WidgetTester tester) async {
       classes: [
         ShiftClass(name: '$name-白', abbr: '白', startMinute: 480, endMinute: 1080),
       ],
-      cycle: const [0],
+      cycle: const [[0]],
       makeCurrent: current,
       teamCount: 1,
       teamNames: const ['我'],

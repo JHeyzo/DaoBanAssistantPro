@@ -28,6 +28,7 @@ import 'info_card_metrics.dart';
 import 'calendar_lens.dart';
 import 'lens_warp_scope.dart';
 import 'calendar_range_band.dart';
+import 'day_chip_painter.dart';
 import 'range_band.dart';
 import 'schedule_management_screen.dart';
 import 'schedule_span_label.dart';
@@ -396,9 +397,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     final counts = <String, int>{};
     final days = DateTime(_month.year, _month.month + 1, 0).day;
     for (var d = 1; d <= days; d++) {
-      final shift = chain.shiftOn(DateTime(_month.year, _month.month, d));
-      if (shift == null) continue;
-      counts.update(shift.shortLabel, (n) => n + 1, ifAbsent: () => 1);
+      final shifts = chain.shiftsOn(DateTime(_month.year, _month.month, d));
+      // 按天互斥计数，优先级休 > 值 > 白（用户 2026-10-17 定）。
+      final primary = primaryByPriority(shifts);
+      if (primary == null) continue;
+      counts.update(primary.shortLabel, (n) => n + 1, ifAbsent: () => 1);
     }
     if (counts.isEmpty) return null;
     final parts = [for (final e in counts.entries) '${e.key}${e.value}'];
@@ -1038,8 +1041,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
 
     final hasOverride =
         days.any((d) => schedule.dayOverrides.containsKey(dayNumber(d)));
-    final current =
-        days.length == 1 ? schedule.shiftOn(days.single) : null;
+    // 有覆盖时那天恒为单个班次（覆盖整天替换）；无覆盖时传 null（picker 不需要）。
+    final currentShifts =
+        days.length == 1 && hasOverride ? schedule.shiftsOn(days.single) : const <ShiftClass>[];
+    final current = currentShifts.isEmpty ? null : currentShifts.first;
 
     final choice = await showShiftOverridePicker(
       context,
@@ -1639,10 +1644,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
       cells.add(_dayCell(
           context,
           date,
-          // 真值：空白表（跟随法定节假日）那套没有班次定义，这里就是 null ——
+          // 真值：空白表（跟随法定节假日）那套没有班次定义，这里就是空列表 ——
           // 格子只画日期与农历，**不替它断言今天上不上班**（v0.9.16 用户反馈）。
           // 「有没有班表在管」是另一件事，由 `chain.hasScheduleOn` 回答。
-          chain?.shiftOn(date),
+          chain?.shiftsOn(date) ?? const [],
           lunarOf(date),
           cellW,
           cellH,
@@ -1693,9 +1698,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
   /// [warp] 是液态档那枚透镜把它**内容**挤了一下的仿射变换（`null` = 不套）。
   /// 只套内容、**不套卡片**：卡片动了就成了「格子自己在扭」，而用户要的是
   /// 「一枚玻璃压过去」。`Transform` 只改绘制、不改布局，所以字的排版不会跟着变。
-  Widget _dayCell(BuildContext context, DateTime date, ShiftClass? shift,
+  Widget _dayCell(BuildContext context, DateTime date, List<ShiftClass> shifts,
       LunarInfo lunar, double cellW, double cellH, bool isToday, bool solid,
       bool adjusted, bool inRange, {Offset? warpCenter}) {
+    // v0.11.3 视觉重做前过渡：多班次时暂取第一个（TODO: 扁平+圆角方章+红折角）。
+    final shift = shifts.isEmpty ? null : shifts.first;
     final lunarColor = lunar.isLegalHoliday
         ? AppTokens.holiday
         : AppTokens.inkMuted(context);
@@ -1771,56 +1778,40 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
       ),
     );
 
-    final children = <Widget>[dateLine];
+    // v0.11.3 新视觉：日期收进章内（扁平+圆角方章+红折角）。
+    // 有班次 → 画章（含日期）；无班次 → 只画日期数字。
+    final chipStyle = _dayChipStyle(shifts, isToday);
+    final children = <Widget>[];
+    if (chipStyle != null) {
+      // 章：CustomPaint 画圆角方章 + 日期 + 简称 + 红折角
+      final chipSize = (contentW * 0.72).clamp(28.0, 44.0);
+      children.add(
+        SizedBox(
+          width: chipSize,
+          height: chipSize * 1.2, // 章高宽比 72:60
+          child: CustomPaint(
+            painter: DayChipPainter(
+              day: date.day,
+              label: chipStyle.label,
+              baseColor: chipStyle.base,
+              borderColor: chipStyle.border,
+              textColor: chipStyle.text,
+              hasDutyCorner: chipStyle.dutyCorner,
+              isToday: isToday,
+            ),
+          ),
+        ),
+      );
+      // 已调班标记：章右上小圆点
+      if (adjusted) {
+        // TODO: 调整标记位置（目前放在章外，需与新视觉对齐）
+      }
+    } else {
+      // 无班次：只画日期数字（原 dateLine）
+      children.add(dateLine);
+    }
     if (shift != null) {
-      children.add(const SizedBox(height: AppTokens.gapHair));
-      children.add(chip
-          // 两侧留硬边距：胶囊再宽也碰不到格子边（更碰不到选中滑块）。
-          ? Padding(
-              padding: const EdgeInsets.symmetric(horizontal: _chipSideGap),
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  _shiftChip(context, shift, s, solid,
-                      ValueKey('day-chip-${date.day}')),
-                  if (adjusted)
-                    Positioned(
-                      right: -2,
-                      top: -2,
-                      child: Container(
-                        key: ValueKey('day-adjusted-${date.day}'),
-                        // spec §7.4：**固定在 3–4dp、不跟格子高度缩放** ——
-                        // 格子里的字是按格子高等比缩放的，小窗里缩到 1–2px 就
-                        // 等于没有。这里借间距刻度上的 4dp 一档（`spaceXs`）：
-                        // 光学刻度（`gapHair` / `padChipV` …）最高的 3dp 也在
-                        // 区间内，但它们表达的是"控件内部两个元素贴合的微距"，
-                        // 用在标记的**尺寸**上语义不对。
-                        width: AppTokens.spaceXs,
-                        height: AppTokens.spaceXs,
-                        decoration: BoxDecoration(
-                          color: Color(shift.color),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            )
-          : FittedBox(
-              // 与日期、农历、周标题同一条规则：文字在**无界宽**下排好，再由这层
-              // 按需缩小 —— 有 `ellipsis` 的话，省略号会先按 `contentW` 烘进结果，
-              // 外层再怎么缩也变不回来（农历那一行的原话见 `lunarLine` 上面）。
-              fit: BoxFit.scaleDown,
-              child: Text(
-                shift.shortLabel,
-                // 窄到画不出胶囊时的退路：班次色是给色块用的强色，当文字色太浅
-                // （橙 2.06:1、灰 2.60:1），要按格子底色算一版可读的。
-                maxLines: 1,
-                style: AppTokens.scaled(AppTokens.microStrong, s).copyWith(
-                  color: AppTokens.inkFor(Color(shift.color), surface),
-                ),
-              ),
-            ));
+      // 旧胶囊逻辑已删（v0.11.3 用章代替）
     }
     children
       ..add(const SizedBox(height: AppTokens.gapHair))
@@ -1908,6 +1899,60 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
   /// 不会连带触发布局跳动。
   ///
   /// 底色走 [AnimatedContainer]，选中/取消时渐变过去而不是硬切；文字色是跳变的
+  /// v0.11.3：根据班次列表算出日历章的配色与标记。
+  ///
+  /// 规则（用户 2026-10-17 拍板）：
+  /// - 空：返回 null（调用方不画章）。
+  /// - 纯值班（单个值班标记班次）：红底章，不画折角。
+  /// - 其他：底色按「休 > 白」取代表（休=灰，白=蓝）；有值班标记则画红折角。
+  /// - 今天：蓝色实心章（覆盖底色）。
+  ({Color base, Color border, Color text, String label, bool dutyCorner})?
+      _dayChipStyle(List<ShiftClass> shifts, bool isToday) {
+    if (shifts.isEmpty) return null;
+    // 纯值班：单个值班班次 → 红底章
+    if (shifts.length == 1 && shifts.first.isDuty && !shifts.first.isRest) {
+      return (
+        base: AppTokens.chipDutyBase,
+        border: AppTokens.chipDutyBase,
+        text: Colors.white,
+        label: shifts.first.abbr ?? shifts.first.name,
+        dutyCorner: false,
+      );
+    }
+    // 代表：休 > 白（值班不单独做底，只画角）
+    ShiftClass? rep;
+    for (final s in shifts) {
+      if (s.isRest) {
+        rep = s;
+        break;
+      }
+    }
+    rep ??= shifts.firstWhere(
+      (s) => !s.isDuty && !s.isRest,
+      orElse: () => shifts.first,
+    );
+    final hasDuty = shifts.any((s) => s.isDuty && !s.isRest);
+    if (rep.isRest) {
+      // 休：灰章
+      return (
+        base: AppTokens.chipRestBase,
+        border: AppTokens.chipRestBorder,
+        text: AppTokens.chipRestText,
+        label: rep.abbr ?? rep.name,
+        dutyCorner: hasDuty,
+      );
+    } else {
+      // 白：蓝章
+      return (
+        base: AppTokens.chipWorkBase,
+        border: AppTokens.chipWorkBorder,
+        text: AppTokens.chipWorkText,
+        label: rep.abbr ?? rep.name,
+        dutyCorner: hasDuty,
+      );
+    }
+  }
+
   /// —— 两个候选（`inkFor` 与 `onSolid`）各自在对应底色上可读，中间态可接受，
   /// 而 Color.lerp 两个可读色反而会穿过不可读区。
   Widget _shiftChip(BuildContext context, ShiftClass shift, double s,
@@ -1981,6 +2026,75 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
   ///
   /// 胶囊比裸文字高，所以它在**完整卡**里的高度必须进定高模型：见
   /// `info_card_metrics.dart` 的 `_adjustedBadgeH` 与 `hasOverrideHint`。
+  /// 信息卡里一行班次（v0.11.3：一行一个，多班次时调多次）。
+  ///
+  /// [keySuffix] 单班次时传空串（key 与从前一字不差，测试按 key 找）；
+  /// 多班次时传 '-0'/'-1'…。
+  Widget _infoCardShiftRow(
+    BuildContext context,
+    ShiftClass shift,
+    String keySuffix,
+    ShiftSchedule daySchedule,
+    Color muted,
+    Color primary,
+  ) {
+    return GlassPressable(
+      key: Key('info-card-shift-entry$keySuffix'),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: daySchedule.classes.isEmpty
+            ? null
+            : () => adjustDays(_selected, _selected),
+        child: Row(
+          children: [
+            Container(
+              // 保持原来的 12 不动 —— 这个色点的尺寸不是本任务要改的东西，
+              // 换成 `AppTokens.iconSm`（16）会白白把点撑大一圈。
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                  color: Color(shift.color), shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text.rich(
+                key: Key('info-card-shift-line$keySuffix'),
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: shift.name,
+                      style: AppTokens.titleStrong.copyWith(
+                        color: AppTokens.inkFor(Color(shift.color),
+                            Theme.of(context).colorScheme.surface),
+                      ),
+                    ),
+                    if (shift.startMinute != null && shift.endMinute != null)
+                      TextSpan(
+                        text: '  ${_timeRange(shift)}',
+                        style: AppTokens.rowPrimary,
+                      ),
+                    TextSpan(
+                      text: '   ${_alarmText(shift)}',
+                      style: AppTokens.rowSecondary.copyWith(color: muted),
+                    ),
+                  ],
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            // 这天被单独调动过：形状抄同一行的邻居，理由见 `_adjustedBadge`。
+            if (daySchedule.dayOverrides.containsKey(dayNumber(_selected)))
+              Padding(
+                padding: const EdgeInsets.only(left: AppTokens.spaceSm),
+                child: _adjustedBadge(context, primary),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _adjustedBadge(BuildContext context, Color primary) => Container(
         key: const Key('info-card-adjusted'),
         padding: const EdgeInsets.symmetric(
@@ -2240,11 +2354,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     // 别退回「给空白表合成一个班次」那一版（v0.9.15 试过）：那是拿显示去迁就判据。
     // 「有没有班表在管」是**另一件事**，由 `chain.hasScheduleOn` 回答（只有
     // 「整月没有任何班表」时才写「这段时间没有排班」）。
-    final shift = chain?.shiftOn(_selected);
+    // v0.11.3：一天可多个班次，信息卡一行一个（白班 08:30–17:00 闹钟07:30 /
+    // 值班 17:00–次日08:30）。
+    final shifts = chain?.shiftsOn(_selected) ?? const <ShiftClass>[];
+    // accent 取「休>值>白」的代表（单班次时就是它自己）。
+    final accentShift = primaryByPriority(shifts);
     final isToday = _selected == dateOnly(DateTime.now());
     final muted = AppTokens.inkMuted(context);
-    final accent = shift != null
-        ? Color(shift.color)
+    final accent = accentShift != null
+        ? Color(accentShift.color)
         : Theme.of(context).colorScheme.primary;
     // 「信息胶囊」那套配方一律走主色（「今天」「N 项待办」「已调整」同一族），
     // 与上面的 `accent`（跟着当天班次色走）不是一回事。
@@ -2255,10 +2373,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     // 「哪天 · 什么班 · 几点到几点」，带上闹钟图标；农历、今天徽章与其他
     // 班组收起来 —— 网格上本来就直接画着班次与农历，信息没有丢。
     if (compact) {
-      final timeText =
-          (shift != null && shift.startMinute != null && shift.endMinute != null)
-              ? _timeRange(shift)
-              : null;
       final isAdjusted =
           daySchedule?.dayOverrides.containsKey(dayNumber(_selected)) ?? false;
       return Padding(
@@ -2325,62 +2439,68 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                       color: lunar.isLegalHoliday ? AppTokens.holiday : muted,
                     ),
                   ),
-                  if (shift != null) ...[
+                  // v0.11.3：一行一个班次（名 + 时间另起一行）。
+                  if (shifts.isNotEmpty) ...[
                     const SizedBox(height: AppTokens.spaceSm),
-                    Row(
-                      // 顶上对齐：左边色点、右边「名 + 徽章」一行、时间再一行。
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding:
-                              const EdgeInsets.only(top: AppTokens.padChipV),
-                          child: Container(
-                            width: 12,
-                            height: 12,
-                            decoration: BoxDecoration(
-                                color: Color(shift.color),
-                                shape: BoxShape.circle),
+                    for (final s in shifts) ...[
+                      Row(
+                        // 顶上对齐：左边色点、右边「名 + 徽章」一行、时间再一行。
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding:
+                                const EdgeInsets.only(top: AppTokens.padChipV),
+                            child: Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                  color: Color(s.color),
+                                  shape: BoxShape.circle),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: AppTokens.gapIconText),
-                        Expanded(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      shift.name,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: AppTokens.rowPrimary,
+                          const SizedBox(width: AppTokens.gapIconText),
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        s.name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTokens.rowPrimary,
+                                      ),
                                     ),
-                                  ),
-                                  if (isAdjusted) ...[
-                                    const SizedBox(
-                                        width: AppTokens.gapIconText),
-                                    _adjustedBadge(context, accent),
+                                    if (isAdjusted) ...[
+                                      const SizedBox(
+                                          width: AppTokens.gapIconText),
+                                      _adjustedBadge(context, accent),
+                                    ],
                                   ],
-                                ],
-                              ),
-                              // 时间另起一行而不是与班次名挤同一行：200dp 宽下
-                              // 挤一起的结果是「白班 0…」—— 时间全被截掉。
-                              if (timeText != null) ...[
-                                const SizedBox(height: AppTokens.gapHair),
-                                Text(
-                                  timeText,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTokens.labelSecondary,
                                 ),
+                                // 时间另起一行而不是与班次名挤同一行：200dp 宽下
+                                // 挤一起的结果是「白班 0…」—— 时间全被截掉。
+                                if (s.startMinute != null &&
+                                    s.endMinute != null) ...[
+                                  const SizedBox(height: AppTokens.gapHair),
+                                  Text(
+                                    _timeRange(s),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTokens.labelSecondary,
+                                  ),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                      if (s != shifts.last)
+                        const SizedBox(height: AppTokens.spaceXs),
+                    ],
                   ],
                 ],
               ),
@@ -2491,7 +2611,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
         // 优先级正好反过来。
         // `shift` 是真值：空白表（跟随法定节假日）这天是 null，走下面「有班表、
         // 但没班次」那一支（什么都不写）。
-        if (shift != null && daySchedule != null)
+        // v0.11.3：一行一个班次（白班 08:30–17:00 闹钟07:30 /
+        // 值班 17:00–次日08:30 各占一行）。单班次时 key 不带下标（测试兼容）。
+        if (shifts.isNotEmpty && daySchedule != null)
           // `GlassPressable` **没有 `onTap`** —— 它只是个按压缩放的视觉包装
           // （`Listener` + `QScale`），点击一律由子 widget 承载。这里用
           // `GestureDetector` 只拿点击：全 app 的按压反馈就是玻璃的 Q 弹缩放，
@@ -2505,63 +2627,22 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
           // 空白表方案没有班次定义可挑，入口不给（spec §7.3）—— 传 null 禁用它。
           // 已知小瑕疵：`GlassPressable` 的按压缩放挡不住，空白表下按这行仍会
           // 缩一下。不值得为它再加一层条件包装。
-          GlassPressable(
-            key: const Key('info-card-shift-entry'),
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: daySchedule.classes.isEmpty
-                  ? null
-                  : () => adjustDays(_selected, _selected),
-              child: Row(
-                children: [
-                  Container(
-                    // 保持原来的 12 不动 —— 这个色点的尺寸不是本任务要改的东西，
-                    // 换成 `AppTokens.iconSm`（16）会白白把点撑大一圈。
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                        color: Color(shift.color), shape: BoxShape.circle),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text.rich(
-                      key: const Key('info-card-shift-line'),
-                      TextSpan(
-                        children: [
-                          TextSpan(
-                            text: shift.name,
-                            style: AppTokens.titleStrong.copyWith(
-                              color: AppTokens.inkFor(Color(shift.color),
-                                  Theme.of(context).colorScheme.surface),
-                            ),
-                          ),
-                          if (shift.startMinute != null &&
-                              shift.endMinute != null)
-                            TextSpan(
-                              text: '  ${_timeRange(shift)}',
-                              style: AppTokens.rowPrimary,
-                            ),
-                          TextSpan(
-                            text: '   ${_alarmText(shift)}',
-                            style:
-                                AppTokens.rowSecondary.copyWith(color: muted),
-                          ),
-                        ],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  // 这天被单独调动过：形状抄同一行的邻居，理由见 `_adjustedBadge`。
-                  // （外层 `if (shift != null && daySchedule != null)` 已经把它收窄了。）
-                  if (daySchedule.dayOverrides.containsKey(dayNumber(_selected)))
-                    Padding(
-                      padding: const EdgeInsets.only(left: AppTokens.spaceSm),
-                      child: _adjustedBadge(context, primary),
-                    ),
-                ],
-              ),
-            ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var i = 0; i < shifts.length; i++) ...[
+                if (i > 0) const SizedBox(height: AppTokens.spaceXs),
+                _infoCardShiftRow(
+                  context,
+                  shifts[i],
+                  // 单班次时 key 与从前一字不差（测试按 key 找）。
+                  shifts.length == 1 ? '' : '-$i',
+                  daySchedule,
+                  muted,
+                  primary,
+                ),
+              ],
+            ],
           )
         // 判据是「**这天有没有班表在管**」，不是「这天有没有班次」：
         //   · 「其余时间」是「无」、又没有段覆盖 → 真的没有排班，写那句说明；
@@ -2707,7 +2788,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     final chips = <Widget>[];
     for (var i = 0; i < schedule.teamCount; i++) {
       if (i == schedule.ourTeamIndex) continue;
-      final t = schedule.teamShift(i, date);
+      final shifts = schedule.teamShifts(i, date);
+      final t = primaryByPriority(shifts);
       if (t == null) continue;
       final name = i < schedule.teamNames.length
           ? schedule.teamNames[i]

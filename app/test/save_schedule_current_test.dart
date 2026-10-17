@@ -43,7 +43,7 @@ void main() {
       name: 'B',
       anchorDate: DateTime.utc(2025, 6, 1),
       classes: _classes,
-      cycle: const [0, 1],
+      cycle: const [[0], [1]],
       makeCurrent: makeCurrent,
     );
   }

@@ -39,6 +39,7 @@ class ProfileScreen extends ConsumerWidget {
           language: s.language,
           liquidGlass: s.liquidGlass,
           hapticsEnabled: s.hapticsEnabled,
+          showHuangli: s.showHuangli,
         )));
 
     return Scaffold(
@@ -175,6 +176,31 @@ class ProfileScreen extends ConsumerWidget {
                         onChanged: (v) => ref
                             .read(appSettingsProvider.notifier)
                             .setHapticsEnabled(v),
+                      ),
+                    ],
+                  ),
+                  // v0.11.3：黄历宜忌显示开关（默认关）。
+                  const SizedBox(height: AppTokens.spaceSm),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(L10n.showHuangli,
+                                style: AppTokens.labelStrong),
+                            const SizedBox(height: AppTokens.gapHair),
+                            Text(L10n.showHuangliHint,
+                                style: AppTokens.microText
+                                    .copyWith(color: AppTokens.inkMuted(context))),
+                          ],
+                        ),
+                      ),
+                      GlassSwitch(
+                        value: settings.showHuangli,
+                        onChanged: (v) => ref
+                            .read(appSettingsProvider.notifier)
+                            .setShowHuangli(v),
                       ),
                     ],
                   ),

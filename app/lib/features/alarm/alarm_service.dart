@@ -136,27 +136,42 @@ List<ShiftAlarmPlan> planShiftAlarms(
   final plans = <ShiftAlarmPlan>[];
   for (var d = 0; d < days; d++) {
     final date = today.add(Duration(days: d));
-    final t = source.shiftOn(date);
-    if (t == null || t.isRest || !t.alarmEnabled || t.alarms.isEmpty) {
-      continue;
-    }
+    final shifts = source.shiftsOn(date);
     // 按天覆盖：该天被单独关闭则跳过
     if (overrides[dayNumber(date)] == false) continue;
 
-    // 值班次日规则：前一天是值班班种时，第一条闹钟改用规则时刻
-    // （只换第一条，「序号」不变，原生 id 不换号）。
-    final alarms = effectiveDayAlarms(source, date, t, postDutyRule);
-    for (var i = 0; i < alarms.length; i++) {
-      final alarm = alarms[i];
-      final fireAt = shiftAlarmFireAt(date, t, alarm);
-      if (!fireAt.isAfter(from)) continue;
-      plans.add(ShiftAlarmPlan(
-        offset: d,
-        shift: t,
-        alarm: alarm,
-        alarmIndex: i,
-        fireAt: fireAt,
-      ));
+    // 一天可叠多个班次（v0.11.3）：每个班次的闹钟都要排。
+    // 值班次日规则只作用于当天第一个有闹钟的非休息班次（起床那条）。
+    var postDutyApplied = false;
+    final isPostDuty =
+        postDutyRule != null && isPostDutyDay(source, date, postDutyRule);
+    for (final t in shifts) {
+      if (t.isRest || !t.alarmEnabled || t.alarms.isEmpty) {
+        continue;
+      }
+
+      // 值班次日规则：前一天含值班时，当天第一条闹钟改用规则时刻
+      // （只换第一条，「序号」不变，原生 id 不换号；一天只换一次）。
+      var alarms = t.alarms;
+      if (isPostDuty && !postDutyApplied) {
+        alarms = [
+          ShiftAlarm(minute: postDutyRule.minute, label: t.alarms.first.label),
+          ...t.alarms.sublist(1),
+        ];
+        postDutyApplied = true;
+      }
+      for (var i = 0; i < alarms.length; i++) {
+        final alarm = alarms[i];
+        final fireAt = shiftAlarmFireAt(date, t, alarm);
+        if (!fireAt.isAfter(from)) continue;
+        plans.add(ShiftAlarmPlan(
+          offset: d,
+          shift: t,
+          alarm: alarm,
+          alarmIndex: i,
+          fireAt: fireAt,
+        ));
+      }
     }
   }
   return plans;

@@ -20,7 +20,7 @@ class AppSettings {
     this.hapticsEnabled = true,
     this.postDutyAlarmEnabled = false,
     this.postDutyAlarmMinute,
-    this.postDutyClassName = '',
+    this.showHuangli = false,
   });
 
   final AppThemeMode themeMode;
@@ -48,8 +48,10 @@ class AppSettings {
   /// 值班次日改用的钟点（自午夜分钟数）；null = 还没设。
   final int? postDutyAlarmMinute;
 
-  /// 值班班种的班次名（按名认，不按 id —— 季度轮换重建排班后 id 会变）。
-  final String postDutyClassName;
+  /// 黄历宜忌：是否在日历信息卡显示「宜 / 忌」（默认关）。
+  ///
+  /// v0.11.3 新增，开关在「我的 → 设置」，不在日历页。
+  final bool showHuangli;
 
   Color get accentColor => AppColors.accentPalette[accentIndex];
 
@@ -61,7 +63,7 @@ class AppSettings {
     bool? hapticsEnabled,
     bool? postDutyAlarmEnabled,
     int? postDutyAlarmMinute,
-    String? postDutyClassName,
+    bool? showHuangli,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -71,11 +73,13 @@ class AppSettings {
       hapticsEnabled: hapticsEnabled ?? this.hapticsEnabled,
       postDutyAlarmEnabled: postDutyAlarmEnabled ?? this.postDutyAlarmEnabled,
       postDutyAlarmMinute: postDutyAlarmMinute ?? this.postDutyAlarmMinute,
-      postDutyClassName: postDutyClassName ?? this.postDutyClassName,
+      showHuangli: showHuangli ?? this.showHuangli,
     );
   }
 
-  /// 读出值班次日规则；未启用或没配齐（没设时间/没认到值班班种）返回 null。
+  /// 读出值班次日规则；未启用或没设时间返回 null。
+  ///
+  /// v0.11.3 起按语义标记认值班，不再需要班次名（`postDutyClassName` 已删）。
   ///
   /// 静态方法是因为 `AlarmService.rescheduleAll` 是静态的、拿不到 Riverpod，
   /// 而「读齐参数」只该有一份（见那里的注释）。
@@ -83,9 +87,8 @@ class AppSettings {
     final sp = await SharedPreferences.getInstance();
     if (!(sp.getBool('postDutyAlarmEnabled') ?? false)) return null;
     final minute = sp.getInt('postDutyAlarmMinute');
-    final name = (sp.getString('postDutyClassName') ?? '').trim();
-    if (minute == null || name.isEmpty) return null;
-    return PostDutyAlarmRule(dutyClassName: name, minute: minute);
+    if (minute == null) return null;
+    return PostDutyAlarmRule(minute: minute);
   }
 }
 
@@ -109,7 +112,7 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
       final hapticsEnabled = sp.getBool('hapticsEnabled') ?? true;
       final postDutyAlarmEnabled = sp.getBool('postDutyAlarmEnabled') ?? false;
       final postDutyAlarmMinute = sp.getInt('postDutyAlarmMinute');
-      final postDutyClassName = sp.getString('postDutyClassName') ?? '';
+      final showHuangli = sp.getBool('showHuangli') ?? false;
       L10n.locale = language;
       liquidGlassEnabled.value = liquidGlass;
       hapticsDisabled = !hapticsEnabled;
@@ -125,7 +128,7 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
         hapticsEnabled: hapticsEnabled,
         postDutyAlarmEnabled: postDutyAlarmEnabled,
         postDutyAlarmMinute: postDutyAlarmMinute,
-        postDutyClassName: postDutyClassName,
+        showHuangli: showHuangli,
       );
     } catch (_) {
       // 忽略读取失败，使用默认值
@@ -187,10 +190,11 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
     await sp.setInt('postDutyAlarmMinute', minute);
   }
 
-  Future<void> setPostDutyClassName(String name) async {
-    state = state.copyWith(postDutyClassName: name);
+  /// 黄历宜忌显示开关（v0.11.3，默认关）。
+  Future<void> setShowHuangli(bool value) async {
+    state = state.copyWith(showHuangli: value);
     final sp = await SharedPreferences.getInstance();
-    await sp.setString('postDutyClassName', name);
+    await sp.setBool('showHuangli', value);
   }
 
   /// 把外观这一组**在内存里**拨回默认（跟随系统 / 首个主色调 / 中文 / 液态玻璃关 /

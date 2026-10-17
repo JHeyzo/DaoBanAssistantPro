@@ -21,6 +21,17 @@ class AppTokens {
   static const Color success = Color(0xFF4ADE80);
   static const Color holiday = Color(0xFFE53935);
 
+  // ── 日历日期章（v0.11.3 扁平设计）──
+  static const Color chipWorkBase = Color(0xFFEEF4FF);
+  static const Color chipWorkBorder = Color(0xFF9EC1F5);
+  static const Color chipWorkText = Color(0xFF2F7CF6);
+  static const Color chipDutyBase = Color(0xFFE5484D);
+  static const Color chipRestBase = Color(0xFFF0F0F3);
+  static const Color chipRestBorder = Color(0xFFD1D1D6);
+  static const Color chipRestText = Color(0xFF8E8E93);
+  static const Color chipDutyLightBase = Color(0xFFFFF0F0);
+  static const Color chipDutyLightBorder = Color(0xFFF0A8A8);
+
   // ── 圆角 ──
   static const double radiusS = 12;
   static const double radiusM = 16;

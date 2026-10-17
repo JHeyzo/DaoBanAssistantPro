@@ -44,7 +44,7 @@ class _Saved {
   final String name;
   final DateTime anchorDate;
   final List<ShiftClass> classes;
-  final List<int> cycle;
+  final List<List<int>> cycle;
   final int teamCount;
   final List<String> teamNames;
   final int ourTeamIndex;
@@ -82,7 +82,8 @@ class _FakeRepository extends AppRepository {
     required String name,
     required DateTime anchorDate,
     required List<ShiftClass> classes,
-    required List<int> cycle,
+    required List<List<int>> cycle,
+    RestRule restRule = const RestRule(),
     bool makeCurrent = true,
     int teamCount = 4,
     List<String> teamNames = const ['一班', '二班', '三班', '四班'],
@@ -111,7 +112,7 @@ class _FakeRepository extends AppRepository {
 
 ShiftSchedule _domain({
   List<ShiftClass>? classes,
-  List<int>? cycle,
+  List<List<int>>? cycle,
   DateTime? anchor,
   List<int>? teamOffsets,
   Map<int, int>? dayOverrides,
@@ -138,7 +139,7 @@ ShiftSchedule _domain({
               color: 0xFF7A5CFF),
           ShiftClass(name: '休班', abbr: '休', isRest: true, color: 0xFF9AA0B4),
         ],
-    cycle: cycle ?? const [0, 0, 1, 1, 2, 2],
+    cycle: cycle ?? const [[0], [0], [1], [1], [2], [2]],
     teamCount: teamCount,
     teamNames: teamNames ?? L10n.defaultTeamNames(teamCount),
     ourTeamIndex: 0,
@@ -149,7 +150,7 @@ ShiftSchedule _domain({
 /// 只有一个非休息班次 + 一个休班的方案：页面上只有一条「结束」时间行。
 ShiftSchedule _oneShift(ShiftClass c) => _domain(
       classes: [c, const ShiftClass(name: '休息', abbr: '休', isRest: true)],
-      cycle: const [0, 1],
+      cycle: const [[0], [1]],
     );
 
 /// 24 小时值班：08:00 → 次日 08:00（Task 1 把分钟域扩到 2880 的起因）。
@@ -291,7 +292,7 @@ List<String> _expectedLabels(ShiftSchedule d) {
   final today = dateOnly(DateTime.now());
   return [
     for (var i = 0; i < 14; i++)
-      d.shiftOn(today.add(Duration(days: i)))?.shortLabel ?? '—',
+      d.shiftsOn(today.add(Duration(days: i))).firstOrNull?.shortLabel ?? '—',
   ];
 }
 
@@ -306,7 +307,7 @@ void main() {
 
   testWidgets('周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰',
       (tester) async {
-    await _pumpEditor(tester, _domain(cycle: const [0, 0, 1, 1, 2, 2]));
+    await _pumpEditor(tester, _domain(cycle: const [[0], [0], [1], [1], [2], [2]]));
 
     expect(find.text(L10n.dayN(6)), findsOneWidget);
     expect(find.text(L10n.dayN(7)), findsNothing);
@@ -330,7 +331,7 @@ void main() {
 
   testWidgets('周期长度上限 60：到顶后 + 置灰，减一次又可用', (tester) async {
     await _pumpEditor(
-        tester, _domain(cycle: List.generate(59, (i) => i % 3)));
+        tester, _domain(cycle: List.generate(59, (i) => [i % 3])));
 
     await tester.tap(_plus());
     await tester.pumpAndSettle();
@@ -345,7 +346,7 @@ void main() {
 
   testWidgets('周期某天换成别的班次后，该行右侧时间文本跟着变', (tester) async {
     // 第 1 天引用白班，另外两天都是休班 —— 这样「夜班」的时间文本只会出现一次
-    await _pumpEditor(tester, _domain(cycle: const [0, 2, 2]));
+    await _pumpEditor(tester, _domain(cycle: const [[0], [2], [2]]));
 
     // 第 1 天引用白班（08:30–20:30）
     expect(find.text('08:30 – 20:30'), findsOneWidget);
@@ -372,7 +373,7 @@ void main() {
               color: 0xFF4C8DFF),
           ShiftClass(name: '休班', abbr: '休', isRest: true, color: 0xFF9AA0B4),
         ],
-        cycle: const [0, 0, 1],
+        cycle: const [[0], [0], [1]],
       ),
     );
     expect(find.text('08:30 – 20:30'), findsNWidgets(2));
@@ -398,7 +399,7 @@ void main() {
 
   testWidgets('删除仍被引用的班次定义被拦下，未被引用的可以删', (tester) async {
     // 休班（下标 2）没有被周期引用
-    await _pumpEditor(tester, _domain(cycle: const [0, 1, 1]));
+    await _pumpEditor(tester, _domain(cycle: const [[0], [1], [1]]));
     expect(find.byType(GlassDeleteButton), findsNWidgets(3));
 
     // 删被引用的「白班」→ 拦下并提示
@@ -427,7 +428,7 @@ void main() {
   });
 
   testWidgets('打开「跟随法定节假日」后班次与周期清空', (tester) async {
-    final repo = await _pumpEditor(tester, _domain(cycle: const [0, 1, 2]));
+    final repo = await _pumpEditor(tester, _domain(cycle: const [[0], [1], [2]]));
     expect(find.byType(GlassDeleteButton), findsNWidgets(3));
     expect(find.text(L10n.dayN(3)), findsOneWidget);
 
@@ -452,7 +453,7 @@ void main() {
 
   testWidgets('保存写入两层形状的 classes + cycle（不再是旧的一天一班）',
       (tester) async {
-    final repo = await _pumpEditor(tester, _domain(cycle: const [0, 0, 1, 1, 2, 2]));
+    final repo = await _pumpEditor(tester, _domain(cycle: const [[0], [0], [1], [1], [2], [2]]));
 
     // 周期 6 → 7 天，新一天沿用最后一天的班次
     await tester.tap(_plus());
@@ -495,7 +496,7 @@ void main() {
   });
 
   testWidgets('添加班次：新增一条定义，周期里没引用所以可以删掉', (tester) async {
-    await _pumpEditor(tester, _domain(cycle: const [0, 0, 1, 1, 2, 2]));
+    await _pumpEditor(tester, _domain(cycle: const [[0], [0], [1], [1], [2], [2]]));
     expect(find.byType(GlassDeleteButton), findsNWidgets(3));
 
     await tester.tap(find.text(L10n.addShiftClass));
@@ -522,7 +523,7 @@ void main() {
               color: 0xFF4C8DFF),
           ShiftClass(name: '休班', abbr: '休', isRest: true, color: 0xFF9AA0B4),
         ],
-        cycle: const [0, 1],
+        cycle: const [[0], [1]],
       ),
     );
 
@@ -556,7 +557,7 @@ void main() {
   });
 
   testWidgets('周期长度与班组数是两个彼此独立的步进器', (tester) async {
-    await _pumpEditor(tester, _domain(cycle: const [0, 0, 1, 1, 2, 2]));
+    await _pumpEditor(tester, _domain(cycle: const [[0], [0], [1], [1], [2], [2]]));
     expect(find.text(L10n.dayN(6)), findsOneWidget);
 
     // 展开「班组设置」
@@ -660,11 +661,11 @@ void main() {
       ourTeamIndex: saved.ourTeamIndex,
       teamOffsets: saved.teamOffsets,
     );
-    expect(sched.shiftOn(newDate), saved.classes[saved.cycle[0]]);
+    expect(sched.shiftsOn(newDate).firstOrNull, saved.classes[saved.cycle[0].first]);
   });
 
   testWidgets('预览条：从今天起渲染 14 格，简称与引擎算出来的一致', (tester) async {
-    final domain = _domain(cycle: const [0, 1, 2, 2]);
+    final domain = _domain(cycle: const [[0], [1], [2], [2]]);
     await _pumpEditor(tester, domain);
 
     expect(find.text(L10n.previewNext14), findsOneWidget);
@@ -680,7 +681,7 @@ void main() {
   });
 
   testWidgets('改周期里某天引用的班次，预览条对应格子跟着变', (tester) async {
-    final domain = _domain(cycle: const [0, 1, 2, 2]);
+    final domain = _domain(cycle: const [[0], [1], [2], [2]]);
     await _pumpEditor(tester, domain);
     final before = _cellLabels(tester);
     expect(before, _expectedLabels(domain));
@@ -690,14 +691,14 @@ void main() {
     await tester.pumpAndSettle();
 
     final after = _cellLabels(tester);
-    expect(after, _expectedLabels(_domain(cycle: const [1, 1, 2, 2])));
+    expect(after, _expectedLabels(_domain(cycle: const [[1], [1], [2], [2]])));
     expect(after, isNot(equals(before)), reason: '换了班次，预览必须真的变');
   });
 
   testWidgets('改「我的班组起始日」→ 整条预览往前移一格', (tester) async {
     await _pumpEditor(
       tester,
-      _domain(anchor: DateTime.utc(2025, 6, 1), cycle: const [0, 1, 2, 2]),
+      _domain(anchor: DateTime.utc(2025, 6, 1), cycle: const [[0], [1], [2], [2]]),
     );
     final before = _cellLabels(tester);
     expect(before.toSet().length, greaterThan(1), reason: '一片相同的班次测不出移位');
@@ -719,7 +720,7 @@ void main() {
   });
 
   testWidgets('空白表（跟随法定节假日）预览条 14 格全显示 —', (tester) async {
-    await _pumpEditor(tester, _domain(cycle: const [0, 1, 2, 2]));
+    await _pumpEditor(tester, _domain(cycle: const [[0], [1], [2], [2]]));
     expect(_cellLabels(tester).contains('—'), isFalse);
 
     final sw = find.descendant(
@@ -893,7 +894,7 @@ void main() {
                 alarms: const [ShiftAlarm(minute: at2359)]),
             const ShiftClass(name: '休班', abbr: '休', isRest: true),
           ],
-          cycle: const [0, 1],
+          cycle: const [[0], [1]],
         );
 
     await _pumpEditor(tester, withName('编辑中'), active: withName('当前班表'));
@@ -918,7 +919,7 @@ void main() {
           ShiftClass(name: 'B班', abbr: 'B'),
           ShiftClass(name: 'C班', abbr: 'C'),
         ],
-        cycle: const [0, 2],
+        cycle: const [[0], [2]],
       ),
     );
     expect(find.byType(GlassDeleteButton), findsNWidgets(3));
@@ -949,7 +950,7 @@ void main() {
           ShiftClass(name: 'B班', abbr: 'B'),
           ShiftClass(name: 'C班', abbr: 'C'),
         ],
-        cycle: const [0, 2],
+        cycle: const [[0], [2]],
       ),
     );
 
@@ -966,7 +967,7 @@ void main() {
   });
 
   testWidgets('删仍被周期引用的班次：拦下并提示，不弹确认框', (tester) async {
-    await _pumpEditor(tester, _domain(cycle: const [0, 0, 2]));
+    await _pumpEditor(tester, _domain(cycle: const [[0], [0], [2]]));
     // 下标 0 被周期用了 2 天
     await tester.tap(find.byType(GlassDeleteButton).first);
     await tester.pumpAndSettle();
@@ -1067,7 +1068,7 @@ void main() {
   });
 
   testWidgets('周期行把可选班次铺成 chip，点一下就切换', (tester) async {
-    await _pumpEditor(tester, _domain(cycle: const [0, 1, 1]));
+    await _pumpEditor(tester, _domain(cycle: const [[0], [1], [1]]));
 
     // 3 天 × 3 个班次定义 = 9 个 chip
     expect(find.byType(GlassChoiceChip), findsNWidgets(9));
@@ -1190,7 +1191,7 @@ void main() {
         ShiftClass(name: '甲班', abbr: '甲', color: 0xFF4C8DFF),
         ShiftClass(name: '乙班', abbr: '乙', color: 0xFF7A5CFF),
       ],
-      cycle: const [0], // 轮转恒为「甲班」，今天那格有没有被覆盖一眼可辨
+      cycle: const [[0]], // 轮转恒为「甲班」，今天那格有没有被覆盖一眼可辨
       dayOverrides: {dayNumber(today): 1}, // 今天单独改成「乙班」
     );
     await _pumpEditor(tester, domain);
@@ -1225,7 +1226,7 @@ void main() {
           ShiftClass(id: 12, name: 'B班', abbr: 'B'),
           ShiftClass(id: 13, name: 'C班', abbr: 'C'),
         ],
-        cycle: const [0, 2],
+        cycle: const [[0], [2]],
         // 有两天单独改成了 B 班（下标 1）
         dayOverrides: {dayNumber(d1): 1, dayNumber(d2): 1},
       ),
@@ -1257,7 +1258,7 @@ void main() {
           ShiftClass(id: 12, name: 'B班', abbr: 'B'),
           ShiftClass(id: 13, name: 'C班', abbr: 'C'),
         ],
-        cycle: const [0, 1], // A、B 被周期引用，C 空着
+        cycle: const [[0], [1]], // A、B 被周期引用，C 空着
         dayOverrides: {dayNumber(d1): 0}, // 那一天改成的是 A，不是 C
       ),
     );
@@ -1353,7 +1354,7 @@ void main() {
               color: 0xFF7A5CFF),
           ShiftClass(name: '休班', abbr: '休', isRest: true, color: 0xFF9AA0B4),
         ],
-        cycle: const [0, 0, 1, 1, 3, 2, 2, 3, 3, 3],
+        cycle: const [[0], [0], [1], [1], [3], [2], [2], [3], [3], [3]],
         teamCount: 5,
         teamOffsets: teamOffsets,
       );
@@ -1522,7 +1523,7 @@ void main() {
   // 这一条钉的是**剩下的那几层**：编辑排班页上只该剩**浮在滚动正文之上的控件**
   // （底部那颗保存胶囊、班次行里的开关），卡片一层都不该有。
   testWidgets('编辑排班页的 BackdropFilter 层数有上界', (tester) async {
-    await _pumpEditor(tester, _domain(cycle: const [0, 1, 2]));
+    await _pumpEditor(tester, _domain(cycle: const [[0], [1], [2]]));
     final int layers =
         tester.widgetList<BackdropFilter>(find.byType(BackdropFilter)).length;
     // 夹具是**标准档**（`liquidGlass` 默认关）：分段器与开关只在液态档下才带模糊，

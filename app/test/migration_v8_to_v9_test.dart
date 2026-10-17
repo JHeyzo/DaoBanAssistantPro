@@ -77,7 +77,7 @@ ShiftSchedule _schedule() => ShiftSchedule(
             alarms: [ShiftAlarm(minute: 7 * 60)]),
         ShiftClass(name: '休班', abbr: '休', isRest: true, color: 0xFF9AA0B4),
       ],
-      cycle: const [0, 1],
+      cycle: const [[0], [1]],
       teamCount: 2,
       teamNames: const ['一班', '二班'],
       teamOffsets: const [0, 1],
@@ -116,21 +116,6 @@ void main() {
     expect(schedules.single.name, '四班两倒');
     expect(schedules.single.teamOffsets, '0,1,2,3');
 
-    // 新表建出来了，而且是空的
-    expect(await db.select(db.customTemplates).get(), isEmpty);
-
-    // 而且能写能读：走仓储存一份模板再读回来，编解码一并过一遍
-    final repo = AppRepository(db);
-    final saved = ScheduleTemplate.fromSchedule(_schedule(), name: '零点班那套');
-    await repo.saveTemplate(saved);
-
-    final back = await repo.listTemplates();
-    expect(back, hasLength(1));
-    expect(back.single.name, '零点班那套');
-    expect(back.single.cycle, [0, 1]);
-    expect(back.single.teamCount, 2);
-    expect(back.single.teamOffsets, [0, 1]);
-    expect(back.single.classes.map((c) => c.name), ['白班', '休班']);
-    expect(back.single.classes.first.alarms.single.minute, 7 * 60);
+    // v0.11.3 起「我的模板」表已删除，不再断言
   });
 }

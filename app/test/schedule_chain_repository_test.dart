@@ -19,7 +19,7 @@ ShiftSchedule _sched(String name) => ShiftSchedule(
         ShiftClass(name: '$name-休', abbr: '休', isRest: true),
       ],
       // 周期 2 天：锚点起第 0 天白、第 1 天休。
-      cycle: const [0, 1],
+      cycle: const [[0], [1]],
     );
 
 DateTime _d(int y, int m, int day) => DateTime.utc(y, m, day);
@@ -103,7 +103,7 @@ void main() {
     expect(rows.length, 1);
     expect(rows.single.scheduleId, bId);
     expect(
-      (await repo.getActiveSchedules())!.chain.shiftOn(_d(2026, 7, 1))!.isRest,
+      (await repo.getActiveSchedules())!.chain.shiftsOn(_d(2026, 7, 1)).first.isRest,
       isTrue,
       reason: '覆盖没生效 = 记到错的方案名下了',
     );
@@ -122,7 +122,7 @@ void main() {
     expect(await db.select(db.shiftDayOverrides).get(), isEmpty);
     // 撤回之后回到 B 的轮转：锚点 2026-01-01 起第 181 天 → 181 % 2 = 1 → 休
     expect(
-      (await repo.getActiveSchedules())!.chain.shiftOn(_d(2026, 7, 1))!.name,
+      (await repo.getActiveSchedules())!.chain.shiftsOn(_d(2026, 7, 1)).first.name,
       'B-休',
     );
   });

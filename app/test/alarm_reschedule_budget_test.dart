@@ -14,7 +14,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shiftassistantpro/core/l10n.dart';
 import 'package:shiftassistantpro/data/app_repository.dart';
 import 'package:shiftassistantpro/domain/shift_rotation.dart';
-import 'package:shiftassistantpro/domain/shift_templates.dart';
 import 'package:shiftassistantpro/features/alarm/alarm_service.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite3;
 
@@ -36,18 +35,17 @@ void main() {
     addTearDown(db.close);
 
     final repo = AppRepository(db);
-    final template =
-        shiftTemplates.firstWhere((x) => x.id == 'four_crew_three_shift');
+    final d = defaultSchedule();
     await repo.saveSchedule(
-      name: template.subtitle,
+      name: d.name,
       anchorDate: dateOnly(DateTime.now()),
-      classes: template.classes,
-      cycle: template.cycle,
+      classes: d.classes,
+      cycle: d.cycle,
       makeCurrent: true,
-      teamCount: template.teamCount,
-      teamNames: L10n.defaultTeamNames(template.teamCount),
+      teamCount: d.teamCount,
+      teamNames: d.teamNames,
       ourTeamIndex: 0,
-      teamOffsets: template.teamOffsets,
+      teamOffsets: d.teamOffsets,
     );
 
     final calls = <String, int>{};

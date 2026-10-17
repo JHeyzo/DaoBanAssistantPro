@@ -33,6 +33,7 @@ Future<void> seedIfEmpty(AppDatabase db) async {
             startMinute: Value(c.startMinute),
             endMinute: Value(c.endMinute),
             isRest: Value(c.isRest),
+            isDuty: Value(c.isDuty),
             color: Value(c.color),
             alarmEnabled: Value(c.alarmEnabled),
           ),
@@ -50,13 +51,16 @@ Future<void> seedIfEmpty(AppDatabase db) async {
           );
     }
   }
+  // 周期：一天可多个班次（各占一行，同 order）。
   for (var i = 0; i < sched.cycle.length; i++) {
-    await db.into(db.shiftCycleRows).insert(
-          ShiftCycleRowsCompanion.insert(
-            scheduleId: id,
-            order: i,
-            classId: classIds[sched.cycle[i]],
-          ),
-        );
+    for (final ci in sched.cycle[i]) {
+      await db.into(db.shiftCycleRows).insert(
+            ShiftCycleRowsCompanion.insert(
+              scheduleId: id,
+              order: i,
+              classId: classIds[ci],
+            ),
+          );
+    }
   }
 }

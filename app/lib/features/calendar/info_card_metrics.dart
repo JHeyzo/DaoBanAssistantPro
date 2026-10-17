@@ -243,13 +243,15 @@ InfoCardMetrics measureBottomInfoCardHeight({
     //   · 那天没有任何班表在管 → 「这段时间没有排班」那一句。
     // 间距照给：渲染那边那根 `SizedBox(height: spaceMd)` 是无条件的（见
     // `calendar_screen.dart` 的 `_infoCard`），少了它卡片会矮一截、内容顶出定高。
-    final dayShift = chain?.shiftOn(date);
-    final rowH = dayShift != null
+    final dayShifts = chain?.shiftsOn(date) ?? const <ShiftClass>[];
+    // v0.11.3：一行一个班次（多班次时按班次数叠高度）。
+    final rowH = dayShifts.isNotEmpty
         ? [
             shiftLineH,
             _shiftDot,
             if (hasOverrideHint) _adjustedBadgeH(measure),
-          ].reduce((a, b) => a > b ? a : b)
+          ].reduce((a, b) => a > b ? a : b) *
+            dayShifts.length
         : (daySchedule == null ? noShiftH : 0.0);
 
     var dayContent =
@@ -354,8 +356,10 @@ int _chipRows(
   var used = 0.0;
   for (var i = 0; i < schedule.teamCount; i++) {
     if (i == schedule.ourTeamIndex) continue;
-    final t = schedule.teamShift(i, date);
-    if (t == null) continue;
+    final shifts = schedule.teamShifts(i, date);
+    if (shifts.isEmpty) continue;
+    // 多班次时用「休>值>白」的代表（chip 上只放得下一个）。
+    final t = primaryByPriority(shifts)!;
     final name = i < schedule.teamNames.length
         ? schedule.teamNames[i]
         : (L10n.isEn ? 'Team ${i + 1}' : '${i + 1}班');

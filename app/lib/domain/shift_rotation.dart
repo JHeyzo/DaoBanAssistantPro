@@ -73,30 +73,31 @@ class ShiftAlarm {
   String toString() => 'ShiftAlarm($minute${label == null ? '' : ', $label'})';
 }
 
-/// 「值班次日」闹钟规则：前一天是值班班种时，当天班次的第一条联动闹钟
+/// 「值班次日」闹钟规则：前一天含值班标记的班次时，当天班次的第一条联动闹钟
 /// 改用 [minute]（只换第一条 —— 那是起床那条；午休之类的其余各条不动）。
 ///
-/// 值班班种按**班次名**认（[dutyClassName]），不按 id —— 季度轮换会重建排班、
-/// 班次 id 会变，名字是每套都沿用的那个。
+/// 值班按**语义标记**认（[ShiftClass.isDuty]），不按班次名 —— v0.11.2 及以前按
+/// 名认，季度轮换改名就断（`dutyClassName` 已删）。
 class PostDutyAlarmRule {
-  const PostDutyAlarmRule({required this.dutyClassName, required this.minute});
-
-  /// 值班班种的班次名（如「值班」）。
-  final String dutyClassName;
+  const PostDutyAlarmRule({required this.minute});
 
   /// 改用的钟点（自午夜分钟数，如 7*60+45）。
   final int minute;
 }
 
-/// [date] 的前一天是不是值班（按 [rule] 的班次名认；前一天是休班/无班不算）。
+/// [date] 的前一天是否含值班（按语义标记认；前一天是休班/无班不算）。
 bool isPostDutyDay(ShiftSource source, DateTime date, PostDutyAlarmRule rule) {
-  final prev = source.shiftOn(DateTime(date.year, date.month, date.day - 1));
-  return prev != null && !prev.isRest && prev.name == rule.dutyClassName;
+  final prev = source.shiftsOn(DateTime(date.year, date.month, date.day - 1));
+  return prev.any((c) => c.isDuty && !c.isRest);
 }
 
-/// 建议的值班班种名：名字含「值」/duty 的优先，其次跨夜的非休息班次，
-/// 再次第一个非休息班次；都没有返回空串（调用方此时不应启用规则）。
+/// 建议的值班班种：有标 duty 的直接拿它；没有时退回旧逻辑（名字含「值」/duty
+/// 的优先，其次跨夜的非休息班次，再次第一个非休息班次）；都没有返回空串
+/// （调用方此时不应启用规则）。
 String suggestDutyClassName(Iterable<ShiftClass> classes) {
+  for (final c in classes) {
+    if (c.isDuty && !c.isRest) return c.name;
+  }
   ShiftClass? fallback;
   ShiftClass? crossNight;
   for (final c in classes) {
@@ -175,6 +176,23 @@ bool _sameAlarms(List<ShiftAlarm> a, List<ShiftAlarm> b) {
   return true;
 }
 
+/// 班次语义标记：一个班次在排班语义上属于哪一类。
+///
+/// 这是 v0.11.3 引入的「语义身份」—— 改名、调序、删班次都不影响它。
+/// 值班次日闹钟、休息规则的「跟随值班」、日历的红折角，认的都是它，
+/// 不再认班次名（v0.11.2 及以前按名认，季度轮换改名就断）。
+enum ShiftTag {
+  /// 工作：普通的班（白班、夜班…）。
+  work,
+
+  /// 值班：行政班的值班（17:00–次日 08:30 那种）。三班倒没有值班，
+  /// 只有深夜班/浅夜班 —— 那些标「工作」，别标「值班」。
+  duty,
+
+  /// 休息：不响联动闹钟。
+  rest,
+}
+
 /// 班次定义：一个班次只定义一次，周期里的每一天引用它。
 class ShiftClass {
   const ShiftClass({
@@ -184,6 +202,7 @@ class ShiftClass {
     this.startMinute,
     this.endMinute,
     this.isRest = false,
+    this.isDuty = false,
     this.color = 0xFF5B7FFF,
     this.alarmEnabled = false,
     this.alarms = const [],
@@ -211,6 +230,13 @@ class ShiftClass {
 
   /// 是否休息日（不响联动闹钟）。
   final bool isRest;
+
+  /// 是否值班（语义标记）。与 [isRest] 互斥 —— 两个都 true 是非法状态，
+  /// 以 [isRest] 为准（[tag] 里 rest 优先）。
+  final bool isDuty;
+
+  /// 语义标记：[isRest] → rest，[isDuty] → duty，否则 work。
+  ShiftTag get tag => isRest ? ShiftTag.rest : (isDuty ? ShiftTag.duty : ShiftTag.work);
 
   /// 日历格子的 ARGB 颜色。
   final int color;
@@ -262,6 +288,7 @@ class ShiftClass {
     int? startMinute,
     int? endMinute,
     bool? isRest,
+    bool? isDuty,
     int? color,
     bool? alarmEnabled,
     List<ShiftAlarm>? alarms,
@@ -273,6 +300,7 @@ class ShiftClass {
       startMinute: startMinute ?? this.startMinute,
       endMinute: endMinute ?? this.endMinute,
       isRest: isRest ?? this.isRest,
+      isDuty: isDuty ?? this.isDuty,
       color: color ?? this.color,
       alarmEnabled: alarmEnabled ?? this.alarmEnabled,
       alarms: alarms ?? this.alarms,
@@ -288,16 +316,17 @@ class ShiftClass {
       other.startMinute == startMinute &&
       other.endMinute == endMinute &&
       other.isRest == isRest &&
+      other.isDuty == isDuty &&
       other.color == color &&
       other.alarmEnabled == alarmEnabled &&
       _sameAlarms(other.alarms, alarms);
 
   @override
   int get hashCode => Object.hash(id, name, abbr, startMinute, endMinute,
-      isRest, color, alarmEnabled, Object.hashAll(alarms));
+      isRest, isDuty, color, alarmEnabled, Object.hashAll(alarms));
 
   @override
-  String toString() => 'ShiftClass($name, rest=$isRest)';
+  String toString() => 'ShiftClass($name, tag=$tag)';
 }
 
 /// 「某天什么班」的**唯一**查询面 —— 日历、闹钟、桌面小组件都只依赖它。
@@ -306,16 +335,135 @@ class ShiftClass {
 /// 见 `schedule_chain.dart`）在调用点**无法区分**：`planShiftAlarms` /
 /// `AlarmService.reschedule` 从前收的是 `ShiftSchedule`，改成收这个接口之后
 /// 传哪一边都对，而调用点拿到的就是「一个能回答某天什么班的东西」。
+///
+/// v0.11.3 起返回**列表**：一天可以叠多个班次（如白班 + 值班）。
+/// 空列表 = 那天没有班次（空白表 / 无方案）。
 abstract class ShiftSource {
-  /// 某天的班次；那天没有班次（空白表 / 无方案）返回 null。
-  ShiftClass? shiftOn(DateTime date);
+  /// 某天的班次列表（按班次定义的顺序）；那天没有班次返回空列表。
+  List<ShiftClass> shiftsOn(DateTime date);
 
   /// 日志用的一行描述。**不是用户可见文案**（Kotlin 的日志串本来就是中文，
   /// 仓库既有惯例）。
   String get label;
 }
 
-/// 一套排班方案（班次定义 + 轮换周期 + 多班组）。
+/// 休息规则的模式。
+enum RestRuleMode {
+  /// 不用规则：休息日写进周期里（ legacy 行为，三班倒那种）。
+  none,
+
+  /// 固定星期：每周固定某几天休息（如双休）。
+  fixedWeekdays,
+
+  /// 跟随值班：值班日的星期几 → 休息日的星期几（如周四值 → 周六休）。
+  followDuty,
+}
+
+/// 休息规则（一套方案一条；null / mode=none = 不用规则）。
+///
+/// 设计见 v0.11.3：「休息跟星期走 → 用规则；休息跟节奏走 → 写进周期」。
+/// 规则是「轮转层」之上的「休息层」，引擎把两层合并。
+class RestRule {
+  const RestRule({
+    this.mode = RestRuleMode.none,
+    this.fixedWeekdays = const {},
+    this.followDutyMap = const {},
+  });
+
+  final RestRuleMode mode;
+
+  /// 固定星期的休息日（1=周一 … 7=周日）。
+  final Set<int> fixedWeekdays;
+
+  /// 跟随值班的映射：值班日星期几 → 休息日星期几（1=周一 … 7=周日）。
+  /// 如 {4: 6, 5: 7} = 周四值→周六休、周五值→周日休。
+  final Map<int, int> followDutyMap;
+
+  bool get isNone => mode == RestRuleMode.none;
+
+  /// JSON 编解码（存 `shift_schedule_rows.rest_rule` 列）。
+  Map<String, dynamic> toJson() => {
+        'mode': mode.name,
+        'fixedWeekdays': fixedWeekdays.toList()..sort(),
+        'followDutyMap': {
+          for (final e in followDutyMap.entries) '${e.key}': e.value,
+        },
+      };
+
+  static RestRule fromJson(Map<String, dynamic> json) {
+    final mode = RestRuleMode.values.firstWhere(
+      (m) => m.name == json['mode'],
+      orElse: () => RestRuleMode.none,
+    );
+    final fixed = <int>{};
+    final fw = json['fixedWeekdays'];
+    if (fw is List) {
+      for (final e in fw) {
+        final v = (e as num?)?.toInt();
+        if (v != null && v >= 1 && v <= 7) fixed.add(v);
+      }
+    }
+    final map = <int, int>{};
+    final fm = json['followDutyMap'];
+    if (fm is Map) {
+      fm.forEach((k, v) {
+        final kk = int.tryParse('$k');
+        final vv = (v as num?)?.toInt();
+        if (kk != null && kk >= 1 && kk <= 7 && vv != null && vv >= 1 && vv <= 7) {
+          map[kk] = vv;
+        }
+      });
+    }
+    return RestRule(mode: mode, fixedWeekdays: fixed, followDutyMap: map);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is RestRule &&
+      other.mode == mode &&
+      other.fixedWeekdays.length == fixedWeekdays.length &&
+      other.fixedWeekdays.containsAll(fixedWeekdays) &&
+      other.followDutyMap.length == followDutyMap.length &&
+      followDutyMap.entries
+          .every((e) => other.followDutyMap[e.key] == e.value);
+
+  @override
+  int get hashCode =>
+      Object.hash(mode, Object.hashAll(fixedWeekdays.toList()..sort()),
+          Object.hashAll(followDutyMap.entries.map((e) => '${e.key}:${e.value}')));
+
+  @override
+  String toString() =>
+      'RestRule($mode, fixed=$fixedWeekdays, follow=$followDutyMap)';
+}
+
+/// 休息规则算出来的休息日用的**合成班次**（不落库、不参与班次定义）。
+///
+/// 休息规则是「层」，不是「班次定义」—— 它不需要用户事先定义一个休班，
+/// 引擎在解析时直接合成。显示为「休」，灰色，不响闹钟。
+ShiftClass syntheticRestClass() => ShiftClass(
+      name: L10n.t('休息', 'Rest'),
+      abbr: L10n.t('休', 'R'),
+      isRest: true,
+      color: 0xFF9AA0B4,
+    );
+
+/// 一天的班次按「休 > 值 > 白」取一个代表（本月统计、桌面小组件摘要用）。
+///
+/// 互斥计数：一天只算一次，优先级休最高、值次之、白最后
+/// （用户 2026-10-17 定；如 10 月：休4 · 白19 · 值8）。
+ShiftClass? primaryByPriority(List<ShiftClass> shifts) {
+  if (shifts.isEmpty) return null;
+  for (final s in shifts) {
+    if (s.isRest) return s;
+  }
+  for (final s in shifts) {
+    if (s.isDuty) return s;
+  }
+  return shifts.first;
+}
+
+/// 一套排班方案（班次定义 + 轮换周期 + 多班组 + 休息规则）。
 class ShiftSchedule implements ShiftSource {
   const ShiftSchedule({
     required this.name,
@@ -327,6 +475,7 @@ class ShiftSchedule implements ShiftSource {
     this.ourTeamIndex = 0,
     this.teamOffsets = const [],
     this.dayOverrides = const {},
+    this.restRule = const RestRule(),
   });
 
   /// 空白表（跟随法定节假日）：周期为空。
@@ -340,8 +489,10 @@ class ShiftSchedule implements ShiftSource {
   /// 班次定义。
   final List<ShiftClass> classes;
 
-  /// 周期序列：长度即周期，元素是 [classes] 的下标。
-  final List<int> cycle;
+  /// 周期序列：长度即周期天数，每个元素是**一天的班次下标列表**
+  /// （v0.11.3 起一天可叠多个班次，如 [白班, 值班]）。
+  /// 空列表的那天 = 当天无班（一般只出现在「不用规则」又手写了空天的旧数据）。
+  final List<List<int>> cycle;
 
   /// 班组数。
   final int teamCount;
@@ -358,45 +509,106 @@ class ShiftSchedule implements ShiftSource {
 
   /// 按天改班覆盖：`dayNumber(日期) → classes 下标`。
   ///
-  /// 与其他班次查询**同口径**（存的是下标，不是 classId）—— 库里存 classId，
-  /// 由 `ActiveSchedule.toDomain()` 转换过来。
+  /// 覆盖**整天**：那天原来是几个班次都被这一个替代（与其它班次查询同口径，
+  /// 存的是下标，不是 classId —— 库里存 classId，由 `ActiveSchedule.toDomain()`
+  /// 转换过来）。
   ///
-  /// 只作用于**我们班组**：[teamShift] 不查它。
+  /// 只作用于**我们班组**：[teamShifts] 不查它。
   final Map<int, int> dayOverrides;
+
+  /// 休息规则（轮转层之上的休息层）。
+  final RestRule restRule;
 
   int get cycleLength => cycle.length;
 
   @override
   String get label => name;
 
-  /// 我们班组的班次：先查按天覆盖，没有覆盖才按轮转算。
+  /// 我们班组的班次列表：先查按天覆盖，没有覆盖才按轮转算（含休息规则）。
   ///
-  /// **覆盖只在 `shiftOn` 这一层生效**，所以四个消费者 —— 日历格子、底栏
+  /// **覆盖只在 `shiftsOn` 这一层生效**，所以四个消费者 —— 日历格子、底栏
   /// 信息卡、闹钟重排（`AlarmService.reschedule`）、闹钟页「未来 30 天」 ——
-  /// 全都自动跟着走。而 [teamShift] 不查覆盖，「查看其他班组」看到的仍是纯
+  /// 全都自动跟着走。而 [teamShifts] 不查覆盖，「查看其他班组」看到的仍是纯
   /// 轮转，别人的班不会被我的调整改掉。
   ///
   /// 覆盖下标越界（班次被删、历史脏数据）时**回退到轮转**，不抛异常。
-  /// 空白表（无周期）仍返回 null，覆盖不改变这一点。
+  /// 空白表（无周期）仍返回空列表，覆盖不改变这一点。
   @override
-  ShiftClass? shiftOn(DateTime date) {
+  List<ShiftClass> shiftsOn(DateTime date) {
     final ov = dayOverrides[dayNumber(date)];
-    if (ov != null && ov >= 0 && ov < classes.length) return classes[ov];
-    return teamShift(ourTeamIndex, date);
+    if (ov != null && ov >= 0 && ov < classes.length) return [classes[ov]];
+    return teamShifts(ourTeamIndex, date);
   }
 
-  /// 指定班组在某天的班次；空白表（无周期）返回 null。
-  ShiftClass? teamShift(int teamIndex, DateTime date) {
-    if (cycle.isEmpty) return null;
+  /// 指定班组在某天的班次列表；空白表（无周期）返回空列表。
+  ///
+  /// 含休息规则：规则是**按班组**算的（各班组的值班日不同，跟随值班的休息日
+  /// 也不同）。查某天「有没有班表在管」用 `ScheduleChain.hasScheduleOn`，
+  /// 别用这个判空。
+  List<ShiftClass> teamShifts(int teamIndex, DateTime date) {
+    if (cycle.isEmpty) return const [];
     final base = (teamIndex >= 0 && teamIndex < teamOffsets.length)
         ? teamOffsets[teamIndex]
         : teamIndex - ourTeamIndex; // 回退：旧的按班组错开
     final offset = daysBetween(anchorDate, date) + base;
     var idx = offset % cycleLength;
     if (idx < 0) idx += cycleLength;
-    final classIndex = cycle[idx];
-    if (classIndex < 0 || classIndex >= classes.length) return null;
-    return classes[classIndex];
+    final dayClasses = <ShiftClass>[];
+    for (final classIndex in cycle[idx]) {
+      if (classIndex >= 0 && classIndex < classes.length) {
+        dayClasses.add(classes[classIndex]);
+      }
+    }
+    // 值班优先：当天含值班标记，休息规则让路（值班日不能同时是休息日）。
+    if (dayClasses.any((c) => c.isDuty && !c.isRest)) return dayClasses;
+    // 休息规则命中：合成一个休息班次替代当天。
+    if (_isRestByRule(teamIndex, date)) return [syntheticRestClass()];
+    return dayClasses;
+  }
+
+  /// 这天按休息规则是不是休息日（不含「值班优先」那条，调用方自己判）。
+  ///
+  /// 用**纯轮转**查过去 7 天的值班日（不递归进休息规则、不查按天覆盖 ——
+  /// 覆盖是「我们班组」的手工调整，不该反过来驱动规则）。
+  bool _isRestByRule(int teamIndex, DateTime date) {
+    final rule = restRule;
+    if (rule.isNone || cycle.isEmpty) return false;
+    switch (rule.mode) {
+      case RestRuleMode.none:
+        return false;
+      case RestRuleMode.fixedWeekdays:
+        return rule.fixedWeekdays.contains(date.weekday);
+      case RestRuleMode.followDuty:
+        if (rule.followDutyMap.isEmpty) return false;
+        for (var i = 1; i <= 7; i++) {
+          final past = date.subtract(Duration(days: i));
+          final pastClasses = _rawTeamShifts(teamIndex, past);
+          if (!pastClasses.any((c) => c.isDuty && !c.isRest)) continue;
+          // 取离今天最近的那个值班日（i 从 1 往大走，第一个命中的就是最近的）。
+          final mapped = rule.followDutyMap[past.weekday];
+          return mapped == date.weekday;
+        }
+        return false;
+    }
+  }
+
+  /// 纯轮转（不含休息规则、不含按天覆盖）：给休息规则查「过去的值班日」用，
+  /// 避免递归。
+  List<ShiftClass> _rawTeamShifts(int teamIndex, DateTime date) {
+    if (cycle.isEmpty) return const [];
+    final base = (teamIndex >= 0 && teamIndex < teamOffsets.length)
+        ? teamOffsets[teamIndex]
+        : teamIndex - ourTeamIndex;
+    final offset = daysBetween(anchorDate, date) + base;
+    var idx = offset % cycleLength;
+    if (idx < 0) idx += cycleLength;
+    final out = <ShiftClass>[];
+    for (final classIndex in cycle[idx]) {
+      if (classIndex >= 0 && classIndex < classes.length) {
+        out.add(classes[classIndex]);
+      }
+    }
+    return out;
   }
 }
 
@@ -436,22 +648,28 @@ List<CrewClash> crewClashes(ShiftSchedule s) {
   final out = <CrewClash>[];
   for (var k = 0; k < s.cycleLength; k++) {
     final date = s.anchorDate.add(Duration(days: k));
-    final working = <int, ShiftClass>{};
+    // 每个班组当天的工作班次（去休息；休息规则已含在 teamShifts 里）。
+    final working = <int, List<ShiftClass>>{};
     for (var t = 0; t < s.teamCount; t++) {
-      final sc = s.teamShift(t, date);
-      if (sc == null || sc.isRest) continue;
-      working[t] = sc;
+      final list =
+          s.teamShifts(t, date).where((c) => !c.isRest).toList();
+      if (list.isNotEmpty) working[t] = list;
     }
     final teams = working.keys.toList()..sort();
     for (var i = 0; i < teams.length; i++) {
       for (var j = i + 1; j < teams.length; j++) {
-        if (identical(working[teams[i]], working[teams[j]])) {
-          out.add(CrewClash(
-            cycleDay: k + 1,
-            teamA: teams[i],
-            teamB: teams[j],
-            shift: working[teams[i]]!,
-          ));
+        // 两队 shares 同一个工作班次实例即撞班（判等用 identical，见下）。
+        for (final a in working[teams[i]]!) {
+          for (final b in working[teams[j]]!) {
+            if (identical(a, b)) {
+              out.add(CrewClash(
+                cycleDay: k + 1,
+                teamA: teams[i],
+                teamB: teams[j],
+                shift: a,
+              ));
+            }
+          }
         }
       }
     }
@@ -502,7 +720,12 @@ ShiftSchedule defaultSchedule() {
     teamNames: L10n.defaultTeamNames(4),
     ourTeamIndex: 0,
     teamOffsets: const [0, 1, 2, 3],
-    cycle: const [0, 1, 2, 3],
+    cycle: const [
+      [0],
+      [1],
+      [2],
+      [3],
+    ],
     classes: [
       ShiftClass(
         name: L10n.t('白班', 'Day shift'),

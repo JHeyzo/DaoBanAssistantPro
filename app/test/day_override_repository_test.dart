@@ -72,8 +72,8 @@ void main() {
         );
 
     final d = (await repo.getActiveSchedule())!;
-    expect(d.shiftOn(day)!.name, target.name, reason: '覆盖要命中');
-    expect(d.shiftOn(day)!.name, isNot(d.teamShift(0, day)!.name),
+    expect(d.shiftsOn(day).first.name, target.name, reason: '覆盖要命中');
+    expect(d.shiftsOn(day).first.name, isNot(d.teamShifts(0, day).first.name),
         reason: '覆盖应当与那天的轮转结果不同（这天才选得有代表性）');
   });
 
@@ -90,7 +90,7 @@ void main() {
 
     final d = (await repo.getActiveSchedule())!;
     expect(d.dayOverrides, isEmpty, reason: '查不到的脏数据不该进领域模型');
-    expect(d.shiftOn(day)!.name, d.teamShift(0, day)!.name);
+    expect(d.shiftsOn(day).first.name, d.teamShifts(0, day).first.name);
   });
 
   test('覆盖表变化时 watchActiveSchedule 重新发值', () async {
@@ -182,8 +182,10 @@ void main() {
     // 周期里指向被删班次的下标要跟着重映射，否则这次保存本身就坏了
     final keptIndex = {for (var i = 0; i < kept.length; i++) kept[i].id!: i};
     final cycle = d.cycle
-        .map((ci) => keptIndex[d.classes[ci].id])
-        .whereType<int>()
+        .map((day) => day
+            .map((ci) => keptIndex[d.classes[ci].id])
+            .whereType<int>()
+            .toList())
         .toList();
     await repo.saveSchedule(
       scheduleId: scheduleId,
@@ -276,8 +278,10 @@ void main() {
     final kept = d.classes.where((c) => c.id != aRestId).toList();
     final keptIndex = {for (var i = 0; i < kept.length; i++) kept[i].id!: i};
     final cycle = d.cycle
-        .map((ci) => keptIndex[d.classes[ci].id])
-        .whereType<int>()
+        .map((day) => day
+            .map((ci) => keptIndex[d.classes[ci].id])
+            .whereType<int>()
+            .toList())
         .toList();
     await repo.saveSchedule(
       scheduleId: aId,
@@ -367,7 +371,7 @@ void main() {
           ],
         ),
       ],
-      cycle: const [0],
+      cycle: const [[0]],
       makeCurrent: true,
       teamCount: 1,
       teamNames: const ['我'],

@@ -22,6 +22,10 @@ class ShiftScheduleRows extends Table {
   // 每个班组相对基准日的**天数偏移**（逗号分隔，如 "0,1,2,3"）。
   // 第 i 组在某天的周期下标 = (目标日 − 基准日 + offsets[i]) mod 周期长度。
   TextColumn get teamOffsets => text().withDefault(const Constant(''))();
+
+  /// 休息规则（JSON；见 `RestRule.toJson`/`fromJson`）。
+  /// null = 不用规则（`RestRuleMode.none`，休息日写进周期里）。
+  TextColumn get restRule => text().nullable()();
 }
 
 /// 时间线上的一段：**这套方案从哪天到哪天生效**（多排班表按日期衔接）。
@@ -61,6 +65,10 @@ class ShiftClassRows extends Table {
   IntColumn get startMinute => integer().nullable()();
   IntColumn get endMinute => integer().nullable()();
   BoolColumn get isRest => boolean().withDefault(const Constant(false))();
+
+  /// 值班语义标记（见 `ShiftClass.isDuty`）。与 [isRest] 互斥，都 true 时按
+  /// rest 算（领域层的 `ShiftClass.tag` 里 rest 优先）。
+  BoolColumn get isDuty => boolean().withDefault(const Constant(false))();
   IntColumn get color => integer().withDefault(const Constant(0xFF5B7FFF))();
   BoolColumn get alarmEnabled => boolean().withDefault(const Constant(false))();
   // `alarm_minute` 在 v10 迁进 `ShiftClassAlarms` 后从本表删掉了（见 onUpgrade
@@ -175,30 +183,11 @@ class ShiftDayOverrides extends Table {
   Set<Column> get primaryKey => {scheduleId, day};
 }
 
-/// 「我的模板」表：把一套方案的**结构**（班次定义 + 周期 + 班组错位）存成快照，
-/// 新建排班时可以再选它。见 `domain/schedule_template.dart`（那边的值类型与
-/// 编解码是纯函数，可直接单测）。
-///
-/// 为什么整块存进一列而不是像方案那样拆成三张表：模板是只读快照 —— 没有按字段
-/// 查询、没有跨表引用、也不与任何行共享身份，拆表只会多两张表和一套装配代码。
-/// （方案那边拆表是因为**按天改班的覆盖要引用稳定的 classId**，模板没有这个需求。）
-class CustomTemplates extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get name => text()();
-
-  /// 班次定义数组（JSON；见 `encodeTemplateClasses`）。**不含班次 id**。
-  TextColumn get classes => text()();
-
-  /// 周期下标序列（逗号分隔；见 `encodeTemplateCycle`）。
-  TextColumn get cycle => text()();
-
-  IntColumn get teamCount => integer()();
-
-  /// 班组错位（逗号分隔）。保存时已归一化成「我们班组在第 0 位、错位 0」。
-  TextColumn get teamOffsets => text()();
-
-  DateTimeColumn get createdAt => dateTime()();
-}
+/// 「我的模板」表已在 v0.11.3 删除（schema 14）。
+/// 模板系统整体砍掉：内置模板与「我的模板」都不再有，取而代之的是配置文件的
+/// 导入/导出（见 `domain/schedule_template.dart` 的文件编解码）。
+/// 迁移见 `onUpgrade` 的 `from < 14` 分支（`m.deleteTable('custom_templates')`）。
+/// 这里不留空类 —— 空表类会让 drift 生成无用的代码。
 
 /// 重复待办表（「每周三开会」这类）。
 ///
@@ -259,7 +248,6 @@ class RecurringSeriesRows extends Table {
   CustomAlarms,
   ShiftAlarmOverrides,
   ShiftDayOverrides,
-  CustomTemplates,
   RecurringSeriesRows,
 ])
 class AppDatabase extends _$AppDatabase {
@@ -269,12 +257,35 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) => m.createAll(),
         onUpgrade: (m, from, to) async {
+          if (from < 14) {
+            // v0.11.3：语义标记 + 休息规则 + 模板系统移除。
+            // 1. 班次加 `is_duty` 列（语义标记：工作/值班/休息）。
+            //    防御：老版本测试库可能没有这张表（最小化 setup），有才加。
+            try {
+              await m.addColumn(shiftClassRows, shiftClassRows.isDuty);
+            } catch (_) {
+              // 表不存在时跳过（测试用的最小化旧库）
+            }
+            // 2. 方案加 `rest_rule` 列（休息规则 JSON，null = 不用规则）。
+            try {
+              await m.addColumn(shiftScheduleRows, shiftScheduleRows.restRule);
+            } catch (_) {
+              // 表不存在时跳过（测试用的最小化旧库）
+            }
+            // 3. 删掉「我的模板」表（模板系统整体砍掉，改走配置文件导入/导出）。
+            //    表里的数据是快照，不迁移 —— 用户要留的可以先导出成文件。
+            try {
+              await m.deleteTable('custom_templates');
+            } catch (_) {
+              // 表不存在时跳过
+            }
+          }
           if (from < 13) {
             // 排班时段重做：段从「方案行上的两列」搬进**自己的表**，并改成
             // **不许重叠**（v0.9.12 允许重叠、按「起点最晚的赢」解析）。
@@ -321,10 +332,6 @@ class AppDatabase extends _$AppDatabase {
               // ignore: experimental_member_use
               await m.alterTable(TableMigration(shiftClassRows));
             }
-          }
-          if (from < 9) {
-            // 「我的模板」（自定义模板）。纯新增一张表，不碰任何既有数据。
-            await m.createTable(customTemplates);
           }
           if (from < 8) {
             // 按天改班（换班 / 请假覆盖）。纯新增一张表，不碰任何既有数据。

@@ -405,9 +405,31 @@ class L10n {
   static String get rest => t('休息', 'Rest');
   static String get work => t('工作', 'Work');
   static String get workday => t('上班', 'Workday');
+  // v0.11.3 语义标记三段
+  static String get tagWork => t('工作', 'Work');
+  static String get tagDuty => t('值班', 'Duty');
+  static String get tagRest => t('休息', 'Rest');
+  static String get dutyNudge => t(
+      '值班日通常还上白班，要加上吗？', 'Duty days usually include a day shift — add it?');
   static String get followHoliday => t('跟随法定节假日（无班次）', 'Follow legal holidays (no shifts)');
   static String get followHolidayHint => t('法定节假日休息，其余按上班', 'Rest on legal holidays, work otherwise');
   static String get holidayScheduleName => t('法定班次', 'Legal-holiday schedule');
+  // v0.11.3 休息规则
+  static String get restRuleTitle => t('休息规则', 'Rest rule');
+  static String get restRuleHint => t(
+      '休息跟星期走 → 用规则；休息跟节奏走 → 写进周期', 'Rest follows the week → use a rule; rest follows the rhythm → write it into the cycle');
+  static String get restRuleNone => t('不用规则', 'No rule');
+  static String get restRuleFollowDuty => t('跟随值班', 'Follow duty');
+  static String get restRuleFixed => t('固定星期', 'Fixed weekdays');
+  static String get restRuleMappingHint =>
+      t('值班在周几，休息就定在周几', 'Which weekday you rest after a duty on a given weekday');
+  static String dutyOnWeekday(int w) => t('周${_weekdayCn(w)}值', 'Duty on ${weekdayShort(w)}');
+  static String get noRest => t('不休', 'None');
+  static String get restPresetDuty => t('行政班值班制', 'Office duty preset');
+  static String get restPresetWeekend => t('双休', 'Weekend off');
+  static String get restPresetSunday => t('单休周日', 'Sunday off');
+  static String _weekdayCn(int w) => ['一', '二', '三', '四', '五', '六', '日'][w - 1];
+  static String weekdayShort(int w) => t('周${_weekdayCn(w)}', ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][w - 1]);
 
   // ── 方案「生效时段」（多排班表按日期衔接） ──
   //
@@ -633,74 +655,24 @@ class L10n {
       t('周期第 1 天是几号？', 'Which date is day 1 of the cycle?');
 
   // 选择倒班方式
-  static String get pickShiftPattern => t('选择你的倒班方式', 'Pick your shift pattern');
+  static String get pickShiftPattern => t('新建排班', 'New schedule');
   static String get pickShiftPatternHint =>
-      t('选一个和你班表最像的，建好之后还能随时改', 'Pick the closest one — you can tweak it anytime');
-  static String get searchPattern => t('搜索，如「四班三倒」「上24休48」', 'Search, e.g. "4-crew 3-shift"');
-  // 英文原标题是 `Start from scratch`，但这条路并不给空白 —— 它塞一套默认
-  // 四班两倒进去（见 `createScheduleFromTemplatePicker` 里 `?? d.cycle` 那一串），
-  // 中文副标题「从默认四班两倒开始」才是实情。标题跟副标题不能自相矛盾。
-  static String get customPattern => t('我自己排', 'Build my own');
+      t('从空白开始，或导入一份排班配置文件', 'Start blank, or import a schedule config file');
 
-  /// 倒班方式列表的分组标题。
-  ///
-  /// 分组在数据层是**语言无关键**（`ShiftTemplate.groupKey`），这里映射到
-  /// 当前语言的显示名。键与显示名都必须与 `shiftTemplateGroups` 对得上 ——
-  /// 对不上的键会走 `_ => key` 原样露出，英文界面上就会冒出一个 `h12`。
-  ///
-  /// 模板自身的标题/副标题**不在这里** —— 那是内容文案，跟着模板数据走，
-  /// 见 `domain/shift_templates.dart`。
-  static String templateGroup(String key) => switch (key) {
-        'h12' => t('12 小时制', '12-hour shifts'),
-        'h8' => t('8 小时制', '8-hour shifts'),
-        'h6' => t('6 小时制', '6-hour shifts'),
-        'duty' => t('值班制', '24-hour duty'),
-        'office' => t('常白', 'Day shift only'),
-        _ => key,
-      };
-  static String get customPatternHint => t('从默认四班两倒开始，边看边改', 'Start from the default and edit as you go');
-  static String get noPatternMatch => t('没找到匹配的倒班方式', 'No matching pattern');
-
-  /// 搜索落空时的下一句。
-  ///
-  /// **必须有这一句**：搜索框的提示语教用户「按行话名去搜」（`searchPattern`
-  /// 举的例子就是真别名「上24休48」），所以照做的人完全可能搜不到 —— 内置模板
-  /// 只有 20 种，班表有几百种。从前这里只有 `noPatternMatch` 一行，是个死胡同：
-  /// 搜索框承诺「我们有，你找找」，撞空之后又不告诉他「我们其实没有，选个最像的
-  /// 进去改」。2026-09-23 的「上12休24」反馈就是这么卡住的。
-  static String get noPatternMatchHint => t(
-      '换个说法再搜，或者从下面挑一个最接近的 —— 建好之后时间、几天一轮都能改',
-      'Try another name, or start from the closest one below — times and cycle length are editable afterwards');
-  /// 模板卡片底部那行「每天在岗 N 个班组」。
-  ///
-  /// 中英语序不同（中文把数量放中间、英文放句首），整串交给 [t] ——
-  /// 拿「每天在岗」+ 数字 + 「个班组」拼出来的英文是「on duty 2 crews」。
-  static String crewsOnDutyCount(int n) =>
-      isEn ? '$n crews on duty' : '每天在岗 $n 个班组';
-
-  // 「我的模板」（用户自己存的模板）
-  static String get myTemplates => t('我的模板', 'My templates');
-  static String get manageTemplates => t('管理', 'Manage');
-  static String get saveAsTemplate => t('存为模板', 'Save as template');
-  static String get templateName => t('模板名称', 'Template name');
-  static String get renameTemplate => t('重命名模板', 'Rename template');
-  static String get deleteTemplateTitle => t('删除模板？', 'Delete template?');
-  static String deleteTemplateContent(String name) => isEn
-      ? 'Delete "$name"? This cannot be undone.'
-      : '将删除「$name」，此操作不可撤销。';
-  /// 存完模板的提示条。**要写上哪儿找**：用户存完的第一反应就是去找它，
-  /// 而「我的模板」那一组在新建排班的选择页里，不在「我的」页。
-  static String templateSaved(String name) => t(
-      '已存为模板「$name」—— 新建排班时可选', 'Saved as template "$name" — pick it when creating a schedule');
-  /// 空白表（跟随法定节假日）没有班次与周期，没东西可存。
-  static String get templateNeedsPattern =>
-      t('这套是空白表（跟随法定节假日），没有班次可存', 'Nothing to save — this schedule has no shifts');
-  /// 「我的模板」卡片上的副标题：周期天数 + 班组数。
-  ///
-  /// 内置模板的副标题（「五班三倒 · 10 天一轮」）是作者手写的，用户存的那些
-  /// 没有这句文案，只能按结构现算 —— 所以中英语序同样整串交给 [t]。
-  static String savedTemplateSubtitle(int days, int teams) => t(
-      '$days 天一轮 · $teams 个班组', '$days-day cycle · $teams teams');
+  /// v0.11.3：模板系统已拆除，只留空白新建 + 配置文件导入/导出。
+  static String get blankTemplate => t('空白模板', 'Blank template');
+  static String get blankTemplateHint =>
+      t('从零开始：自己定义班次、排周期', 'Start from scratch: define your own shifts and cycle');
+  static String get importConfig => t('导入配置文件', 'Import config file');
+  static String get importConfigHint =>
+      t('从 JSON 配置文件恢复一套排班', 'Restore a schedule from a JSON config file');
+  static String get importNotImplemented =>
+      t('文件选择器尚未接入，敬请期待', 'File picker not yet available');
+  static String get exportConfig => t('导出配置文件', 'Export config file');
+  static String get exportConfigHint => t(
+      '复制下面的 JSON 存为文件，即可在别的设备上导入', 'Copy the JSON below and save it as a file to import on another device');
+  static String get exportNeedsPattern =>
+      t('这套是空白表（跟随法定节假日），没有班次可导出', 'Nothing to export — this schedule has no shifts');
 
   // 日历
   static String get prevMonth => t('上个月', 'Previous month');
@@ -889,6 +861,10 @@ class L10n {
       '开关翻转、选中、拖选与改班时轻微震动（普通点击不震）',
       'A light buzz when a switch flips, a selection changes, or you drag-select '
           'and apply a day change (plain taps stay still)');
+  static String get showHuangli => t('黄历宜忌', 'Daily almanac');
+  static String get showHuangliHint => t(
+      '在日历信息卡显示当天的宜忌（默认关闭）',
+      'Show the day\'s auspicious and inauspicious activities on the calendar info card (off by default)');
 
   // 日期格式
   // 英文下月份要带出来：`yyyy M` 会渲染成「2026 9」，读不出是哪个月。

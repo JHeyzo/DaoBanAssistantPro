@@ -126,7 +126,8 @@ class ScheduleChain implements ShiftSource {
   bool hasScheduleOn(DateTime day) => scheduleOn(day) != null;
 
   @override
-  ShiftClass? shiftOn(DateTime day) => scheduleOn(day)?.shiftOn(day);
+  List<ShiftClass> shiftsOn(DateTime day) =>
+      scheduleOn(day)?.shiftsOn(day) ?? const [];
 
   /// 链上有没有「有周期」的方案。
   ///
@@ -215,7 +216,8 @@ String _rotationOf(ShiftSchedule? s) {
   final List<MapEntry<int, int>> overrides = s.dayOverrides.entries.toList()
     ..sort((MapEntry<int, int> a, MapEntry<int, int> b) => a.key.compareTo(b.key));
   return '${s.anchorDate.millisecondsSinceEpoch}|'
-      '${s.cycle.join(",")}|'
+      '${s.cycle.map((d) => d.join("+")).join(",")}|'
+      '${s.restRule}|'
       '${s.teamOffsets.join(",")}|'
       '${s.teamCount}|${s.ourTeamIndex}|'
       '${overrides.map((MapEntry<int, int> e) => '${e.key}:${e.value}').join(",")}';

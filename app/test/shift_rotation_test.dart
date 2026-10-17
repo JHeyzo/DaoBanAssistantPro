@@ -18,32 +18,32 @@ void main() {
   test('四班两倒周期正确（白班→上夜班→下夜班→大休）', () {
     final s = defaultSchedule();
     expect(s.cycleLength, 4);
-    expect(s.shiftOn(DateTime(2025, 1, 6))!.name, '白班'); // 锚点
-    expect(s.shiftOn(DateTime(2025, 1, 7))!.name, '上夜班');
-    expect(s.shiftOn(DateTime(2025, 1, 8))!.name, '下夜班');
-    expect(s.shiftOn(DateTime(2025, 1, 9))!.name, '大休');
-    expect(s.shiftOn(DateTime(2025, 1, 10))!.name, '白班');
+    expect(s.shiftsOn(DateTime(2025, 1, 6)).first.name, '白班'); // 锚点
+    expect(s.shiftsOn(DateTime(2025, 1, 7)).first.name, '上夜班');
+    expect(s.shiftsOn(DateTime(2025, 1, 8)).first.name, '下夜班');
+    expect(s.shiftsOn(DateTime(2025, 1, 9)).first.name, '大休');
+    expect(s.shiftsOn(DateTime(2025, 1, 10)).first.name, '白班');
   });
 
   test('负偏移回绕（锚点之前）', () {
     final s = defaultSchedule();
-    expect(s.shiftOn(DateTime(2025, 1, 5))!.name, '大休');
-    expect(s.shiftOn(DateTime(2025, 1, 4))!.name, '下夜班');
-    expect(s.shiftOn(DateTime(2025, 1, 3))!.name, '上夜班');
-    expect(s.shiftOn(DateTime(2025, 1, 2))!.name, '白班');
+    expect(s.shiftsOn(DateTime(2025, 1, 5)).first.name, '大休');
+    expect(s.shiftsOn(DateTime(2025, 1, 4)).first.name, '下夜班');
+    expect(s.shiftsOn(DateTime(2025, 1, 3)).first.name, '上夜班');
+    expect(s.shiftsOn(DateTime(2025, 1, 2)).first.name, '白班');
   });
 
   test('跨午夜判断', () {
     final s = defaultSchedule();
-    expect(s.shiftOn(DateTime(2025, 1, 7))!.crossesMidnight, isTrue); // 上夜班
-    expect(s.shiftOn(DateTime(2025, 1, 6))!.crossesMidnight, isFalse); // 白班
+    expect(s.shiftsOn(DateTime(2025, 1, 7)).first.crossesMidnight, isTrue); // 上夜班
+    expect(s.shiftsOn(DateTime(2025, 1, 6)).first.crossesMidnight, isFalse); // 白班
   });
 
   test('休息日标记', () {
     final s = defaultSchedule();
-    expect(s.shiftOn(DateTime(2025, 1, 8))!.isRest, isTrue); // 下夜班
-    expect(s.shiftOn(DateTime(2025, 1, 9))!.isRest, isTrue); // 大休
-    expect(s.shiftOn(DateTime(2025, 1, 6))!.isRest, isFalse); // 白班
+    expect(s.shiftsOn(DateTime(2025, 1, 8)).first.isRest, isTrue); // 下夜班
+    expect(s.shiftsOn(DateTime(2025, 1, 9)).first.isRest, isTrue); // 大休
+    expect(s.shiftsOn(DateTime(2025, 1, 6)).first.isRest, isFalse); // 白班
   });
 
   // 响铃落在上班前一天：判据是「响铃钟点晚于上班钟点」。00:00 上班的夜班配
@@ -83,18 +83,18 @@ void main() {
     expect(s.ourTeamIndex, 0);
     // 锚点日（我们=一班 白班）：一班白班、二班上夜班、三班下夜班、四班大休
     final anchor = DateTime(2025, 1, 6);
-    expect(s.teamShift(0, anchor)!.name, '白班');
-    expect(s.teamShift(1, anchor)!.name, '上夜班');
-    expect(s.teamShift(2, anchor)!.name, '下夜班');
-    expect(s.teamShift(3, anchor)!.name, '大休');
+    expect(s.teamShifts(0, anchor).first.name, '白班');
+    expect(s.teamShifts(1, anchor).first.name, '上夜班');
+    expect(s.teamShifts(2, anchor).first.name, '下夜班');
+    expect(s.teamShifts(3, anchor).first.name, '大休');
     // 我们班组的班次 = shiftOn
-    expect(s.shiftOn(anchor)!.name, s.teamShift(0, anchor)!.name);
+    expect(s.shiftsOn(anchor).first.name, s.teamShifts(0, anchor).first.name);
     // 次日错开：一班上夜班、二班下夜班、三班大休、四班白班
     final next = DateTime(2025, 1, 7);
-    expect(s.teamShift(0, next)!.name, '上夜班');
-    expect(s.teamShift(1, next)!.name, '下夜班');
-    expect(s.teamShift(2, next)!.name, '大休');
-    expect(s.teamShift(3, next)!.name, '白班');
+    expect(s.teamShifts(0, next).first.name, '上夜班');
+    expect(s.teamShifts(1, next).first.name, '下夜班');
+    expect(s.teamShifts(2, next).first.name, '大休');
+    expect(s.teamShifts(3, next).first.name, '白班');
   });
 
   test('图层：周期引用的是班次定义，不是每天一行', () {
@@ -106,16 +106,16 @@ void main() {
         ShiftClass(name: '夜班', abbr: '夜'),
         ShiftClass(name: '休班', abbr: '休', isRest: true),
       ],
-      cycle: const [0, 0, 1, 1, 2, 2],
+      cycle: const [[0], [0], [1], [1], [2], [2]],
       teamCount: 3,
       teamNames: const ['一班', '二班', '三班'],
       teamOffsets: const [0, 2, 4],
     );
     expect(s.cycleLength, 6);
     expect(s.classes.length, 3);
-    expect(s.shiftOn(DateTime.utc(2025, 1, 6))!.name, '白班');
-    expect(s.shiftOn(DateTime.utc(2025, 1, 8))!.name, '夜班');
-    expect(s.shiftOn(DateTime.utc(2025, 1, 11))!.name, '休班');
+    expect(s.shiftsOn(DateTime.utc(2025, 1, 6)).first.name, '白班');
+    expect(s.shiftsOn(DateTime.utc(2025, 1, 8)).first.name, '夜班');
+    expect(s.shiftsOn(DateTime.utc(2025, 1, 11)).first.name, '休班');
   });
 
   test('格子简称：显式 abbr 优先，为空时按名称推断', () {
@@ -181,7 +181,7 @@ void main() {
             ShiftClass(id: 3, name: '夜班', abbr: '夜', startMinute: 0, endMinute: 480),
             ShiftClass(id: 4, name: '休班', abbr: '休', isRest: true),
           ],
-          cycle: const [0, 0, 1, 1, 3, 2, 2, 3, 3, 3],
+          cycle: const [[0], [0], [1], [1], [3], [2], [2], [3], [3], [3]],
           teamCount: 5,
           teamNames: const ['一班', '二班', '三班', '四班', '五班'],
           ourTeamIndex: 0,
@@ -222,7 +222,7 @@ void main() {
           ShiftClass(id: 1, name: '白班', startMinute: 480, endMinute: 1080),
           ShiftClass(id: 2, name: '休班', isRest: true),
         ],
-        cycle: const [0, 1],
+        cycle: const [[0], [1]],
         teamCount: 2,
         teamNames: const ['一班', '二班'],
         ourTeamIndex: 0,
@@ -268,9 +268,9 @@ void main() {
     test('覆盖命中：那天返回覆盖的班次', () {
       final s = withOverrides({dayNumber(day): 3});
       final bare = withOverrides(const {});
-      expect(s.shiftOn(day)!.name, isNot(bare.shiftOn(day)!.name),
+      expect(s.shiftsOn(day).first.name, isNot(bare.shiftsOn(day).first.name),
           reason: '这天应当换成了别的班');
-      expect(s.shiftOn(day)!.name, bare.classes[3].name);
+      expect(s.shiftsOn(day).first.name, bare.classes[3].name);
     });
 
     test('没被覆盖的日子仍是轮转结果', () {
@@ -280,22 +280,22 @@ void main() {
       final s = withOverrides({dayNumber(day): 1});
       final bare = withOverrides(const {});
       final next = day.add(const Duration(days: 1));
-      expect(s.shiftOn(next)!.name, bare.shiftOn(next)!.name);
-      expect(s.shiftOn(next)!.name, isNot(s.shiftOn(day)!.name),
+      expect(s.shiftsOn(next).first.name, bare.shiftsOn(next).first.name);
+      expect(s.shiftsOn(next).first.name, isNot(s.shiftsOn(day).first.name),
           reason: '次日没被覆盖，得是它自己的轮转班次，不是覆盖值照抄一天');
     });
 
     test('下标越界回退到轮转，不抛异常', () {
       final s = withOverrides({dayNumber(day): 99});
       final bare = withOverrides(const {});
-      expect(s.shiftOn(day)!.name, bare.shiftOn(day)!.name);
+      expect(s.shiftsOn(day).first.name, bare.shiftsOn(day).first.name);
     });
 
     test('teamShift 不受覆盖影响（其他班组仍是纯轮转）', () {
       final s = withOverrides({dayNumber(day): 3});
       final bare = withOverrides(const {});
       for (var t = 0; t < 4; t++) {
-        expect(s.teamShift(t, day)!.name, bare.teamShift(t, day)!.name,
+        expect(s.teamShifts(t, day).first.name, bare.teamShifts(t, day).first.name,
             reason: '第 $t 组不该被「我」的覆盖改掉');
       }
     });
@@ -308,7 +308,7 @@ void main() {
         cycle: const [],
         dayOverrides: {dayNumber(day): 0},
       );
-      expect(blank.shiftOn(day), isNull);
+      expect(blank.shiftsOn(day), isEmpty);
     });
 
     test('ShiftClass 带 id 时按 id 区分身份', () {

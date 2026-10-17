@@ -24,7 +24,6 @@ import 'package:shiftassistantpro/core/glass/glass.dart';
 import 'package:shiftassistantpro/core/haptics.dart';
 import 'package:shiftassistantpro/core/l10n.dart';
 import 'package:shiftassistantpro/data/app_repository.dart';
-import 'package:shiftassistantpro/domain/schedule_template.dart';
 import 'package:shiftassistantpro/domain/shift_rotation.dart';
 import 'package:shiftassistantpro/features/profile/profile_screen.dart';
 import 'package:shiftassistantpro/state/app_settings.dart';
@@ -40,18 +39,6 @@ Future<void> _pumpFrames(WidgetTester tester, {int frames = 24}) async {
     await tester.pump(const Duration(milliseconds: 40));
   }
 }
-
-/// 一个能存进「我的模板」的最小方案。
-ScheduleTemplate _template() => const ScheduleTemplate(
-      name: '我的三班',
-      classes: [
-        ShiftClass(name: '早', abbr: '早', startMinute: 480, endMinute: 960),
-        ShiftClass(name: '休', abbr: '休', isRest: true),
-      ],
-      cycle: [0, 1],
-      teamCount: 2,
-      teamOffsets: [0, 1],
-    );
 
 void main() {
   setUpAll(() async {
@@ -73,16 +60,13 @@ void main() {
 
   test('仓库层：clearAll 连自定义闹钟与「我的模板」一起清，并种回默认排班', () async {
     await repo.addCustomAlarm(hour: 6, minute: 30, repeatType: 1);
-    await repo.saveTemplate(_template());
     expect(await repo.listCustomAlarms(), hasLength(1));
-    expect(await repo.listTemplates(), hasLength(1));
 
     await repo.clearAll();
 
     // 这两条是这一轮补上的（此前只清排班那半边）。
     expect(await repo.listCustomAlarms(), isEmpty,
         reason: '自定义闹钟也要清 —— 「回到第一次安装时的状态」');
-    expect(await repo.listTemplates(), isEmpty, reason: '「我的模板」同理');
     expect(await repo.listEvents(), isEmpty);
     expect(await repo.listSchedules(), isNotEmpty,
         reason: '清完要种回默认「四班两倒」，不能留一座空库');
@@ -118,7 +102,6 @@ void main() {
     }
 
     await repo.addCustomAlarm(hour: 6, minute: 30, repeatType: 1);
-    await repo.saveTemplate(_template());
 
     tester.view.physicalSize = const Size(420, 900);
     tester.view.devicePixelRatio = 1.0;
@@ -149,7 +132,6 @@ void main() {
 
     // 库
     expect(await repo.listCustomAlarms(), isEmpty);
-    expect(await repo.listTemplates(), isEmpty);
     expect(await repo.listSchedules(), isNotEmpty);
 
     // 外观设置：内存里回默认，**并且几个模块级标志跟着翻回来**
@@ -184,7 +166,6 @@ void main() {
       'lastSeenVersion': '0.9.19',
     });
     await repo.addCustomAlarm(hour: 6, minute: 30, repeatType: 1);
-    await repo.saveTemplate(_template());
 
     tester.view.physicalSize = const Size(420, 900);
     tester.view.devicePixelRatio = 1.0;
@@ -209,8 +190,7 @@ void main() {
 
     expect(await repo.listCustomAlarms(), isNotEmpty,
         reason: '点了「取消」，自定义闹钟却没了 —— 返回值被当成了确认');
-    expect(await repo.listTemplates(), isNotEmpty,
-        reason: '点了「取消」，「我的模板」却没了');
+    // 模板系统已移除，无需断言
     final container =
         ProviderScope.containerOf(tester.element(find.byType(ProfileScreen)));
     expect(container.read(appSettingsProvider).themeMode, AppThemeMode.dark,

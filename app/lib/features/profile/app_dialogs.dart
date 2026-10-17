@@ -39,7 +39,16 @@ void showAppInfoDialog(
   );
 }
 
-const String _changelogZh = 'v0.11.2\n'
+const String _changelogZh = 'v0.11.3\n'
+    '· 排班模型重做：一天可叠多个班次（如白班+值班同日）；班次新增「工作/值班/休息」语义标记，改名调序不再弄断闹钟与休息规则\n'
+    '· 新增「休息规则」：跟随值班（周几值→周几休，可选预设）/ 固定星期 / 不用规则；休息日由规则自动算出，不用手排28天\n'
+    '· 模板系统拆除：内置模板库与「我的模板」删除，新建只留「空白模板」+「导入配置文件」，编辑页可「导出配置文件」\n'
+    '· 日历视觉重做：扁平布局，日期收进圆角方章，值班显示为右上红折角（蓝章斜切+实心红三角）\n'
+    '· 「值班次日闹钟」改按语义标记自动认值班，不用再手动选班种\n'
+    '· 新增「黄历宜忌」开关（我的→设置，默认关）\n'
+    '\n'
+
+    'v0.11.2\n'
     '· 去掉每次打开 App 都会跳出来的「全屏通知」授权：ColorOS 适配版的闹钟走系统时钟响，本来就不需要这个权限，之前是每次冷启动白跳一次设置页\n'
     '· 新增「值班次日闹钟」：前一天是值班时，次日第一条班次闹钟自动改用单独设的时间（只换起床那条）。在「闹钟」页开关、设时间、认值班班种；排定与闹钟页显示是同一套算法，不会对不上\n'
     '· 从模板新建排班时，可以选「周期第 1 天是几号」了（默认今天，可拨到昨天/明天/任意天）—— 此前写死当天，值班相位对不上只能去编辑器里手动挪\n'
@@ -103,14 +112,20 @@ const String _changelogZh = 'v0.11.2\n'
     '· 落定之后这些自己收回去，静止时与之前一样\n'
     '· 拖动那枚块时，形状是「开」出来的，不再一下拉满（与底栏滑块同一套手感）\n\n'
 
-    'v0.10.16\n'
-    '· 修好上一版带进来的一处问题：拖完日历上那枚选中的块、再点一下日期，它会自己抽一下（陈旧的速度被反复灌回来）\n'
-    '· 按住那枚块不动时，它的形变现在会自己收回去（之前会一直挂着）\n\n'
 
         '\n'
 ;
 
-const String _changelogEn = 'v0.11.2\n'
+const String _changelogEn = 'v0.11.3\n'
+    '· Schedule model rework: multiple shifts per day (e.g. day + duty on the same day); shifts now carry a Work/Duty/Rest semantic tag — renaming or reordering no longer breaks alarms and rest rules\n'
+    '· New "Rest rule": follow-duty (which weekday to rest after a duty on a given weekday, with presets) / fixed weekdays / no rule; rest days are computed automatically, no more hand-laying 28 days\n'
+    '· Template system removed: built-in library and "My templates" deleted; creating a schedule offers "Blank template" + "Import config file", the editor can "Export config file"\n'
+    '· Calendar visual rework: flat layout, date inside a rounded-square chip, duty shown as a red folded corner (blue chip with diagonal cut + solid red triangle)\n'
+    '· "Post-duty alarm" now auto-detects duty by semantic tag, no manual shift picking\n'
+    '· New "Daily almanac" toggle (Profile → Settings, off by default)\n'
+    '\n'
+
+    'v0.11.2\n'
     '· Removed the full-screen notification permission prompt that popped up on every launch: the ColorOS build rings via the system clock and never needed that permission — it was a dead settings page every cold start\n'
     '· New \"Post-duty alarm\": when the previous day was a duty shift, the first shift alarm the next day automatically uses a separate time (only the wake-up one). Toggle it, set the time and pick the duty shift on the Alarm tab; scheduling and display share the same logic\n'
     '· Creating a schedule from a template now asks \"which date is day 1 of the cycle?\" (defaults to today, can be yesterday / tomorrow / any day) — it used to be hard-coded to today, forcing phase fixes through the editor\n'
@@ -174,9 +189,6 @@ const String _changelogEn = 'v0.11.2\n'
     '· All of it settles back once it lands — at rest it looks exactly as before\n'
     '· While dragging, the shape blooms instead of snapping to full (the same feel as the tab bar pill)\n\n'
 
-    'v0.10.16\n'
-    '· Fixed a regression from the previous version: after dragging the calendar selection block, tapping a day made it stretch and flash once (a stale drag velocity was re-applied)\n'
-    '· Holding the block still now lets its stretch relax (it used to stay stretched)\n\n'
 
         '\n'
 ;

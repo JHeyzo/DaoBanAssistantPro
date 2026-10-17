@@ -19,7 +19,6 @@ import 'package:shiftassistantpro/core/glass/glass.dart';
 import 'package:shiftassistantpro/core/l10n.dart';
 import 'package:shiftassistantpro/data/app_repository.dart';
 import 'package:shiftassistantpro/domain/shift_rotation.dart';
-import 'package:shiftassistantpro/domain/shift_templates.dart';
 import 'package:shiftassistantpro/features/calendar/calendar_screen.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite3;
 
@@ -66,18 +65,17 @@ Future<void> _pumpCalendar(WidgetTester tester, {required bool liquid}) async {
   final db = AppDatabase.forTesting(NativeDatabase.opened(raw));
   addTearDown(db.close);
 
-  final ShiftTemplate t =
-      shiftTemplates.firstWhere((ShiftTemplate x) => x.id == 'four_crew_three_shift');
+  final d = defaultSchedule();
   await AppRepository(db).saveSchedule(
-    name: t.subtitle,
+    name: d.name,
     anchorDate: dateOnly(DateTime.now()),
-    classes: t.classes,
-    cycle: t.cycle,
+    classes: d.classes,
+    cycle: d.cycle,
     makeCurrent: true,
-    teamCount: t.teamCount,
-    teamNames: L10n.defaultTeamNames(t.teamCount),
+    teamCount: d.teamCount,
+    teamNames: d.teamNames,
     ourTeamIndex: 0,
-    teamOffsets: t.teamOffsets,
+    teamOffsets: d.teamOffsets,
   );
 
   await tester.pumpWidget(ProviderScope(

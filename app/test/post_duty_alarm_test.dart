@@ -11,7 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shiftassistantpro/domain/shift_rotation.dart';
 import 'package:shiftassistantpro/features/alarm/alarm_service.dart';
 
-const _rule = PostDutyAlarmRule(dutyClassName: '值班', minute: 7 * 60 + 45);
+const _rule = PostDutyAlarmRule(minute: 7 * 60 + 45);
 
 /// 两天一循环：9/21（周一）值班、9/22 白班、9/23 值班……
 ShiftSchedule _schedule() => ShiftSchedule(
@@ -32,11 +32,12 @@ ShiftSchedule _schedule() => ShiftSchedule(
             abbr: '值',
             startMinute: 17 * 60,
             endMinute: 8 * 60,
+            isDuty: true,
             alarmEnabled: true,
             alarms: [ShiftAlarm(minute: 16 * 60 + 30)]),
         ShiftClass(id: 3, name: '休班', abbr: '休', isRest: true),
       ],
-      cycle: const [1, 0],
+      cycle: const [[1], [0]],
       teamCount: 1,
       teamNames: const ['我'],
       teamOffsets: const [0],
@@ -54,18 +55,19 @@ void main() {
       expect(isPostDutyDay(s, DateTime(2026, 9, 24), _rule), isTrue);
     });
 
-    test('班次名对不上不命中', () {
-      final s = _schedule();
-      const other =
-          PostDutyAlarmRule(dutyClassName: '不存在的班', minute: 7 * 60 + 45);
-      expect(isPostDutyDay(s, DateTime(2026, 9, 22), other), isFalse);
-    });
+    // v0.11.3 起按语义标记匹配，不再按班次名 —— 此测试已废弃
+    // test('班次名对不上不命中', () {
+    //   final s = _schedule();
+    //   const other =
+    //       PostDutyAlarmRule(minute: 7 * 60 + 45);
+    //   expect(isPostDutyDay(s, DateTime(2026, 9, 22), other), isFalse);
+    // });
   });
 
   group('effectiveDayAlarms', () {
     test('命中时只换第一条，label 保留', () {
       final s = _schedule();
-      final t = s.shiftOn(DateTime(2026, 9, 22))!;
+      final t = s.shiftsOn(DateTime(2026, 9, 22)).first;
       expect(t.name, '白班');
       final eff = effectiveDayAlarms(s, DateTime(2026, 9, 22), t, _rule);
       expect(eff.length, 1);
@@ -74,14 +76,14 @@ void main() {
 
     test('未命中时返回原列表本体', () {
       final s = _schedule();
-      final t = s.shiftOn(DateTime(2026, 9, 23))!;
+      final t = s.shiftsOn(DateTime(2026, 9, 23)).first;
       expect(identical(effectiveDayAlarms(s, DateTime(2026, 9, 23), t, _rule),
           t.alarms), isTrue);
     });
 
     test('rule 为 null 时返回原列表本体', () {
       final s = _schedule();
-      final t = s.shiftOn(DateTime(2026, 9, 22))!;
+      final t = s.shiftsOn(DateTime(2026, 9, 22)).first;
       expect(
           identical(effectiveDayAlarms(s, DateTime(2026, 9, 22), t, null),
               t.alarms),
@@ -104,14 +106,14 @@ void main() {
                 ShiftAlarm(minute: 12 * 60 + 30, label: '午休'),
               ]),
           ShiftClass(
-              id: 2, name: '值班', startMinute: 17 * 60, endMinute: 8 * 60),
+              id: 2, name: '值班', startMinute: 17 * 60, endMinute: 8 * 60, isDuty: true),
         ],
-        cycle: const [1, 0],
+        cycle: const [[1], [0]],
         teamCount: 1,
         teamNames: const ['我'],
         teamOffsets: const [0],
       );
-      final t = s.shiftOn(DateTime(2026, 9, 22))!;
+      final t = s.shiftsOn(DateTime(2026, 9, 22)).first;
       final eff = effectiveDayAlarms(s, DateTime(2026, 9, 22), t, _rule);
       expect(eff.length, 2);
       expect(eff[0].minute, 7 * 60 + 45);
@@ -149,7 +151,7 @@ void main() {
     test('规则时刻参与「前一天」落点重算', () {
       // 规则时刻 23:00 晚于白班上班钟点 → 落到前一天晚上（既有两档模型的语义）。
       const nightRule =
-          PostDutyAlarmRule(dutyClassName: '值班', minute: 23 * 60);
+          PostDutyAlarmRule(minute: 23 * 60);
       final s = _schedule();
       final plans = planShiftAlarms(s,
           from: DateTime(2026, 9, 21), days: 3, postDutyRule: nightRule);

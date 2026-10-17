@@ -36,7 +36,7 @@ ShiftSchedule _schedule({Map<int, int> overrides = const {}}) => ShiftSchedule(
             color: 0xFF7A5CFF),
         ShiftClass(id: 13, name: '休班', abbr: '休', isRest: true, color: 0xFF5A5F73),
       ],
-      cycle: const [0, 1, 2],
+      cycle: const [[0], [1], [2]],
       dayOverrides: overrides,
     );
 
@@ -356,7 +356,7 @@ void main() {
               endMinute: 24 * 60,
               color: 0xFF4C8DFF),
         ],
-        cycle: const [0],
+        cycle: const [[0]],
       )),
       now: DateTime(2026, 9, 18, 10),
       themeMode: 'system',
@@ -408,7 +408,7 @@ void main() {
             color: 0xFF7A5CFF),
         ShiftClass(id: 13, name: '休班', abbr: '休', isRest: true, color: 0xFF5A5F73),
       ],
-      cycle: const [0, 1, 2],
+      cycle: const [[0], [1], [2]],
       // 9/19 本按轮转是夜班，被按天改成休班（覆盖存的是 classes **下标**，2 = 休班）。
       dayOverrides: {dayNumber(DateTime(2026, 9, 19)): 2},
     );
@@ -578,7 +578,7 @@ void main() {
       classes: const [
         ShiftClass(id: 11, name: '白班', abbr: '白', startMinute: 480, endMinute: 1200),
       ],
-      cycle: const [0],
+      cycle: const [[0]],
       teamCount: 1,
       teamNames: const ['我自己'],
       ourTeamIndex: 0,
@@ -632,7 +632,7 @@ void main() {
                 color: 0xFF4C8DFF),
             ShiftClass(id: 2, name: '$name-休', abbr: '休', isRest: true),
           ],
-          cycle: const [0, 1],
+          cycle: const [[0], [1]],
           teamNames: List.generate(4, (i) => '$name${i + 1}'),
         );
 

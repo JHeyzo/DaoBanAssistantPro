@@ -36,7 +36,7 @@ ShiftSchedule _tenDay({int ourTeamIndex = 0, List<int>? offsets}) =>
             alarms: [ShiftAlarm(minute: 23 * 60)]),
         ShiftClass(name: '休班', abbr: '休', isRest: true, color: 0xFF9AA0B4),
       ],
-      cycle: const [0, 0, 1, 1, 3, 2, 2, 3, 3, 3],
+      cycle: const [[0], [0], [1], [1], [3], [2], [2], [3], [3], [3]],
       teamCount: 5,
       teamNames: const ['一班', '二班', '三班', '四班', '五班'],
       ourTeamIndex: ourTeamIndex,
@@ -58,7 +58,7 @@ ShiftSchedule _scheduleOf(ScheduleTemplate t) => ShiftSchedule(
 List<String> _shiftNames(ShiftSchedule s, int day) {
   final date = s.anchorDate.add(Duration(days: day));
   return [
-    for (var t = 0; t < s.teamCount; t++) s.teamShift(t, date)?.name ?? 'null',
+    for (var t = 0; t < s.teamCount; t++) s.teamShifts(t, date).firstOrNull?.name ?? 'null',
   ]..sort();
 }
 
@@ -102,7 +102,7 @@ void main() {
     // 周期开始」即一次点选）。所以这里断言的是起手相位，而不是「我们班组
     // 的班次一文不变」。
     expect(built.teamOffsets.first, 0);
-    expect(built.teamShift(0, built.anchorDate)!.name, src.classes.first.name);
+    expect(built.teamShifts(0, built.anchorDate).first.name, src.classes.first.name);
   });
 
   test('错位表短于班组数时按域里的回退规则补齐', () {
@@ -145,7 +145,7 @@ void main() {
     });
 
     test('周期与错位往返（含负错位）', () {
-      expect(decodeTemplateCycle(encodeTemplateCycle(const [0, 0, 1, 1, 3])),
+      expect(decodeTemplateCycle(encodeTemplateCycle(const [[0], [0], [1], [1], [3]])),
           [0, 0, 1, 1, 3]);
       expect(decodeTemplateOffsets(encodeTemplateOffsets(const [0, 2, -4, 6])),
           [0, 2, -4, 6]);

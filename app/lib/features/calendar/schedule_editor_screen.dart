@@ -88,8 +88,14 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
   /// 悬空清理连带删掉覆盖行，得先告诉用户会丢几天。
   Map<int, int> _overridesByClassId = const {};
 
-  /// 周期序列：长度即周期，元素是 [_classes] 的下标。
-  List<int> _cycle = [];
+  /// 周期序列：长度即周期天数，每格是 [_classes] 的下标列表（一格可多个班次，
+  /// 如 `[白, 值]` 同一天）。
+  ///
+  /// v0.11.3 起 `List<List<int>>`（原 `List<int>`）。
+  List<List<int>> _cycle = [];
+
+  /// 休息规则（v0.11.3 新增）：跟随值班 / 固定星期 / 不用规则。
+  RestRule _restRule = const RestRule();
 
   int _teamCount = 4;
   List<String> _teamNames = ['一班', '二班', '三班', '四班'];
@@ -145,7 +151,9 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
         _classes = List.of(dd.classes);
         _overrideDays = dd.dayOverrides.length;
         _overridesByClassId = _countOverridesByClassId(dd);
-        _cycle = List.of(dd.cycle);
+        // 深拷贝：内层 List 也要复制，否则编辑器里改一格会污染领域对象。
+        _cycle = [for (final day in dd.cycle) List<int>.of(day)];
+        _restRule = dd.restRule;
         _teamCount = dd.teamCount;
         _teamNames = List.of(dd.teamNames);
         _ourTeamIndex = dd.ourTeamIndex;
@@ -279,9 +287,9 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
         title: Text(L10n.editSchedule),
         actions: [
           IconButton(
-            tooltip: L10n.saveAsTemplate,
-            icon: const Icon(Icons.bookmark_add_outlined),
-            onPressed: _saving ? null : _saveAsTemplate,
+            tooltip: L10n.exportConfig,
+            icon: const Icon(Icons.file_download_outlined),
+            onPressed: _saving ? null : _exportConfig,
           ),
         ],
       ),
@@ -323,6 +331,8 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                       _classesCard(context),
                       const SizedBox(height: AppTokens.spaceMd),
                       _cycleCard(context),
+                      const SizedBox(height: AppTokens.spaceMd),
+                      _restRuleCard(context),
                       const SizedBox(height: AppTokens.spaceMd),
                       _crewCard(context),
                       const SizedBox(height: AppTokens.spaceMd),
@@ -387,6 +397,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
         anchorDate: dateOnly(_anchor),
         classes: _classes,
         cycle: _cycle,
+        restRule: _restRule,
         teamCount: _teamCount,
         teamNames: _teamNames,
         ourTeamIndex: _ourTeamIndex,
@@ -447,7 +458,8 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
   }
 
   Widget _previewCell(ShiftSchedule schedule, DateTime date, Color muted) {
-    final s = schedule.shiftOn(date);
+    final shifts = schedule.shiftsOn(date);
+    final s = primaryByPriority(shifts);
     final color = s == null ? muted : Color(s.color);
     return Column(
       children: [
@@ -637,16 +649,21 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
             ],
           ),
           const SizedBox(height: AppTokens.spaceMd),
-          // 工作 / 休息用分段器：两个标签都在，不会像裸开关那样让人猜
-          // 「拨过去是休息还是启用」。与闹钟页、我的页的选择器同款手感。
+          // 语义标记：工作 / 值班 / 休息（三段）。
+          //
+          // v0.11.3 起班次有语义身份 —— 改名、调序、删班次都不再弄断
+          // 「值班次日闹钟」与「休息规则」的匹配（它们按标记认，不按名认）。
+          // 值班专属于长白班/行政班模式；三班倒没有值班概念，全标工作。
           GlassSegment(
-            count: 2,
+            count: 3,
             height: 38,
-            selectedIndex: c.isRest ? 1 : 0,
-            onSelected: (i) => _setRest(index, i == 1),
+            selectedIndex: c.isRest ? 2 : (c.isDuty ? 1 : 0),
+            onSelected: (i) => _setTag(index, i),
             itemBuilder: (i, selected) => Center(
               child: Text(
-                i == 0 ? L10n.work : L10n.rest,
+                i == 0
+                    ? L10n.tagWork
+                    : (i == 1 ? L10n.tagDuty : L10n.tagRest),
                 // 13 档最重的角色是 w600，分段器标签原本就是 w700：选中态只改
                 // 色不改重，字重是控件自己的标签强调，按 spec 走 copyWith。
                 style: AppTokens.labelSecondary.copyWith(
@@ -854,19 +871,36 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
   /// 切成休息必须把时间和闹钟一起清掉（走 [_editClass] 的 clear* 通道，
   /// `copyWith` 没有「清成 null」的通道）；切回工作时补一组默认时间，
   /// 否则时间块会以「未设置」出现。
-  void _setRest(int index, bool rest) {
+  /// 语义标记三段：0=工作 / 1=值班 / 2=休息。
+  ///
+  /// 切到休息时清掉时间与闹钟（与从前 `_setRest` 同一条）；切回工作/值班时
+  /// 若时间为空给默认值。值班与工作的唯一区别是标记 —— 时间、闹钟都保留。
+  void _setTag(int index, int tag) {
     setState(() {
       final cur = _classes[index];
-      _classes[index] = rest
-          ? _editClass(cur,
-              isRest: true,
-              clearTimes: true,
-              alarmEnabled: false,
-              clearAlarms: true)
-          : _editClass(cur,
-              isRest: false,
-              startMinute: cur.startMinute ?? toMinutes(8, 0),
-              endMinute: cur.endMinute ?? toMinutes(20, 0));
+      if (tag == 2) {
+        // 休息
+        _classes[index] = _editClass(cur,
+            isRest: true,
+            isDuty: false,
+            clearTimes: true,
+            alarmEnabled: false,
+            clearAlarms: true);
+      } else if (tag == 1) {
+        // 值班
+        _classes[index] = _editClass(cur,
+            isRest: false,
+            isDuty: true,
+            startMinute: cur.startMinute ?? toMinutes(8, 0),
+            endMinute: cur.endMinute ?? toMinutes(20, 0));
+      } else {
+        // 工作
+        _classes[index] = _editClass(cur,
+            isRest: false,
+            isDuty: false,
+            startMinute: cur.startMinute ?? toMinutes(8, 0),
+            endMinute: cur.endMinute ?? toMinutes(20, 0));
+      }
     });
   }
 
@@ -1044,9 +1078,9 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
     if (_classes.isEmpty) return; // 没有班次定义就无从引用
     setState(() {
       if (n > _cycle.length) {
-        final tail = _cycle.isEmpty ? 0 : _cycle.last;
+        final tail = _cycle.isEmpty ? <int>[0] : List<int>.of(_cycle.last);
         while (_cycle.length < n) {
-          _cycle.add(tail);
+          _cycle.add(List<int>.of(tail));
         }
       } else {
         _cycle.removeRange(n, _cycle.length);
@@ -1126,62 +1160,122 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
 
   Widget _cycleRow(BuildContext context, int index) {
     final muted = AppTokens.inkMuted(context);
-    final timeText = _rangeText(_classes[_cycle[index]]);
+    // v0.11.3：一格可多个班次，chip 改多选（点选叠加）。
+    final selected = _cycle[index].toSet();
+    // 右侧时间：只取第一个选中班次的（多班次时信息卡里每行都有时间）。
+    final firstClass = selected.isEmpty
+        ? null
+        : _classes[selected.first.clamp(0, _classes.length - 1)];
+    final timeText = firstClass == null ? '' : _rangeText(firstClass);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppTokens.spaceXs),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final showTime = cycleRowFitsTime(
-            rowWidth: constraints.maxWidth,
-            classNames: [for (final c in _classes) c.name],
-            timeText: timeText,
-          );
-          return Row(
+          final showTime = firstClass != null &&
+              cycleRowFitsTime(
+                rowWidth: constraints.maxWidth,
+                classNames: [for (final c in _classes) c.name],
+                timeText: timeText,
+              );
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(
-                width: _dayLabelWidth,
-                child: Text(L10n.dayN(index + 1),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTokens.labelSecondary),
+              Row(
+                children: [
+                  SizedBox(
+                    width: _dayLabelWidth,
+                    child: Text(L10n.dayN(index + 1),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTokens.labelSecondary),
+                  ),
+                  const SizedBox(width: AppTokens.spaceSm),
+                  Expanded(
+                    // 班次多（五六班倒）或屏窄时横向滚动：右侧露出半个 chip
+                    // 就是「还能滑」的提示。滚动而不是换行 —— 换行会把每一行撑高，
+                    // 60 天的周期会立刻变得没法看。
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          for (var i = 0; i < _classes.length; i++)
+                            Padding(
+                              padding: EdgeInsets.only(
+                                  right: i == _classes.length - 1
+                                      ? 0
+                                      : AppTokens.spaceSm),
+                              child: GlassChoiceChip(
+                                key: cycleChipKey(index, i),
+                                label: _classes[i].name,
+                                color: Color(_classes[i].color),
+                                selected: selected.contains(i),
+                                onTap: () => setState(() {
+                                  // 多选切换：已选则去掉，未选则加上。
+                                  final day = _cycle[index];
+                                  if (day.contains(i)) {
+                                    day.remove(i);
+                                  } else {
+                                    day.add(i);
+                                    day.sort();
+                                  }
+                                }),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (showTime) ...[
+                    const SizedBox(width: AppTokens.spaceMd),
+                    Text(timeText,
+                        style: AppTokens.rowSecondary.copyWith(color: muted)),
+                  ],
+                ],
               ),
-              const SizedBox(width: AppTokens.spaceSm),
-              Expanded(
-                // 班次多（五六班倒）或屏窄时横向滚动：右侧露出半个 chip
-                // 就是「还能滑」的提示。滚动而不是换行 —— 换行会把每一行撑高，
-                // 60 天的周期会立刻变得没法看。
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      for (var i = 0; i < _classes.length; i++)
-                        Padding(
-                          padding: EdgeInsets.only(
-                              right: i == _classes.length - 1
-                                  ? 0
-                                  : AppTokens.spaceSm),
-                          child: GlassChoiceChip(
-                            key: cycleChipKey(index, i),
-                            label: _classes[i].name,
-                            color: Color(_classes[i].color),
-                            selected: i == _cycle[index],
-                            onTap: () => setState(() => _cycle[index] = i),
-                          ),
-                        ),
-                    ],
+              // 值班日通常还上白班：格子里有值班标记、没有工作班次时给个轻提示，
+              // 点一下把当天第一个工作班次叠上去（不强制）。
+              if (_needsDutyNudge(index))
+                Padding(
+                  padding: const EdgeInsets.only(
+                      left: _dayLabelWidth + AppTokens.spaceSm, top: 4),
+                  child: GestureDetector(
+                    onTap: () => setState(() {
+                      final workIdx = _classes.indexWhere(
+                          (c) => !c.isRest && !c.isDuty);
+                      if (workIdx >= 0 && !_cycle[index].contains(workIdx)) {
+                        _cycle[index].add(workIdx);
+                        _cycle[index].sort();
+                      }
+                    }),
+                    child: Text(
+                      L10n.dutyNudge,
+                      style: AppTokens.microText.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              if (showTime) ...[
-                const SizedBox(width: AppTokens.spaceMd),
-                Text(timeText,
-                    style: AppTokens.rowSecondary.copyWith(color: muted)),
-              ],
             ],
           );
         },
       ),
     );
+  }
+
+  /// 是否需要「值班日通常还上白班」的轻提示：
+  /// 格子里有值班标记的班次，但没有工作班次。
+  bool _needsDutyNudge(int dayIndex) {
+    if (dayIndex < 0 || dayIndex >= _cycle.length) return false;
+    final day = _cycle[dayIndex];
+    var hasDuty = false;
+    var hasWork = false;
+    for (final classIdx in day) {
+      if (classIdx < 0 || classIdx >= _classes.length) continue;
+      final c = _classes[classIdx];
+      if (c.isDuty && !c.isRest) hasDuty = true;
+      if (!c.isRest && !c.isDuty) hasWork = true;
+    }
+    return hasDuty && !hasWork;
   }
 
   /// 周期行右侧的只读时间，与日历上的显示规则一致。
@@ -1194,6 +1288,213 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
     if (e > 1440) e -= 1440;
     return L10n.timeRange(
         formatClock(c.startMinute!), formatClock(e), nextDay);
+  }
+
+  /// 4.5) 休息规则（v0.11.3 新增）：跟随值班 / 固定星期 / 不用规则。
+  ///
+  /// 休息跟星期走 → 用规则；休息跟节奏走 → 写进周期。
+  /// 默认「不用规则」，老用户不受影响。
+  Widget _restRuleCard(BuildContext context) {
+    final muted = AppTokens.inkMuted(context);
+    return GlassTile(
+      padding: EdgeInsets.all(
+          AppLayout.of(context).isNarrow ? AppTokens.spaceMd : AppTokens.spaceLg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(L10n.restRuleTitle, style: AppTokens.titleStrong),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTokens.spaceXs),
+          Text(
+            L10n.restRuleHint,
+            style: AppTokens.rowSecondary.copyWith(color: muted),
+          ),
+          const SizedBox(height: AppTokens.spaceMd),
+          GlassSegment(
+            count: 3,
+            height: 38,
+            selectedIndex: _restRule.mode == RestRuleMode.none
+                ? 0
+                : (_restRule.mode == RestRuleMode.followDuty ? 1 : 2),
+            onSelected: (i) => setState(() {
+              _restRule = RestRule(
+                mode: i == 0
+                    ? RestRuleMode.none
+                    : (i == 1 ? RestRuleMode.followDuty : RestRuleMode.fixedWeekdays),
+                fixedWeekdays: _restRule.fixedWeekdays,
+                followDutyMap: Map.of(_restRule.followDutyMap),
+              );
+            }),
+            itemBuilder: (i, selected) => Center(
+              child: Text(
+                i == 0
+                    ? L10n.restRuleNone
+                    : (i == 1 ? L10n.restRuleFollowDuty : L10n.restRuleFixed),
+                style: AppTokens.labelSecondary.copyWith(
+                  color: selected
+                      ? Theme.of(context).colorScheme.onSurface
+                      : muted,
+                ).copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+          if (_restRule.mode == RestRuleMode.fixedWeekdays) ...[
+            const SizedBox(height: AppTokens.spaceMd),
+            _fixedWeekdaysEditor(context),
+          ],
+          if (_restRule.mode == RestRuleMode.followDuty) ...[
+            const SizedBox(height: AppTokens.spaceMd),
+            _followDutyEditor(context),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// 固定星期：周一~周日多选。
+  Widget _fixedWeekdaysEditor(BuildContext context) {
+    const weekdays = [1, 2, 3, 4, 5, 6, 7];
+    return Wrap(
+      spacing: AppTokens.spaceSm,
+      runSpacing: AppTokens.spaceSm,
+      children: [
+        for (final w in weekdays)
+          GlassChoiceChip(
+            label: L10n.weekdayShort(w),
+            color: const Color(0xFF2F7CF6),
+            selected: _restRule.fixedWeekdays.contains(w),
+            onTap: () => setState(() {
+              final set = Set<int>.of(_restRule.fixedWeekdays);
+              if (set.contains(w)) {
+                set.remove(w);
+              } else {
+                set.add(w);
+              }
+              _restRule = RestRule(
+                mode: _restRule.mode,
+                fixedWeekdays: set,
+                followDutyMap: Map.of(_restRule.followDutyMap),
+              );
+            }),
+          ),
+      ],
+    );
+  }
+
+  /// 跟随值班：周几值 → 周几休的映射表 + 预设。
+  Widget _followDutyEditor(BuildContext context) {
+    final muted = AppTokens.inkMuted(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 预设
+        Wrap(
+          spacing: AppTokens.spaceSm,
+          runSpacing: AppTokens.spaceSm,
+          children: [
+            _presetChip(context, L10n.restPresetDuty, _dutyPresetMap),
+            _presetChip(context, L10n.restPresetWeekend, {6: 6, 7: 7}),
+            _presetChip(context, L10n.restPresetSunday, {7: 7}),
+          ],
+        ),
+        const SizedBox(height: AppTokens.spaceMd),
+        Text(
+          L10n.restRuleMappingHint,
+          style: AppTokens.rowSecondary.copyWith(color: muted),
+        ),
+        const SizedBox(height: AppTokens.spaceSm),
+        ...List.generate(7, (i) {
+          final dutyDay = i + 1; // 1=周一..7=周日
+          final restDay = _restRule.followDutyMap[dutyDay];
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 80,
+                  child: Text(
+                    L10n.dutyOnWeekday(dutyDay),
+                    style: AppTokens.labelSecondary,
+                  ),
+                ),
+                const Text('→'),
+                const SizedBox(width: AppTokens.spaceSm),
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        // 「不休」选项
+                        _restDayChip(context, dutyDay, null, restDay == null),
+                        for (var d = 1; d <= 7; d++)
+                          _restDayChip(context, dutyDay, d, restDay == d),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  /// 行政班值班制预设：周四值→周六休，周五值→周日休，周六值→周日休，周日值→周六休。
+  static const Map<int, int> _dutyPresetMap = {4: 6, 5: 7, 6: 7, 7: 6};
+
+  Widget _presetChip(
+      BuildContext context, String label, Map<int, int> map) {
+    return GlassChoiceChip(
+      label: label,
+      color: const Color(0xFF2F7CF6),
+      selected: _mapEquals(_restRule.followDutyMap, map),
+      onTap: () => setState(() {
+        _restRule = RestRule(
+          mode: _restRule.mode,
+          fixedWeekdays: _restRule.fixedWeekdays,
+          followDutyMap: Map.of(map),
+        );
+      }),
+    );
+  }
+
+  bool _mapEquals(Map<int, int> a, Map<int, int> b) {
+    if (a.length != b.length) return false;
+    for (final k in a.keys) {
+      if (a[k] != b[k]) return false;
+    }
+    return true;
+  }
+
+  Widget _restDayChip(
+      BuildContext context, int dutyDay, int? restDay, bool selected) {
+    return Padding(
+      padding: const EdgeInsets.only(right: AppTokens.spaceXs),
+      child: GlassChoiceChip(
+        label: restDay == null ? L10n.noRest : L10n.weekdayShort(restDay),
+        color: const Color(0xFF2F7CF6),
+        selected: selected,
+        onTap: () => setState(() {
+          final map = Map<int, int>.of(_restRule.followDutyMap);
+          if (restDay == null) {
+            map.remove(dutyDay);
+          } else {
+            map[dutyDay] = restDay;
+          }
+          _restRule = RestRule(
+            mode: _restRule.mode,
+            fixedWeekdays: _restRule.fixedWeekdays,
+            followDutyMap: map,
+          );
+        }),
+      ),
+    );
   }
 
   /// 5) 班组设置（可选）—— 默认折叠。
@@ -1465,7 +1766,8 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
         // 从空白表切回普通表：恢复默认四班两倒
         final d = defaultSchedule();
         _classes = List.of(d.classes);
-        _cycle = List.of(d.cycle);
+        _cycle = [for (final day in d.cycle) List<int>.of(day)];
+        _restRule = d.restRule;
         _teamCount = d.teamCount;
         _teamNames = List.of(d.teamNames);
         _ourTeamIndex = d.ourTeamIndex;
@@ -1538,57 +1840,67 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
   ///
   /// 取的是 [_draftSchedule] —— 也就是**编辑器眼下的草稿状态**，与预览条同一个
   /// 来源：用户可以把一套还没保存的改动直接存成模板，不必先保存成方案。
-  Future<void> _saveAsTemplate() async {
+  /// 导出配置文件：把当前方案的结构（班次+周期+休息规则+班组错位）生成 JSON，
+  /// 弹层展示，用户复制后存文件。
+  ///
+  /// v0.11.3 起模板系统只留配置文件（内置库与「我的模板」已删）。
+  /// TODO: 接入 share_plus 直接分享文件。
+  Future<void> _exportConfig() async {
     if (_followHoliday || _classes.isEmpty || _cycle.isEmpty) {
-      // 空白表（跟随法定节假日）没有班次与周期，存下来是一张空卡
-      // （读回时也会被跳过），不如当场说清楚。
-      showGlassSnack(context, L10n.templateNeedsPattern,
+      // 空白表（跟随法定节假日）没有班次与周期，导出来是一张空卡，
+      // 不如当场说清楚。
+      showGlassSnack(context, L10n.exportNeedsPattern,
           icon: Icons.info_outline);
       return;
     }
-    // 控制器**不 dispose**：与待办弹窗（`schedule_screen.dart` 的 `_showAddDialog`）
-    // 同一套写法 —— 提前 dispose 会在弹窗退场动画里被 TextField 再读一次，
-    // 直接抛「A TextEditingController was used after being disposed」。
-    final ctrl = TextEditingController(text: _name.trim());
-    final name = await showGlassDialog<String>(
+    final template = ScheduleTemplate.fromSchedule(
+      _draftSchedule(),
+      name: _name.trim().isEmpty ? L10n.newSchedule : _name.trim(),
+    );
+    final json = template.toConfigJson();
+    if (!mounted) return;
+    await showGlassDialog(
       context: context,
       builder: (dialogContext) => GlassDialog(
-        title: L10n.saveAsTemplate,
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          decoration: glassInputDecoration(context, L10n.templateName),
+        title: L10n.exportConfig,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              L10n.exportConfigHint,
+              style: AppTokens.rowSecondary.copyWith(
+                color: AppTokens.inkMuted(context),
+              ),
+            ),
+            const SizedBox(height: AppTokens.spaceMd),
+            Container(
+              constraints: const BoxConstraints(maxHeight: 200),
+              padding: const EdgeInsets.all(AppTokens.spaceSm),
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(AppTokens.radiusS),
+              ),
+              child: SingleChildScrollView(
+                child: SelectableText(
+                  json,
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                ),
+              ),
+            ),
+          ],
         ),
         actions: [
           GlassActionButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            label: L10n.cancel,
-          ),
-          const SizedBox(width: 8),
-          GlassActionButton(
-            variant: GlassActionVariant.primary,
-            onPressed: () =>
-                Navigator.of(dialogContext).pop(ctrl.text.trim()),
-            label: L10n.save,
+            label: L10n.close,
           ),
         ],
       ),
     );
-    // 空名字当没存：模板名是选择页卡片上唯一的识别信息，留空比不存更糟。
-    if (name == null || name.isEmpty || !mounted) return;
-
-    await ref
-        .read(appRepositoryProvider)
-        .saveTemplate(ScheduleTemplate.fromSchedule(_draftSchedule(),
-            name: name));
-    // 存完立刻作废选择页那份缓存：用户很可能在这一趟里先开过「新建排班」，
-    // 不作废的话他回去看不到刚存的那条（见 savedTemplatesProvider 的说明）。
-    ref.invalidate(savedTemplatesProvider);
-    if (!mounted) return;
-    showGlassSnack(context, L10n.templateSaved(name),
-        icon: Icons.bookmark_added_outlined);
   }
-
   void _addClass() {    setState(() {
       final idx = _classes.length;
       final c = ShiftClass(
@@ -1658,9 +1970,12 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
       _classes.removeAt(index);
       _nameCtrls.removeAt(index).dispose();
       _abbrCtrls.removeAt(index).dispose();
-      // 删掉一个定义后，周期里所有比它大的下标整体前移一位
+      // 删掉一个定义后，周期里所有比它大的下标整体前移一位；被删的下标从每天移除
       for (var i = 0; i < _cycle.length; i++) {
-        if (_cycle[i] > index) _cycle[i]--;
+        _cycle[i] = [
+          for (final c in _cycle[i])
+            if (c != index) c > index ? c - 1 : c,
+        ];
       }
     });
   }
@@ -1678,6 +1993,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
             anchorDate: anchor,
             classes: _classes,
             cycle: _cycle,
+            restRule: _restRule,
             makeCurrent: widget.scheduleId == null,
             teamCount: _teamCount,
             teamNames: _teamNames,
@@ -1708,6 +2024,7 @@ ShiftClass _editClass(
   int? endMinute,
   bool clearTimes = false,
   bool? isRest,
+  bool? isDuty,
   int? color,
   bool? alarmEnabled,
   List<ShiftAlarm>? alarms,
@@ -1723,6 +2040,7 @@ ShiftClass _editClass(
     startMinute: clearTimes ? null : (startMinute ?? c.startMinute),
     endMinute: clearTimes ? null : (endMinute ?? c.endMinute),
     isRest: isRest ?? c.isRest,
+    isDuty: isDuty ?? c.isDuty,
     color: color ?? c.color,
     alarmEnabled: alarmEnabled ?? c.alarmEnabled,
     alarms: clearAlarms ? const [] : (alarms ?? c.alarms),

@@ -161,7 +161,7 @@ void main() {
       name: 'B班',
       anchorDate: _anchor,
       classes: _legacyTwelveDays.map(_toClass).toList(),
-      cycle: List.generate(_legacyTwelveDays.length, (i) => i),
+      cycle: List.generate(_legacyTwelveDays.length, (i) => [i]),
       teamCount: 1,
       teamNames: const ['我'],
       ourTeamIndex: 0,
@@ -170,8 +170,8 @@ void main() {
 
     for (var d = -30; d <= 60; d++) {
       final date = _anchor.add(Duration(days: d));
-      final a = before.shiftOn(date);
-      final b = migrated.shiftOn(date);
+      final a = before.shiftsOn(date).firstOrNull;
+      final b = migrated.shiftsOn(date).firstOrNull;
       final why = '第 $d 天不一致';
       expect(b?.name, a?.name, reason: why);
       expect(b?.startMinute, a?.startMinute, reason: why);
@@ -206,6 +206,6 @@ void main() {
     final blank = await AppRepository(db).getScheduleDomain(2);
     expect(blank, isNotNull);
     expect(blank!.isBlank, isTrue);
-    expect(blank.shiftOn(_anchor), isNull);
+    expect(blank.shiftsOn(_anchor), isEmpty);
   });
 }

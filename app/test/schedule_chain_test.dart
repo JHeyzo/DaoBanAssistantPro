@@ -19,7 +19,7 @@ ShiftSchedule _sched(String name) => ShiftSchedule(
         ShiftClass(name: '$name-休', abbr: '休', isRest: true),
       ],
       // 周期 2 天：单数日白班、双数日休班（相对 anchor）。
-      cycle: const [0, 1],
+      cycle: const [[0], [1]],
     );
 
 DateTime _d(int y, int m, int day) => DateTime.utc(y, m, day);
@@ -105,7 +105,7 @@ void main() {
       expect(chain.scheduleOn(_d(2026, 9, 30))!.name, 'A'); // 闭区间
       expect(chain.scheduleOn(_d(2026, 10, 1)), isNull);
       expect(chain.scheduleOn(_d(2026, 8, 31)), isNull);
-      expect(chain.shiftOn(_d(2026, 10, 1)), isNull);
+      expect(chain.shiftsOn(_d(2026, 10, 1)), isEmpty);
     });
 
     test('其余时间为 null 且没有任何段 → 哪天都是 null，且 hasCycle 为假', () {
@@ -165,10 +165,10 @@ void main() {
         _span('B', id: 2, from: _d(2026, 7, 1)),
       ]);
       // 周期 2 天：anchor 起第 0 天=白、第 1 天=休。挑两天让两套的班级不同。
-      final before = chain.shiftOn(_d(2026, 6, 30));
-      final after = chain.shiftOn(_d(2026, 7, 1));
-      expect(before!.name, startsWith('A-'));
-      expect(after!.name, startsWith('B-'));
+      final before = chain.shiftsOn(_d(2026, 6, 30));
+      final after = chain.shiftsOn(_d(2026, 7, 1));
+      expect(before.first.name, startsWith('A-'));
+      expect(after.first.name, startsWith('B-'));
     });
 
     test('hasCycle：空白表不算，只要有**一套**有周期就为真', () {
@@ -206,7 +206,7 @@ void main() {
         cycle: const [],
       );
       final chain = ScheduleChain(fallback: blank, fallbackId: 1);
-      expect(chain.shiftOn(_d(2026, 9, 18)), isNull, reason: '空白表没有班次');
+      expect(chain.shiftsOn(_d(2026, 9, 18)), isEmpty, reason: '空白表没有班次');
       expect(chain.hasScheduleOn(_d(2026, 9, 18)), isTrue,
           reason: '但这天有班表在管 —— 日历据此不盖那句指路');
       expect(chain.hasCycle, isFalse, reason: '没有班次可挑');

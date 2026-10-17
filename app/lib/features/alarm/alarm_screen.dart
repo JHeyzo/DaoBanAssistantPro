@@ -79,18 +79,13 @@ class _AlarmScreenState extends ConsumerState<AlarmScreen>
         const <int, bool>{};
     ref.watch(appSettingsProvider.select((s) => s.language)); // 语言切换时重建（**只订阅语言** —— 全量 watch 会让拨触觉开关也白重建整页）
     // 值班次日规则：显示与排定必须同解（见 `effectiveDayAlarms` 的注释）。
+    // v0.11.3 起按语义标记认值班，不再需要班次名。
     final postDutyState = ref.watch(appSettingsProvider.select((s) => (
           s.postDutyAlarmEnabled,
           s.postDutyAlarmMinute,
-          s.postDutyClassName,
         )));
-    final postDutyRule = postDutyState.$1 &&
-            postDutyState.$2 != null &&
-            postDutyState.$3.trim().isNotEmpty
-        ? PostDutyAlarmRule(
-            dutyClassName: postDutyState.$3.trim(),
-            minute: postDutyState.$2!)
-        : null;
+    final postDutyRule =
+        postDutyState.$1 && postDutyState.$2 != null ? PostDutyAlarmRule(minute: postDutyState.$2!) : null;
     final dutyClasses = (async.valueOrNull?.currentDomain?.classes ??
             const <ShiftClass>[])
         .where((c) => !c.isRest)
@@ -102,19 +97,33 @@ class _AlarmScreenState extends ConsumerState<AlarmScreen>
     if (chain != null) {
       for (var i = 0; i < 30; i++) {
         final date = today.add(Duration(days: i));
-        final t = chain.shiftOn(date);
-        if (t == null || t.isRest || !t.alarmEnabled || t.alarms.isEmpty) {
-          continue;
-        }
+        final shifts = chain.shiftsOn(date);
         // 值班次日命中的那天，显示的必须是规则时刻（与实际排定同解）。
-        final effAlarms = effectiveDayAlarms(chain, date, t, postDutyRule);
-        // 这个班次当天**只要还有没响过的闹钟**就保留这一行（响过的自动隐藏）。
-        // 判据不能只看第一条 —— 见 `hasPendingShiftAlarm`。
-        if (!effAlarms.any((a) => shiftAlarmFireAt(date, t, a).isAfter(now))) {
-          continue;
+        // 规则只作用于当天第一个有闹钟的非休息班次（与 `planShiftAlarms` 同序）。
+        final isPostDuty =
+            postDutyRule != null && isPostDutyDay(chain, date, postDutyRule);
+        var postDutyApplied = false;
+        for (final t in shifts) {
+          if (t.isRest || !t.alarmEnabled || t.alarms.isEmpty) {
+            continue;
+          }
+          var effAlarms = t.alarms;
+          if (isPostDuty && !postDutyApplied) {
+            effAlarms = [
+              ShiftAlarm(
+                  minute: postDutyRule.minute, label: t.alarms.first.label),
+              ...t.alarms.sublist(1),
+            ];
+            postDutyApplied = true;
+          }
+          // 这个班次当天**只要还有没响过的闹钟**就保留这一行（响过的自动隐藏）。
+          // 判据不能只看第一条 —— 见 `hasPendingShiftAlarm`。
+          if (!effAlarms.any((a) => shiftAlarmFireAt(date, t, a).isAfter(now))) {
+            continue;
+          }
+          shiftAlarms.add(_ShiftAlarmEntry(
+              date, t, overrides[dayNumber(date)] ?? true, effAlarms));
         }
-        shiftAlarms.add(_ShiftAlarmEntry(
-            date, t, overrides[dayNumber(date)] ?? true, effAlarms));
       }
     }
 
@@ -187,15 +196,18 @@ class _AlarmScreenState extends ConsumerState<AlarmScreen>
   /// 规则存 SharedPreferences（`AppSettings`）：排定（`rescheduleAll` 经
   /// `loadPostDutyRule`）与显示（build 里同一份 select）读的是同一处。
   /// 每次改动都立即 `_reschedule()`，未来 30 天的计划当场重算。
+  ///
+  /// v0.11.3 起值班按语义标记自动认，不再让用户选班种 —— 卡片只留开关与时间，
+  /// 并显示当前认到的是哪个班次（信息行，不可点）。
   Widget _postDutyCard(BuildContext context, List<ShiftClass> dutyClasses) {
     final s = ref.watch(appSettingsProvider.select((p) => (
           p.postDutyAlarmEnabled,
           p.postDutyAlarmMinute,
-          p.postDutyClassName,
         )));
     final enabled = s.$1;
     final minute = s.$2;
-    final className = s.$3;
+    // 按标记认到的值班班种（没有时为空串）。
+    final dutyName = suggestDutyClassName(dutyClasses);
     final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -227,18 +239,10 @@ class _AlarmScreenState extends ConsumerState<AlarmScreen>
                   value: enabled,
                   onChanged: (v) async {
                     final notifier = ref.read(appSettingsProvider.notifier);
-                    if (v) {
-                      // 首次打开：自动认值班班种、给一个默认时刻，省两次手。
-                      if (className.trim().isEmpty) {
-                        final sug = suggestDutyClassName(dutyClasses);
-                        if (sug.isNotEmpty) {
-                          await notifier.setPostDutyClassName(sug);
-                        }
-                      }
-                      if (minute == null) {
-                        await notifier.setPostDutyAlarmMinute(
-                            defaultPostDutyMinute(dutyClasses));
-                      }
+                    if (v && minute == null) {
+                      // 首次打开：给一个默认时刻（按标记认到的第一个值班班次算）。
+                      await notifier.setPostDutyAlarmMinute(
+                          defaultPostDutyMinute(dutyClasses));
                     }
                     await notifier.setPostDutyAlarmEnabled(v);
                     _reschedule();
@@ -272,26 +276,9 @@ class _AlarmScreenState extends ConsumerState<AlarmScreen>
                 context,
                 icon: Icons.work_outline,
                 label: L10n.postDutyAlarmClass,
-                value:
-                    className.trim().isEmpty ? L10n.notSet : className.trim(),
-                onTap: dutyClasses.isEmpty
-                    ? null
-                    : () async {
-                        final picked =
-                            await showGlassOptionPicker<String>(
-                          context,
-                          title: L10n.postDutyAlarmClass,
-                          options:
-                              dutyClasses.map((c) => c.name).toList(),
-                          labelOf: (n) => n,
-                          selected: className,
-                        );
-                        if (picked == null || !context.mounted) return;
-                        await ref
-                            .read(appSettingsProvider.notifier)
-                            .setPostDutyClassName(picked);
-                        _reschedule();
-                      },
+                value: dutyName.isEmpty ? L10n.notSet : dutyName,
+                // 按标记自动认，不可改 —— 去班次编辑页改标记。
+                onTap: null,
               ),
             ],
           ],

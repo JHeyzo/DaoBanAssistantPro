@@ -71,6 +71,12 @@ class $ShiftScheduleRowsTable extends ShiftScheduleRows
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultValue: const Constant(''));
+  static const VerificationMeta _restRuleMeta =
+      const VerificationMeta('restRule');
+  @override
+  late final GeneratedColumn<String> restRule = GeneratedColumn<String>(
+      'rest_rule', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -80,7 +86,8 @@ class $ShiftScheduleRowsTable extends ShiftScheduleRows
         teamCount,
         teamNames,
         ourTeamIndex,
-        teamOffsets
+        teamOffsets,
+        restRule
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -133,6 +140,10 @@ class $ShiftScheduleRowsTable extends ShiftScheduleRows
           teamOffsets.isAcceptableOrUnknown(
               data['team_offsets']!, _teamOffsetsMeta));
     }
+    if (data.containsKey('rest_rule')) {
+      context.handle(_restRuleMeta,
+          restRule.isAcceptableOrUnknown(data['rest_rule']!, _restRuleMeta));
+    }
     return context;
   }
 
@@ -158,6 +169,8 @@ class $ShiftScheduleRowsTable extends ShiftScheduleRows
           .read(DriftSqlType.int, data['${effectivePrefix}our_team_index'])!,
       teamOffsets: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}team_offsets'])!,
+      restRule: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}rest_rule']),
     );
   }
 
@@ -177,6 +190,10 @@ class ShiftScheduleRow extends DataClass
   final String teamNames;
   final int ourTeamIndex;
   final String teamOffsets;
+
+  /// 休息规则（JSON；见 `RestRule.toJson`/`fromJson`）。
+  /// null = 不用规则（`RestRuleMode.none`，休息日写进周期里）。
+  final String? restRule;
   const ShiftScheduleRow(
       {required this.id,
       required this.name,
@@ -185,7 +202,8 @@ class ShiftScheduleRow extends DataClass
       required this.teamCount,
       required this.teamNames,
       required this.ourTeamIndex,
-      required this.teamOffsets});
+      required this.teamOffsets,
+      this.restRule});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -197,6 +215,9 @@ class ShiftScheduleRow extends DataClass
     map['team_names'] = Variable<String>(teamNames);
     map['our_team_index'] = Variable<int>(ourTeamIndex);
     map['team_offsets'] = Variable<String>(teamOffsets);
+    if (!nullToAbsent || restRule != null) {
+      map['rest_rule'] = Variable<String>(restRule);
+    }
     return map;
   }
 
@@ -210,6 +231,9 @@ class ShiftScheduleRow extends DataClass
       teamNames: Value(teamNames),
       ourTeamIndex: Value(ourTeamIndex),
       teamOffsets: Value(teamOffsets),
+      restRule: restRule == null && nullToAbsent
+          ? const Value.absent()
+          : Value(restRule),
     );
   }
 
@@ -225,6 +249,7 @@ class ShiftScheduleRow extends DataClass
       teamNames: serializer.fromJson<String>(json['teamNames']),
       ourTeamIndex: serializer.fromJson<int>(json['ourTeamIndex']),
       teamOffsets: serializer.fromJson<String>(json['teamOffsets']),
+      restRule: serializer.fromJson<String?>(json['restRule']),
     );
   }
   @override
@@ -239,6 +264,7 @@ class ShiftScheduleRow extends DataClass
       'teamNames': serializer.toJson<String>(teamNames),
       'ourTeamIndex': serializer.toJson<int>(ourTeamIndex),
       'teamOffsets': serializer.toJson<String>(teamOffsets),
+      'restRule': serializer.toJson<String?>(restRule),
     };
   }
 
@@ -250,7 +276,8 @@ class ShiftScheduleRow extends DataClass
           int? teamCount,
           String? teamNames,
           int? ourTeamIndex,
-          String? teamOffsets}) =>
+          String? teamOffsets,
+          Value<String?> restRule = const Value.absent()}) =>
       ShiftScheduleRow(
         id: id ?? this.id,
         name: name ?? this.name,
@@ -260,6 +287,7 @@ class ShiftScheduleRow extends DataClass
         teamNames: teamNames ?? this.teamNames,
         ourTeamIndex: ourTeamIndex ?? this.ourTeamIndex,
         teamOffsets: teamOffsets ?? this.teamOffsets,
+        restRule: restRule.present ? restRule.value : this.restRule,
       );
   ShiftScheduleRow copyWithCompanion(ShiftScheduleRowsCompanion data) {
     return ShiftScheduleRow(
@@ -275,6 +303,7 @@ class ShiftScheduleRow extends DataClass
           : this.ourTeamIndex,
       teamOffsets:
           data.teamOffsets.present ? data.teamOffsets.value : this.teamOffsets,
+      restRule: data.restRule.present ? data.restRule.value : this.restRule,
     );
   }
 
@@ -288,14 +317,15 @@ class ShiftScheduleRow extends DataClass
           ..write('teamCount: $teamCount, ')
           ..write('teamNames: $teamNames, ')
           ..write('ourTeamIndex: $ourTeamIndex, ')
-          ..write('teamOffsets: $teamOffsets')
+          ..write('teamOffsets: $teamOffsets, ')
+          ..write('restRule: $restRule')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode => Object.hash(id, name, anchorDate, isCurrent, teamCount,
-      teamNames, ourTeamIndex, teamOffsets);
+      teamNames, ourTeamIndex, teamOffsets, restRule);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -307,7 +337,8 @@ class ShiftScheduleRow extends DataClass
           other.teamCount == this.teamCount &&
           other.teamNames == this.teamNames &&
           other.ourTeamIndex == this.ourTeamIndex &&
-          other.teamOffsets == this.teamOffsets);
+          other.teamOffsets == this.teamOffsets &&
+          other.restRule == this.restRule);
 }
 
 class ShiftScheduleRowsCompanion extends UpdateCompanion<ShiftScheduleRow> {
@@ -319,6 +350,7 @@ class ShiftScheduleRowsCompanion extends UpdateCompanion<ShiftScheduleRow> {
   final Value<String> teamNames;
   final Value<int> ourTeamIndex;
   final Value<String> teamOffsets;
+  final Value<String?> restRule;
   const ShiftScheduleRowsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -328,6 +360,7 @@ class ShiftScheduleRowsCompanion extends UpdateCompanion<ShiftScheduleRow> {
     this.teamNames = const Value.absent(),
     this.ourTeamIndex = const Value.absent(),
     this.teamOffsets = const Value.absent(),
+    this.restRule = const Value.absent(),
   });
   ShiftScheduleRowsCompanion.insert({
     this.id = const Value.absent(),
@@ -338,6 +371,7 @@ class ShiftScheduleRowsCompanion extends UpdateCompanion<ShiftScheduleRow> {
     this.teamNames = const Value.absent(),
     this.ourTeamIndex = const Value.absent(),
     this.teamOffsets = const Value.absent(),
+    this.restRule = const Value.absent(),
   })  : name = Value(name),
         anchorDate = Value(anchorDate);
   static Insertable<ShiftScheduleRow> custom({
@@ -349,6 +383,7 @@ class ShiftScheduleRowsCompanion extends UpdateCompanion<ShiftScheduleRow> {
     Expression<String>? teamNames,
     Expression<int>? ourTeamIndex,
     Expression<String>? teamOffsets,
+    Expression<String>? restRule,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -359,6 +394,7 @@ class ShiftScheduleRowsCompanion extends UpdateCompanion<ShiftScheduleRow> {
       if (teamNames != null) 'team_names': teamNames,
       if (ourTeamIndex != null) 'our_team_index': ourTeamIndex,
       if (teamOffsets != null) 'team_offsets': teamOffsets,
+      if (restRule != null) 'rest_rule': restRule,
     });
   }
 
@@ -370,7 +406,8 @@ class ShiftScheduleRowsCompanion extends UpdateCompanion<ShiftScheduleRow> {
       Value<int>? teamCount,
       Value<String>? teamNames,
       Value<int>? ourTeamIndex,
-      Value<String>? teamOffsets}) {
+      Value<String>? teamOffsets,
+      Value<String?>? restRule}) {
     return ShiftScheduleRowsCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
@@ -380,6 +417,7 @@ class ShiftScheduleRowsCompanion extends UpdateCompanion<ShiftScheduleRow> {
       teamNames: teamNames ?? this.teamNames,
       ourTeamIndex: ourTeamIndex ?? this.ourTeamIndex,
       teamOffsets: teamOffsets ?? this.teamOffsets,
+      restRule: restRule ?? this.restRule,
     );
   }
 
@@ -410,6 +448,9 @@ class ShiftScheduleRowsCompanion extends UpdateCompanion<ShiftScheduleRow> {
     if (teamOffsets.present) {
       map['team_offsets'] = Variable<String>(teamOffsets.value);
     }
+    if (restRule.present) {
+      map['rest_rule'] = Variable<String>(restRule.value);
+    }
     return map;
   }
 
@@ -423,7 +464,8 @@ class ShiftScheduleRowsCompanion extends UpdateCompanion<ShiftScheduleRow> {
           ..write('teamCount: $teamCount, ')
           ..write('teamNames: $teamNames, ')
           ..write('ourTeamIndex: $ourTeamIndex, ')
-          ..write('teamOffsets: $teamOffsets')
+          ..write('teamOffsets: $teamOffsets, ')
+          ..write('restRule: $restRule')
           ..write(')'))
         .toString();
   }
@@ -758,6 +800,15 @@ class $ShiftClassRowsTable extends ShiftClassRows
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('CHECK ("is_rest" IN (0, 1))'),
       defaultValue: const Constant(false));
+  static const VerificationMeta _isDutyMeta = const VerificationMeta('isDuty');
+  @override
+  late final GeneratedColumn<bool> isDuty = GeneratedColumn<bool>(
+      'is_duty', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_duty" IN (0, 1))'),
+      defaultValue: const Constant(false));
   static const VerificationMeta _colorMeta = const VerificationMeta('color');
   @override
   late final GeneratedColumn<int> color = GeneratedColumn<int>(
@@ -785,6 +836,7 @@ class $ShiftClassRowsTable extends ShiftClassRows
         startMinute,
         endMinute,
         isRest,
+        isDuty,
         color,
         alarmEnabled
       ];
@@ -839,6 +891,10 @@ class $ShiftClassRowsTable extends ShiftClassRows
       context.handle(_isRestMeta,
           isRest.isAcceptableOrUnknown(data['is_rest']!, _isRestMeta));
     }
+    if (data.containsKey('is_duty')) {
+      context.handle(_isDutyMeta,
+          isDuty.isAcceptableOrUnknown(data['is_duty']!, _isDutyMeta));
+    }
     if (data.containsKey('color')) {
       context.handle(
           _colorMeta, color.isAcceptableOrUnknown(data['color']!, _colorMeta));
@@ -874,6 +930,8 @@ class $ShiftClassRowsTable extends ShiftClassRows
           .read(DriftSqlType.int, data['${effectivePrefix}end_minute']),
       isRest: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_rest'])!,
+      isDuty: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_duty'])!,
       color: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}color'])!,
       alarmEnabled: attachedDatabase.typeMapping
@@ -898,6 +956,10 @@ class ShiftClassRow extends DataClass implements Insertable<ShiftClassRow> {
   final int? startMinute;
   final int? endMinute;
   final bool isRest;
+
+  /// 值班语义标记（见 `ShiftClass.isDuty`）。与 [isRest] 互斥，都 true 时按
+  /// rest 算（领域层的 `ShiftClass.tag` 里 rest 优先）。
+  final bool isDuty;
   final int color;
   final bool alarmEnabled;
   const ShiftClassRow(
@@ -909,6 +971,7 @@ class ShiftClassRow extends DataClass implements Insertable<ShiftClassRow> {
       this.startMinute,
       this.endMinute,
       required this.isRest,
+      required this.isDuty,
       required this.color,
       required this.alarmEnabled});
   @override
@@ -928,6 +991,7 @@ class ShiftClassRow extends DataClass implements Insertable<ShiftClassRow> {
       map['end_minute'] = Variable<int>(endMinute);
     }
     map['is_rest'] = Variable<bool>(isRest);
+    map['is_duty'] = Variable<bool>(isDuty);
     map['color'] = Variable<int>(color);
     map['alarm_enabled'] = Variable<bool>(alarmEnabled);
     return map;
@@ -947,6 +1011,7 @@ class ShiftClassRow extends DataClass implements Insertable<ShiftClassRow> {
           ? const Value.absent()
           : Value(endMinute),
       isRest: Value(isRest),
+      isDuty: Value(isDuty),
       color: Value(color),
       alarmEnabled: Value(alarmEnabled),
     );
@@ -964,6 +1029,7 @@ class ShiftClassRow extends DataClass implements Insertable<ShiftClassRow> {
       startMinute: serializer.fromJson<int?>(json['startMinute']),
       endMinute: serializer.fromJson<int?>(json['endMinute']),
       isRest: serializer.fromJson<bool>(json['isRest']),
+      isDuty: serializer.fromJson<bool>(json['isDuty']),
       color: serializer.fromJson<int>(json['color']),
       alarmEnabled: serializer.fromJson<bool>(json['alarmEnabled']),
     );
@@ -980,6 +1046,7 @@ class ShiftClassRow extends DataClass implements Insertable<ShiftClassRow> {
       'startMinute': serializer.toJson<int?>(startMinute),
       'endMinute': serializer.toJson<int?>(endMinute),
       'isRest': serializer.toJson<bool>(isRest),
+      'isDuty': serializer.toJson<bool>(isDuty),
       'color': serializer.toJson<int>(color),
       'alarmEnabled': serializer.toJson<bool>(alarmEnabled),
     };
@@ -994,6 +1061,7 @@ class ShiftClassRow extends DataClass implements Insertable<ShiftClassRow> {
           Value<int?> startMinute = const Value.absent(),
           Value<int?> endMinute = const Value.absent(),
           bool? isRest,
+          bool? isDuty,
           int? color,
           bool? alarmEnabled}) =>
       ShiftClassRow(
@@ -1005,6 +1073,7 @@ class ShiftClassRow extends DataClass implements Insertable<ShiftClassRow> {
         startMinute: startMinute.present ? startMinute.value : this.startMinute,
         endMinute: endMinute.present ? endMinute.value : this.endMinute,
         isRest: isRest ?? this.isRest,
+        isDuty: isDuty ?? this.isDuty,
         color: color ?? this.color,
         alarmEnabled: alarmEnabled ?? this.alarmEnabled,
       );
@@ -1020,6 +1089,7 @@ class ShiftClassRow extends DataClass implements Insertable<ShiftClassRow> {
           data.startMinute.present ? data.startMinute.value : this.startMinute,
       endMinute: data.endMinute.present ? data.endMinute.value : this.endMinute,
       isRest: data.isRest.present ? data.isRest.value : this.isRest,
+      isDuty: data.isDuty.present ? data.isDuty.value : this.isDuty,
       color: data.color.present ? data.color.value : this.color,
       alarmEnabled: data.alarmEnabled.present
           ? data.alarmEnabled.value
@@ -1038,6 +1108,7 @@ class ShiftClassRow extends DataClass implements Insertable<ShiftClassRow> {
           ..write('startMinute: $startMinute, ')
           ..write('endMinute: $endMinute, ')
           ..write('isRest: $isRest, ')
+          ..write('isDuty: $isDuty, ')
           ..write('color: $color, ')
           ..write('alarmEnabled: $alarmEnabled')
           ..write(')'))
@@ -1046,7 +1117,7 @@ class ShiftClassRow extends DataClass implements Insertable<ShiftClassRow> {
 
   @override
   int get hashCode => Object.hash(id, scheduleId, order, name, abbr,
-      startMinute, endMinute, isRest, color, alarmEnabled);
+      startMinute, endMinute, isRest, isDuty, color, alarmEnabled);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1059,6 +1130,7 @@ class ShiftClassRow extends DataClass implements Insertable<ShiftClassRow> {
           other.startMinute == this.startMinute &&
           other.endMinute == this.endMinute &&
           other.isRest == this.isRest &&
+          other.isDuty == this.isDuty &&
           other.color == this.color &&
           other.alarmEnabled == this.alarmEnabled);
 }
@@ -1072,6 +1144,7 @@ class ShiftClassRowsCompanion extends UpdateCompanion<ShiftClassRow> {
   final Value<int?> startMinute;
   final Value<int?> endMinute;
   final Value<bool> isRest;
+  final Value<bool> isDuty;
   final Value<int> color;
   final Value<bool> alarmEnabled;
   const ShiftClassRowsCompanion({
@@ -1083,6 +1156,7 @@ class ShiftClassRowsCompanion extends UpdateCompanion<ShiftClassRow> {
     this.startMinute = const Value.absent(),
     this.endMinute = const Value.absent(),
     this.isRest = const Value.absent(),
+    this.isDuty = const Value.absent(),
     this.color = const Value.absent(),
     this.alarmEnabled = const Value.absent(),
   });
@@ -1095,6 +1169,7 @@ class ShiftClassRowsCompanion extends UpdateCompanion<ShiftClassRow> {
     this.startMinute = const Value.absent(),
     this.endMinute = const Value.absent(),
     this.isRest = const Value.absent(),
+    this.isDuty = const Value.absent(),
     this.color = const Value.absent(),
     this.alarmEnabled = const Value.absent(),
   })  : scheduleId = Value(scheduleId),
@@ -1109,6 +1184,7 @@ class ShiftClassRowsCompanion extends UpdateCompanion<ShiftClassRow> {
     Expression<int>? startMinute,
     Expression<int>? endMinute,
     Expression<bool>? isRest,
+    Expression<bool>? isDuty,
     Expression<int>? color,
     Expression<bool>? alarmEnabled,
   }) {
@@ -1121,6 +1197,7 @@ class ShiftClassRowsCompanion extends UpdateCompanion<ShiftClassRow> {
       if (startMinute != null) 'start_minute': startMinute,
       if (endMinute != null) 'end_minute': endMinute,
       if (isRest != null) 'is_rest': isRest,
+      if (isDuty != null) 'is_duty': isDuty,
       if (color != null) 'color': color,
       if (alarmEnabled != null) 'alarm_enabled': alarmEnabled,
     });
@@ -1135,6 +1212,7 @@ class ShiftClassRowsCompanion extends UpdateCompanion<ShiftClassRow> {
       Value<int?>? startMinute,
       Value<int?>? endMinute,
       Value<bool>? isRest,
+      Value<bool>? isDuty,
       Value<int>? color,
       Value<bool>? alarmEnabled}) {
     return ShiftClassRowsCompanion(
@@ -1146,6 +1224,7 @@ class ShiftClassRowsCompanion extends UpdateCompanion<ShiftClassRow> {
       startMinute: startMinute ?? this.startMinute,
       endMinute: endMinute ?? this.endMinute,
       isRest: isRest ?? this.isRest,
+      isDuty: isDuty ?? this.isDuty,
       color: color ?? this.color,
       alarmEnabled: alarmEnabled ?? this.alarmEnabled,
     );
@@ -1178,6 +1257,9 @@ class ShiftClassRowsCompanion extends UpdateCompanion<ShiftClassRow> {
     if (isRest.present) {
       map['is_rest'] = Variable<bool>(isRest.value);
     }
+    if (isDuty.present) {
+      map['is_duty'] = Variable<bool>(isDuty.value);
+    }
     if (color.present) {
       map['color'] = Variable<int>(color.value);
     }
@@ -1198,6 +1280,7 @@ class ShiftClassRowsCompanion extends UpdateCompanion<ShiftClassRow> {
           ..write('startMinute: $startMinute, ')
           ..write('endMinute: $endMinute, ')
           ..write('isRest: $isRest, ')
+          ..write('isDuty: $isDuty, ')
           ..write('color: $color, ')
           ..write('alarmEnabled: $alarmEnabled')
           ..write(')'))
@@ -3025,387 +3108,6 @@ class ShiftDayOverridesCompanion extends UpdateCompanion<ShiftDayOverride> {
   }
 }
 
-class $CustomTemplatesTable extends CustomTemplates
-    with TableInfo<$CustomTemplatesTable, CustomTemplate> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $CustomTemplatesTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
-      'id', aliasedName, false,
-      hasAutoIncrement: true,
-      type: DriftSqlType.int,
-      requiredDuringInsert: false,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
-  static const VerificationMeta _nameMeta = const VerificationMeta('name');
-  @override
-  late final GeneratedColumn<String> name = GeneratedColumn<String>(
-      'name', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _classesMeta =
-      const VerificationMeta('classes');
-  @override
-  late final GeneratedColumn<String> classes = GeneratedColumn<String>(
-      'classes', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _cycleMeta = const VerificationMeta('cycle');
-  @override
-  late final GeneratedColumn<String> cycle = GeneratedColumn<String>(
-      'cycle', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _teamCountMeta =
-      const VerificationMeta('teamCount');
-  @override
-  late final GeneratedColumn<int> teamCount = GeneratedColumn<int>(
-      'team_count', aliasedName, false,
-      type: DriftSqlType.int, requiredDuringInsert: true);
-  static const VerificationMeta _teamOffsetsMeta =
-      const VerificationMeta('teamOffsets');
-  @override
-  late final GeneratedColumn<String> teamOffsets = GeneratedColumn<String>(
-      'team_offsets', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _createdAtMeta =
-      const VerificationMeta('createdAt');
-  @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-      'created_at', aliasedName, false,
-      type: DriftSqlType.dateTime, requiredDuringInsert: true);
-  @override
-  List<GeneratedColumn> get $columns =>
-      [id, name, classes, cycle, teamCount, teamOffsets, createdAt];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'custom_templates';
-  @override
-  VerificationContext validateIntegrity(Insertable<CustomTemplate> instance,
-      {bool isInserting = false}) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('name')) {
-      context.handle(
-          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
-    } else if (isInserting) {
-      context.missing(_nameMeta);
-    }
-    if (data.containsKey('classes')) {
-      context.handle(_classesMeta,
-          classes.isAcceptableOrUnknown(data['classes']!, _classesMeta));
-    } else if (isInserting) {
-      context.missing(_classesMeta);
-    }
-    if (data.containsKey('cycle')) {
-      context.handle(
-          _cycleMeta, cycle.isAcceptableOrUnknown(data['cycle']!, _cycleMeta));
-    } else if (isInserting) {
-      context.missing(_cycleMeta);
-    }
-    if (data.containsKey('team_count')) {
-      context.handle(_teamCountMeta,
-          teamCount.isAcceptableOrUnknown(data['team_count']!, _teamCountMeta));
-    } else if (isInserting) {
-      context.missing(_teamCountMeta);
-    }
-    if (data.containsKey('team_offsets')) {
-      context.handle(
-          _teamOffsetsMeta,
-          teamOffsets.isAcceptableOrUnknown(
-              data['team_offsets']!, _teamOffsetsMeta));
-    } else if (isInserting) {
-      context.missing(_teamOffsetsMeta);
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(_createdAtMeta,
-          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
-    } else if (isInserting) {
-      context.missing(_createdAtMeta);
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  CustomTemplate map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return CustomTemplate(
-      id: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
-      name: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
-      classes: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}classes'])!,
-      cycle: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}cycle'])!,
-      teamCount: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}team_count'])!,
-      teamOffsets: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}team_offsets'])!,
-      createdAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
-    );
-  }
-
-  @override
-  $CustomTemplatesTable createAlias(String alias) {
-    return $CustomTemplatesTable(attachedDatabase, alias);
-  }
-}
-
-class CustomTemplate extends DataClass implements Insertable<CustomTemplate> {
-  final int id;
-  final String name;
-
-  /// 班次定义数组（JSON；见 `encodeTemplateClasses`）。**不含班次 id**。
-  final String classes;
-
-  /// 周期下标序列（逗号分隔；见 `encodeTemplateCycle`）。
-  final String cycle;
-  final int teamCount;
-
-  /// 班组错位（逗号分隔）。保存时已归一化成「我们班组在第 0 位、错位 0」。
-  final String teamOffsets;
-  final DateTime createdAt;
-  const CustomTemplate(
-      {required this.id,
-      required this.name,
-      required this.classes,
-      required this.cycle,
-      required this.teamCount,
-      required this.teamOffsets,
-      required this.createdAt});
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    map['name'] = Variable<String>(name);
-    map['classes'] = Variable<String>(classes);
-    map['cycle'] = Variable<String>(cycle);
-    map['team_count'] = Variable<int>(teamCount);
-    map['team_offsets'] = Variable<String>(teamOffsets);
-    map['created_at'] = Variable<DateTime>(createdAt);
-    return map;
-  }
-
-  CustomTemplatesCompanion toCompanion(bool nullToAbsent) {
-    return CustomTemplatesCompanion(
-      id: Value(id),
-      name: Value(name),
-      classes: Value(classes),
-      cycle: Value(cycle),
-      teamCount: Value(teamCount),
-      teamOffsets: Value(teamOffsets),
-      createdAt: Value(createdAt),
-    );
-  }
-
-  factory CustomTemplate.fromJson(Map<String, dynamic> json,
-      {ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return CustomTemplate(
-      id: serializer.fromJson<int>(json['id']),
-      name: serializer.fromJson<String>(json['name']),
-      classes: serializer.fromJson<String>(json['classes']),
-      cycle: serializer.fromJson<String>(json['cycle']),
-      teamCount: serializer.fromJson<int>(json['teamCount']),
-      teamOffsets: serializer.fromJson<String>(json['teamOffsets']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'name': serializer.toJson<String>(name),
-      'classes': serializer.toJson<String>(classes),
-      'cycle': serializer.toJson<String>(cycle),
-      'teamCount': serializer.toJson<int>(teamCount),
-      'teamOffsets': serializer.toJson<String>(teamOffsets),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-    };
-  }
-
-  CustomTemplate copyWith(
-          {int? id,
-          String? name,
-          String? classes,
-          String? cycle,
-          int? teamCount,
-          String? teamOffsets,
-          DateTime? createdAt}) =>
-      CustomTemplate(
-        id: id ?? this.id,
-        name: name ?? this.name,
-        classes: classes ?? this.classes,
-        cycle: cycle ?? this.cycle,
-        teamCount: teamCount ?? this.teamCount,
-        teamOffsets: teamOffsets ?? this.teamOffsets,
-        createdAt: createdAt ?? this.createdAt,
-      );
-  CustomTemplate copyWithCompanion(CustomTemplatesCompanion data) {
-    return CustomTemplate(
-      id: data.id.present ? data.id.value : this.id,
-      name: data.name.present ? data.name.value : this.name,
-      classes: data.classes.present ? data.classes.value : this.classes,
-      cycle: data.cycle.present ? data.cycle.value : this.cycle,
-      teamCount: data.teamCount.present ? data.teamCount.value : this.teamCount,
-      teamOffsets:
-          data.teamOffsets.present ? data.teamOffsets.value : this.teamOffsets,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('CustomTemplate(')
-          ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('classes: $classes, ')
-          ..write('cycle: $cycle, ')
-          ..write('teamCount: $teamCount, ')
-          ..write('teamOffsets: $teamOffsets, ')
-          ..write('createdAt: $createdAt')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode =>
-      Object.hash(id, name, classes, cycle, teamCount, teamOffsets, createdAt);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is CustomTemplate &&
-          other.id == this.id &&
-          other.name == this.name &&
-          other.classes == this.classes &&
-          other.cycle == this.cycle &&
-          other.teamCount == this.teamCount &&
-          other.teamOffsets == this.teamOffsets &&
-          other.createdAt == this.createdAt);
-}
-
-class CustomTemplatesCompanion extends UpdateCompanion<CustomTemplate> {
-  final Value<int> id;
-  final Value<String> name;
-  final Value<String> classes;
-  final Value<String> cycle;
-  final Value<int> teamCount;
-  final Value<String> teamOffsets;
-  final Value<DateTime> createdAt;
-  const CustomTemplatesCompanion({
-    this.id = const Value.absent(),
-    this.name = const Value.absent(),
-    this.classes = const Value.absent(),
-    this.cycle = const Value.absent(),
-    this.teamCount = const Value.absent(),
-    this.teamOffsets = const Value.absent(),
-    this.createdAt = const Value.absent(),
-  });
-  CustomTemplatesCompanion.insert({
-    this.id = const Value.absent(),
-    required String name,
-    required String classes,
-    required String cycle,
-    required int teamCount,
-    required String teamOffsets,
-    required DateTime createdAt,
-  })  : name = Value(name),
-        classes = Value(classes),
-        cycle = Value(cycle),
-        teamCount = Value(teamCount),
-        teamOffsets = Value(teamOffsets),
-        createdAt = Value(createdAt);
-  static Insertable<CustomTemplate> custom({
-    Expression<int>? id,
-    Expression<String>? name,
-    Expression<String>? classes,
-    Expression<String>? cycle,
-    Expression<int>? teamCount,
-    Expression<String>? teamOffsets,
-    Expression<DateTime>? createdAt,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (name != null) 'name': name,
-      if (classes != null) 'classes': classes,
-      if (cycle != null) 'cycle': cycle,
-      if (teamCount != null) 'team_count': teamCount,
-      if (teamOffsets != null) 'team_offsets': teamOffsets,
-      if (createdAt != null) 'created_at': createdAt,
-    });
-  }
-
-  CustomTemplatesCompanion copyWith(
-      {Value<int>? id,
-      Value<String>? name,
-      Value<String>? classes,
-      Value<String>? cycle,
-      Value<int>? teamCount,
-      Value<String>? teamOffsets,
-      Value<DateTime>? createdAt}) {
-    return CustomTemplatesCompanion(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      classes: classes ?? this.classes,
-      cycle: cycle ?? this.cycle,
-      teamCount: teamCount ?? this.teamCount,
-      teamOffsets: teamOffsets ?? this.teamOffsets,
-      createdAt: createdAt ?? this.createdAt,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
-    }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
-    }
-    if (classes.present) {
-      map['classes'] = Variable<String>(classes.value);
-    }
-    if (cycle.present) {
-      map['cycle'] = Variable<String>(cycle.value);
-    }
-    if (teamCount.present) {
-      map['team_count'] = Variable<int>(teamCount.value);
-    }
-    if (teamOffsets.present) {
-      map['team_offsets'] = Variable<String>(teamOffsets.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('CustomTemplatesCompanion(')
-          ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('classes: $classes, ')
-          ..write('cycle: $cycle, ')
-          ..write('teamCount: $teamCount, ')
-          ..write('teamOffsets: $teamOffsets, ')
-          ..write('createdAt: $createdAt')
-          ..write(')'))
-        .toString();
-  }
-}
-
 class $RecurringSeriesRowsTable extends RecurringSeriesRows
     with TableInfo<$RecurringSeriesRowsTable, RecurringSeriesRow> {
   @override
@@ -4048,8 +3750,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ShiftAlarmOverridesTable(this);
   late final $ShiftDayOverridesTable shiftDayOverrides =
       $ShiftDayOverridesTable(this);
-  late final $CustomTemplatesTable customTemplates =
-      $CustomTemplatesTable(this);
   late final $RecurringSeriesRowsTable recurringSeriesRows =
       $RecurringSeriesRowsTable(this);
   @override
@@ -4066,7 +3766,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         customAlarms,
         shiftAlarmOverrides,
         shiftDayOverrides,
-        customTemplates,
         recurringSeriesRows
       ];
 }
@@ -4081,6 +3780,7 @@ typedef $$ShiftScheduleRowsTableCreateCompanionBuilder
   Value<String> teamNames,
   Value<int> ourTeamIndex,
   Value<String> teamOffsets,
+  Value<String?> restRule,
 });
 typedef $$ShiftScheduleRowsTableUpdateCompanionBuilder
     = ShiftScheduleRowsCompanion Function({
@@ -4092,6 +3792,7 @@ typedef $$ShiftScheduleRowsTableUpdateCompanionBuilder
   Value<String> teamNames,
   Value<int> ourTeamIndex,
   Value<String> teamOffsets,
+  Value<String?> restRule,
 });
 
 class $$ShiftScheduleRowsTableFilterComposer
@@ -4126,6 +3827,9 @@ class $$ShiftScheduleRowsTableFilterComposer
 
   ColumnFilters<String> get teamOffsets => $composableBuilder(
       column: $table.teamOffsets, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get restRule => $composableBuilder(
+      column: $table.restRule, builder: (column) => ColumnFilters(column));
 }
 
 class $$ShiftScheduleRowsTableOrderingComposer
@@ -4161,6 +3865,9 @@ class $$ShiftScheduleRowsTableOrderingComposer
 
   ColumnOrderings<String> get teamOffsets => $composableBuilder(
       column: $table.teamOffsets, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get restRule => $composableBuilder(
+      column: $table.restRule, builder: (column) => ColumnOrderings(column));
 }
 
 class $$ShiftScheduleRowsTableAnnotationComposer
@@ -4195,6 +3902,9 @@ class $$ShiftScheduleRowsTableAnnotationComposer
 
   GeneratedColumn<String> get teamOffsets => $composableBuilder(
       column: $table.teamOffsets, builder: (column) => column);
+
+  GeneratedColumn<String> get restRule =>
+      $composableBuilder(column: $table.restRule, builder: (column) => column);
 }
 
 class $$ShiftScheduleRowsTableTableManager extends RootTableManager<
@@ -4233,6 +3943,7 @@ class $$ShiftScheduleRowsTableTableManager extends RootTableManager<
             Value<String> teamNames = const Value.absent(),
             Value<int> ourTeamIndex = const Value.absent(),
             Value<String> teamOffsets = const Value.absent(),
+            Value<String?> restRule = const Value.absent(),
           }) =>
               ShiftScheduleRowsCompanion(
             id: id,
@@ -4243,6 +3954,7 @@ class $$ShiftScheduleRowsTableTableManager extends RootTableManager<
             teamNames: teamNames,
             ourTeamIndex: ourTeamIndex,
             teamOffsets: teamOffsets,
+            restRule: restRule,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -4253,6 +3965,7 @@ class $$ShiftScheduleRowsTableTableManager extends RootTableManager<
             Value<String> teamNames = const Value.absent(),
             Value<int> ourTeamIndex = const Value.absent(),
             Value<String> teamOffsets = const Value.absent(),
+            Value<String?> restRule = const Value.absent(),
           }) =>
               ShiftScheduleRowsCompanion.insert(
             id: id,
@@ -4263,6 +3976,7 @@ class $$ShiftScheduleRowsTableTableManager extends RootTableManager<
             teamNames: teamNames,
             ourTeamIndex: ourTeamIndex,
             teamOffsets: teamOffsets,
+            restRule: restRule,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -4449,6 +4163,7 @@ typedef $$ShiftClassRowsTableCreateCompanionBuilder = ShiftClassRowsCompanion
   Value<int?> startMinute,
   Value<int?> endMinute,
   Value<bool> isRest,
+  Value<bool> isDuty,
   Value<int> color,
   Value<bool> alarmEnabled,
 });
@@ -4462,6 +4177,7 @@ typedef $$ShiftClassRowsTableUpdateCompanionBuilder = ShiftClassRowsCompanion
   Value<int?> startMinute,
   Value<int?> endMinute,
   Value<bool> isRest,
+  Value<bool> isDuty,
   Value<int> color,
   Value<bool> alarmEnabled,
 });
@@ -4498,6 +4214,9 @@ class $$ShiftClassRowsTableFilterComposer
 
   ColumnFilters<bool> get isRest => $composableBuilder(
       column: $table.isRest, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isDuty => $composableBuilder(
+      column: $table.isDuty, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get color => $composableBuilder(
       column: $table.color, builder: (column) => ColumnFilters(column));
@@ -4539,6 +4258,9 @@ class $$ShiftClassRowsTableOrderingComposer
   ColumnOrderings<bool> get isRest => $composableBuilder(
       column: $table.isRest, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<bool> get isDuty => $composableBuilder(
+      column: $table.isDuty, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<int> get color => $composableBuilder(
       column: $table.color, builder: (column) => ColumnOrderings(column));
 
@@ -4579,6 +4301,9 @@ class $$ShiftClassRowsTableAnnotationComposer
 
   GeneratedColumn<bool> get isRest =>
       $composableBuilder(column: $table.isRest, builder: (column) => column);
+
+  GeneratedColumn<bool> get isDuty =>
+      $composableBuilder(column: $table.isDuty, builder: (column) => column);
 
   GeneratedColumn<int> get color =>
       $composableBuilder(column: $table.color, builder: (column) => column);
@@ -4622,6 +4347,7 @@ class $$ShiftClassRowsTableTableManager extends RootTableManager<
             Value<int?> startMinute = const Value.absent(),
             Value<int?> endMinute = const Value.absent(),
             Value<bool> isRest = const Value.absent(),
+            Value<bool> isDuty = const Value.absent(),
             Value<int> color = const Value.absent(),
             Value<bool> alarmEnabled = const Value.absent(),
           }) =>
@@ -4634,6 +4360,7 @@ class $$ShiftClassRowsTableTableManager extends RootTableManager<
             startMinute: startMinute,
             endMinute: endMinute,
             isRest: isRest,
+            isDuty: isDuty,
             color: color,
             alarmEnabled: alarmEnabled,
           ),
@@ -4646,6 +4373,7 @@ class $$ShiftClassRowsTableTableManager extends RootTableManager<
             Value<int?> startMinute = const Value.absent(),
             Value<int?> endMinute = const Value.absent(),
             Value<bool> isRest = const Value.absent(),
+            Value<bool> isDuty = const Value.absent(),
             Value<int> color = const Value.absent(),
             Value<bool> alarmEnabled = const Value.absent(),
           }) =>
@@ -4658,6 +4386,7 @@ class $$ShiftClassRowsTableTableManager extends RootTableManager<
             startMinute: startMinute,
             endMinute: endMinute,
             isRest: isRest,
+            isDuty: isDuty,
             color: color,
             alarmEnabled: alarmEnabled,
           ),
@@ -5695,204 +5424,6 @@ typedef $$ShiftDayOverridesTableProcessedTableManager = ProcessedTableManager<
     ),
     ShiftDayOverride,
     PrefetchHooks Function()>;
-typedef $$CustomTemplatesTableCreateCompanionBuilder = CustomTemplatesCompanion
-    Function({
-  Value<int> id,
-  required String name,
-  required String classes,
-  required String cycle,
-  required int teamCount,
-  required String teamOffsets,
-  required DateTime createdAt,
-});
-typedef $$CustomTemplatesTableUpdateCompanionBuilder = CustomTemplatesCompanion
-    Function({
-  Value<int> id,
-  Value<String> name,
-  Value<String> classes,
-  Value<String> cycle,
-  Value<int> teamCount,
-  Value<String> teamOffsets,
-  Value<DateTime> createdAt,
-});
-
-class $$CustomTemplatesTableFilterComposer
-    extends Composer<_$AppDatabase, $CustomTemplatesTable> {
-  $$CustomTemplatesTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<int> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get name => $composableBuilder(
-      column: $table.name, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get classes => $composableBuilder(
-      column: $table.classes, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get cycle => $composableBuilder(
-      column: $table.cycle, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<int> get teamCount => $composableBuilder(
-      column: $table.teamCount, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get teamOffsets => $composableBuilder(
-      column: $table.teamOffsets, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-      column: $table.createdAt, builder: (column) => ColumnFilters(column));
-}
-
-class $$CustomTemplatesTableOrderingComposer
-    extends Composer<_$AppDatabase, $CustomTemplatesTable> {
-  $$CustomTemplatesTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<int> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get name => $composableBuilder(
-      column: $table.name, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get classes => $composableBuilder(
-      column: $table.classes, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get cycle => $composableBuilder(
-      column: $table.cycle, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<int> get teamCount => $composableBuilder(
-      column: $table.teamCount, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get teamOffsets => $composableBuilder(
-      column: $table.teamOffsets, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
-}
-
-class $$CustomTemplatesTableAnnotationComposer
-    extends Composer<_$AppDatabase, $CustomTemplatesTable> {
-  $$CustomTemplatesTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<int> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => column);
-
-  GeneratedColumn<String> get classes =>
-      $composableBuilder(column: $table.classes, builder: (column) => column);
-
-  GeneratedColumn<String> get cycle =>
-      $composableBuilder(column: $table.cycle, builder: (column) => column);
-
-  GeneratedColumn<int> get teamCount =>
-      $composableBuilder(column: $table.teamCount, builder: (column) => column);
-
-  GeneratedColumn<String> get teamOffsets => $composableBuilder(
-      column: $table.teamOffsets, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-}
-
-class $$CustomTemplatesTableTableManager extends RootTableManager<
-    _$AppDatabase,
-    $CustomTemplatesTable,
-    CustomTemplate,
-    $$CustomTemplatesTableFilterComposer,
-    $$CustomTemplatesTableOrderingComposer,
-    $$CustomTemplatesTableAnnotationComposer,
-    $$CustomTemplatesTableCreateCompanionBuilder,
-    $$CustomTemplatesTableUpdateCompanionBuilder,
-    (
-      CustomTemplate,
-      BaseReferences<_$AppDatabase, $CustomTemplatesTable, CustomTemplate>
-    ),
-    CustomTemplate,
-    PrefetchHooks Function()> {
-  $$CustomTemplatesTableTableManager(
-      _$AppDatabase db, $CustomTemplatesTable table)
-      : super(TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$CustomTemplatesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$CustomTemplatesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$CustomTemplatesTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback: ({
-            Value<int> id = const Value.absent(),
-            Value<String> name = const Value.absent(),
-            Value<String> classes = const Value.absent(),
-            Value<String> cycle = const Value.absent(),
-            Value<int> teamCount = const Value.absent(),
-            Value<String> teamOffsets = const Value.absent(),
-            Value<DateTime> createdAt = const Value.absent(),
-          }) =>
-              CustomTemplatesCompanion(
-            id: id,
-            name: name,
-            classes: classes,
-            cycle: cycle,
-            teamCount: teamCount,
-            teamOffsets: teamOffsets,
-            createdAt: createdAt,
-          ),
-          createCompanionCallback: ({
-            Value<int> id = const Value.absent(),
-            required String name,
-            required String classes,
-            required String cycle,
-            required int teamCount,
-            required String teamOffsets,
-            required DateTime createdAt,
-          }) =>
-              CustomTemplatesCompanion.insert(
-            id: id,
-            name: name,
-            classes: classes,
-            cycle: cycle,
-            teamCount: teamCount,
-            teamOffsets: teamOffsets,
-            createdAt: createdAt,
-          ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
-          prefetchHooksCallback: null,
-        ));
-}
-
-typedef $$CustomTemplatesTableProcessedTableManager = ProcessedTableManager<
-    _$AppDatabase,
-    $CustomTemplatesTable,
-    CustomTemplate,
-    $$CustomTemplatesTableFilterComposer,
-    $$CustomTemplatesTableOrderingComposer,
-    $$CustomTemplatesTableAnnotationComposer,
-    $$CustomTemplatesTableCreateCompanionBuilder,
-    $$CustomTemplatesTableUpdateCompanionBuilder,
-    (
-      CustomTemplate,
-      BaseReferences<_$AppDatabase, $CustomTemplatesTable, CustomTemplate>
-    ),
-    CustomTemplate,
-    PrefetchHooks Function()>;
 typedef $$RecurringSeriesRowsTableCreateCompanionBuilder
     = RecurringSeriesRowsCompanion Function({
   Value<int> id,
@@ -6195,8 +5726,6 @@ class $AppDatabaseManager {
       $$ShiftAlarmOverridesTableTableManager(_db, _db.shiftAlarmOverrides);
   $$ShiftDayOverridesTableTableManager get shiftDayOverrides =>
       $$ShiftDayOverridesTableTableManager(_db, _db.shiftDayOverrides);
-  $$CustomTemplatesTableTableManager get customTemplates =>
-      $$CustomTemplatesTableTableManager(_db, _db.customTemplates);
   $$RecurringSeriesRowsTableTableManager get recurringSeriesRows =>
       $$RecurringSeriesRowsTableTableManager(_db, _db.recurringSeriesRows);
 }

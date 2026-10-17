@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -54,10 +55,21 @@ class ActiveSchedule {
     final indexById = {
       for (var i = 0; i < classes.length; i++) classes[i].id: i,
     };
-    final domainCycle = cycle
-        .map((r) => indexById[r.classId] ?? -1)
-        .where((i) => i >= 0)
-        .toList();
+    // 周期：按 order 分组，一天可叠多个班次（v0.11.3）。
+    // 无效下标（班次被删、历史脏数据）直接丢掉；那天一个都不剩就留空列表
+    // （周期长度不能变，否则班组错位全乱）。
+    final cycleByOrder = <int, List<int>>{};
+    var maxOrder = -1;
+    for (final r in cycle) {
+      final idx = indexById[r.classId];
+      if (idx == null) continue;
+      (cycleByOrder[r.order] ??= []).add(idx);
+      if (r.order > maxOrder) maxOrder = r.order;
+    }
+    final domainCycle = <List<int>>[
+      for (var o = 0; o <= maxOrder; o++)
+        List<int>.unmodifiable(cycleByOrder[o] ?? const []),
+    ];
     // 同口径：覆盖行的 classId 也换算成 classes 下标。
     final dayOverrides = <int, int>{};
     for (final r in overrideRows) {
@@ -87,8 +99,28 @@ class ActiveSchedule {
         (i) => i < offsets.length ? offsets[i] : (i - schedule.ourTeamIndex),
       ),
       dayOverrides: dayOverrides,
+      restRule: parseRestRule(schedule.restRule),
     );
   }
+}
+
+/// `rest_rule` 列 → [RestRule]；null / 空 / 坏 JSON 都按「不用规则」处理。
+RestRule parseRestRule(String? raw) {
+  if (raw == null || raw.trim().isEmpty) return const RestRule();
+  try {
+    final decoded = jsonDecode(raw);
+    if (decoded is Map<String, dynamic>) return RestRule.fromJson(decoded);
+    if (decoded is Map) {
+      return RestRule.fromJson(Map<String, dynamic>.from(decoded));
+    }
+  } catch (_) {}
+  return const RestRule();
+}
+
+/// [RestRule] → `rest_rule` 列；不用规则存 null（省得库里攒 `"{"mode":"none"...}"`）。
+String? encodeRestRule(RestRule rule) {
+  if (rule.isNone) return null;
+  return jsonEncode(rule.toJson());
 }
 
 /// 时间线上的全部方案（已装配成领域模型）+ 按天解析面。
@@ -133,6 +165,7 @@ extension ShiftClassRowX on ShiftClassRow {
         startMinute: startMinute,
         endMinute: endMinute,
         isRest: isRest,
+        isDuty: isDuty,
         color: color,
         alarmEnabled: alarmEnabled,
         alarms: alarms,
@@ -355,10 +388,10 @@ class AppRepository {
       // 这里只清系列本身；漏了的话，下次打开 App 生成器会照着老系列再建出行来，
       // 用户看到的就是「清空重置之后待办又冒出来了」。
       await db.delete(db.recurringSeriesRows).go();
-      // 这两张与排班表没有外键关系，此前被漏掉：用户重置完发现自定义闹钟还在响、
-      // 攒的模板还在「新建排班」里，会当成 bug（2026-10-01 反馈）。
+      // 这张与排班表没有外键关系，此前被漏掉：用户重置完发现自定义闹钟还在响、
+      // 会当成 bug（2026-10-01 反馈）。「我的模板」表已在 schema 14 删掉，
+      // 这里不用再清它。
       await db.delete(db.customAlarms).go();
-      await db.delete(db.customTemplates).go();
     });
     await seedIfEmpty(db);
   }
@@ -529,71 +562,17 @@ class AppRepository {
 
   /// 全部自定义模板，**新存的在前**（最近用过的多半最相关）。
   ///
-  /// 一次性读取而不是流：选择页是短命页面，进来读一次就够 —— 页内的改名 / 删除
-  /// 由调用方 `ref.invalidate` 重新读（见 `savedTemplatesProvider`）。**刻意不用
-  /// `watch()`**：drift 的查询流在取消时会排一个零时长定时器清理缓存，而 widget
-  /// 测试在测试体结束时立刻校验「没有待处理的定时器」—— 用流的话每条挂这个页面
-  /// 的用例都要额外拆一次树（见 `calendar_screen_test.dart` 的 `_disposeCalendar`），
-  /// 这里不必付这个代价。
-  Future<List<ScheduleTemplate>> listTemplates() async {
-    final q = db.select(db.customTemplates)
-      ..orderBy([
-        (t) => OrderingTerm.desc(t.createdAt),
-        (t) => OrderingTerm.desc(t.id),
-      ]);
-    return _decodeTemplates(await q.get());
-  }
-
-  /// 存一份模板。[ScheduleTemplate.id] 会被忽略（永远是新增一条）——
-  /// 同名再存一次就是两条，用户想合并自己在选择页删。
-  Future<int> saveTemplate(ScheduleTemplate t) {
-    return db.into(db.customTemplates).insert(
-          CustomTemplatesCompanion.insert(
-            name: t.name,
-            classes: encodeTemplateClasses(t.classes),
-            cycle: encodeTemplateCycle(t.cycle),
-            teamCount: t.teamCount,
-            teamOffsets: encodeTemplateOffsets(t.teamOffsets),
-            createdAt: DateTime.now(),
-          ),
-        );
-  }
-
-  Future<void> renameTemplate(int id, String name) async {
-    await (db.update(db.customTemplates)..where((t) => t.id.equals(id)))
-        .write(CustomTemplatesCompanion(name: Value(name)));
-  }
-
-  Future<void> deleteTemplate(int id) async {
-    await (db.delete(db.customTemplates)..where((t) => t.id.equals(id))).go();
-  }
-
-  /// 逐行解码，坏数据（班次定义解不出来）**跳过这一条**而不是抛 ——
-  /// 一格坏 JSON 不该让整个模板库消失。
-  List<ScheduleTemplate> _decodeTemplates(List<CustomTemplate> rows) {
-    final out = <ScheduleTemplate>[];
-    for (final r in rows) {
-      final classes = decodeTemplateClasses(r.classes);
-      if (classes.isEmpty) continue;
-      out.add(ScheduleTemplate(
-        id: r.id,
-        name: r.name,
-        classes: classes,
-        cycle: decodeTemplateCycle(r.cycle),
-        teamCount: r.teamCount,
-        teamOffsets: decodeTemplateOffsets(r.teamOffsets),
-      ));
-    }
-    return out;
-  }
-
+  /// 「我的模板」已在 v0.11.3 删除（模板系统整体砍掉，改走配置文件导入/导出）。
+  /// 这里不留 CRUD —— 表在 schema 14 的迁移里删掉了。
+  ///
   /// 保存（新建或更新）一套排班方案并替换其班次。
   Future<int> saveSchedule({
     int? scheduleId,
     required String name,
     required DateTime anchorDate,
     required List<ShiftClass> classes,
-    required List<int> cycle,
+    required List<List<int>> cycle,
+    RestRule restRule = const RestRule(),
     bool makeCurrent = true,
     int teamCount = 4,
     List<String> teamNames = const ['一班', '二班', '三班', '四班'],
@@ -615,6 +594,7 @@ class AppRepository {
                 teamNames: Value(joinTeamNames(teamNames)),
                 ourTeamIndex: Value(ourTeamIndex),
                 teamOffsets: Value(joinTeamOffsets(teamOffsets)),
+                restRule: Value(encodeRestRule(restRule)),
               ),
             );
       } else {
@@ -628,6 +608,7 @@ class AppRepository {
           teamNames: Value(joinTeamNames(teamNames)),
           ourTeamIndex: Value(ourTeamIndex),
           teamOffsets: Value(joinTeamOffsets(teamOffsets)),
+          restRule: Value(encodeRestRule(restRule)),
         ));
       }
 
@@ -669,6 +650,7 @@ class AppRepository {
             startMinute: Value(c.startMinute),
             endMinute: Value(c.endMinute),
             isRest: Value(c.isRest),
+            isDuty: Value(c.isDuty),
             color: Value(c.color),
             alarmEnabled: Value(c.alarmEnabled),
           ));
@@ -683,6 +665,7 @@ class AppRepository {
                   startMinute: Value(c.startMinute),
                   endMinute: Value(c.endMinute),
                   isRest: Value(c.isRest),
+                  isDuty: Value(c.isDuty),
                   color: Value(c.color),
                   alarmEnabled: Value(c.alarmEnabled),
                 ),
@@ -727,16 +710,19 @@ class AppRepository {
             .go();
       }
 
+      // 周期：一行 = 一天的一个班次（一天可叠多个班次，各占一行，
+      // 同 order）。读回时按 order 分组（见 `ActiveSchedule.toDomain`）。
       for (var i = 0; i < cycle.length; i++) {
-        final ci = cycle[i];
-        if (ci < 0 || ci >= classIds.length) continue;
-        await db.into(db.shiftCycleRows).insert(
-              ShiftCycleRowsCompanion.insert(
-                scheduleId: id,
-                order: i,
-                classId: classIds[ci],
-              ),
-            );
+        for (final ci in cycle[i]) {
+          if (ci < 0 || ci >= classIds.length) continue;
+          await db.into(db.shiftCycleRows).insert(
+                ShiftCycleRowsCompanion.insert(
+                  scheduleId: id,
+                  order: i,
+                  classId: classIds[ci],
+                ),
+              );
+        }
       }
       return id;
     });
@@ -1235,19 +1221,8 @@ final scheduleSpansProvider = StreamProvider<List<ScheduleSpanRow>>((ref) {
       .watch();
 });
 
-/// 「我的模板」列表 —— 新建排班的选择页用它多渲染一组卡片。
-///
-/// 一次性读（不是流，理由见 `AppRepository.listTemplates`），但**必须
-/// `autoDispose`**：不带它的 FutureProvider 会把第一次读到的结果缓存一整个
-/// 会话 —— 用户先开过一次「新建排班」（那时还没有模板），之后在编辑器里存下
-/// 一份，再回来**看不到**那一组，直到重启 App。2026-09-21 用户反馈的
-/// 「我保存模板后，没看到呀」就是它（当时先开过选择页）。
-/// autoDispose 之后离开页面即丢缓存，下次进来重新读；页内的改名 / 删除仍由
-/// `ref.invalidate` 即时刷新。
-final savedTemplatesProvider =
-    FutureProvider.autoDispose<List<ScheduleTemplate>>((ref) {
-  return ref.watch(appRepositoryProvider).listTemplates();
-});
+/// 「我的模板」已在 v0.11.3 删除（模板系统整体砍掉，改走配置文件导入/导出）。
+/// 这个 provider 一并删掉 —— 别留着「以后可能用」的死代码。
 
 final eventsProvider = StreamProvider<List<ScheduleEvent>>((ref) {
   final db = ref.watch(databaseProvider);
