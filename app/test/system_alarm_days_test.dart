@@ -15,6 +15,8 @@ class _FixedSource implements ShiftSource {
   String get label => 'fixed';
   @override
   ShiftClass? shiftOn(DateTime date) => shift;
+  @override
+  List<ShiftClass> shiftsOn(DateTime date) => [shift];
 }
 
 ShiftClass _dayShift({int alarmMinute = 7 * 60 + 30}) {

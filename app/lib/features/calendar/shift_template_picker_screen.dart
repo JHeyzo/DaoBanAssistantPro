@@ -98,7 +98,7 @@ class ShiftTemplatePickerScreen extends ConsumerWidget {
           ),
           child: Row(
             children: [
-              Icon(icon, size: 32, color: cs.primary),
+              Icon(icon, size: AppTokens.iconLg, color: cs.primary),
               const SizedBox(width: AppTokens.spaceMd),
               Expanded(
                 child: Column(
