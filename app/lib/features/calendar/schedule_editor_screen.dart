@@ -950,14 +950,15 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
       value: _endTimeText(shift),
       onTap: () async {
         final clock = shift.endClockMinute ?? toMinutes(20, 0);
-        final picked = await showGlassTimePicker(
+        final wasNextDay = shift.endMinute != null && shift.endMinute! >= 1440;
+        final picked = await showGlassEndTimePicker(
           context,
           initialTime: TimeOfDay(hour: clock ~/ 60, minute: clock % 60),
+          initialNextDay: wasNextDay,
         );
         if (picked == null) return;
-        final base = picked.hour * 60 + picked.minute; // 0..1439
-        final wasNextDay = shift.endMinute != null && shift.endMinute! >= 1440;
-        onPick(base + (wasNextDay ? 1440 : 0));
+        final base = picked.time.hour * 60 + picked.time.minute; // 0..1439
+        onPick(base + (picked.nextDay ? 1440 : 0));
       },
     );
   }

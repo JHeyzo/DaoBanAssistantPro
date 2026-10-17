@@ -138,6 +138,155 @@ class _GlassTimePickerSheetState extends State<_GlassTimePickerSheet> {
   }
 }
 
+/// 带「次日」开关的结束时间选择器：用于班次结束时间，可手动切换是否跨日。
+/// 返回 (时间, 是否次日)。`initialNextDay` 为当前是否次日。
+Future<({TimeOfDay time, bool nextDay})?> showGlassEndTimePicker(
+  BuildContext context, {
+  required TimeOfDay initialTime,
+  required bool initialNextDay,
+}) {
+  return showGlassSheet<({TimeOfDay time, bool nextDay})>(
+    context: context,
+    isScrollControlled: true,
+    builder: (context) => _GlassEndTimePickerSheet(
+      initialTime: initialTime,
+      initialNextDay: initialNextDay,
+    ),
+  );
+}
+
+class _GlassEndTimePickerSheet extends StatefulWidget {
+  const _GlassEndTimePickerSheet({
+    required this.initialTime,
+    required this.initialNextDay,
+  });
+  final TimeOfDay initialTime;
+  final bool initialNextDay;
+
+  @override
+  State<_GlassEndTimePickerSheet> createState() =>
+      _GlassEndTimePickerSheetState();
+}
+
+class _GlassEndTimePickerSheetState extends State<_GlassEndTimePickerSheet> {
+  late int _hour = widget.initialTime.hour;
+  late int _minute = widget.initialTime.minute;
+  late bool _nextDay = widget.initialNextDay;
+
+  Widget _wheel({
+    required int itemCount,
+    required int initialItem,
+    required ValueChanged<int> onChanged,
+  }) {
+    return CupertinoPicker(
+      scrollController: FixedExtentScrollController(initialItem: initialItem),
+      itemExtent: 40,
+      onSelectedItemChanged: onChanged,
+      selectionOverlay: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppTokens.radiusM),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
+          ),
+        ),
+      ),
+      children: List.generate(itemCount, (i) {
+        return Center(
+          child: Text(
+            '$i'.padLeft(2, '0'),
+            style: AppTokens.dialogTitle,
+          ),
+        );
+      }),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassPanel(
+      solid: true,
+      margin: const EdgeInsets.all(12),
+      borderRadius: const BorderRadius.all(Radius.circular(AppTokens.radiusXL)),
+      child: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) => Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  L10n.selectTime,
+                  style: AppTokens.titleStrong,
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: (constraints.maxHeight - 150).clamp(96.0, 180.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _wheel(
+                          itemCount: 24,
+                          initialItem: _hour,
+                          onChanged: (i) => _hour = i,
+                        ),
+                      ),
+                      const Text(':', style: AppTokens.bigNumber),
+                      Expanded(
+                        child: _wheel(
+                          itemCount: 60,
+                          initialItem: _minute,
+                          onChanged: (i) => _minute = i,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // 次日开关
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(L10n.t('次日结束', 'Ends next day'),
+                        style: AppTokens.rowPrimary),
+                    CupertinoSwitch(
+                      value: _nextDay,
+                      onChanged: (v) => setState(() => _nextDay = v),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    GlassActionButton(
+                      onPressed: () => Navigator.pop(context),
+                      label: L10n.cancel,
+                    ),
+                    GlassActionButton(
+                      variant: GlassActionVariant.primary,
+                      onPressed: () {
+                        Haptics.select();
+                        Navigator.pop(
+                          context,
+                          (
+                            time: TimeOfDay(hour: _hour, minute: _minute),
+                            nextDay: _nextDay
+                          ),
+                        );
+                      },
+                      label: L10n.confirm,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// 玻璃日期选择器：底部玻璃弹层 + 迷你日历网格（点选即返回）。
 Future<DateTime?> showGlassDatePicker(
   BuildContext context, {
