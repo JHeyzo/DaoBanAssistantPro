@@ -865,7 +865,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                                   if (c.alarms[k].postDutyMinute != null)
                                     IconButton(
                                       icon: const Icon(Icons.clear_outlined,
-                                          size: 16),
+                                          size: AppTokens.iconSm),
                                       onPressed: () => setState(() =>
                                           _classes[index] = _editClass(
                                               _classes[index],
