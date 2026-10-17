@@ -49,3 +49,5 @@ desktop.ini
 # ---- Python 构建缓存 ----
 __pycache__/
 *.pyc
+keystore/
+app/android/key.properties
