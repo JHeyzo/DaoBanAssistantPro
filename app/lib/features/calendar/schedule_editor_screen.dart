@@ -1500,7 +1500,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
         for (final w in weekdays)
           GlassChoiceChip(
             label: L10n.weekdayShort(w),
-            color: const Color(0xFF2F7CF6),
+            color: AppTokens.chipWorkText,
             selected: _restRule.fixedWeekdays.contains(w),
             onTap: () => setState(() {
               final set = Set<int>.of(_restRule.fixedWeekdays);
@@ -1586,7 +1586,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
       BuildContext context, String label, Map<int, int> map) {
     return GlassChoiceChip(
       label: label,
-      color: const Color(0xFF2F7CF6),
+      color: AppTokens.chipWorkText,
       selected: _mapEquals(_restRule.followDutyMap, map),
       onTap: () => setState(() {
         _restRule = RestRule(
@@ -1612,7 +1612,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
       padding: const EdgeInsets.only(right: AppTokens.spaceXs),
       child: GlassChoiceChip(
         label: restDay == null ? L10n.noRest : L10n.weekdayShort(restDay),
-        color: const Color(0xFF2F7CF6),
+        color: AppTokens.chipWorkText,
         selected: selected,
         onTap: () => setState(() {
           final map = Map<int, int>.of(_restRule.followDutyMap);
@@ -2020,7 +2020,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
               child: SingleChildScrollView(
                 child: SelectableText(
                   json,
-                  style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                  style: AppTokens.microText,
                 ),
               ),
             ),
