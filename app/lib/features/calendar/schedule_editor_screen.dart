@@ -74,7 +74,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
 
   /// 闹钟行展开状态：key 为 "$classIndex-$alarmIndex"。
   /// 展开后显示「值班次日时间」与「值班当天跳过」两个按条配置。
-  final Set<String> _expandedAlarms = {};
+  /// 方案三：行内小标签，无需展开状态。
 
   /// 本方案已设置的按天调整天数（只用于预览上方那行提示）。
   ///
@@ -799,28 +799,10 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                                     if (j != k) c.alarms[j],
                                 ])),
                           ),
-                          // 展开按钮：显示「值班次日时间」与「值班当天跳过」设置。
-                          IconButton(
-                            key: Key('shift-alarm-expand-$index-$k'),
-                            icon: Icon(
-                              _expandedAlarms.contains('$index-$k')
-                                  ? Icons.expand_less_outlined
-                                  : Icons.expand_more_outlined,
-                              size: AppTokens.iconSm,
-                            ),
-                            onPressed: () => setState(() {
-                              final key = '$index-$k';
-                              if (_expandedAlarms.contains(key)) {
-                                _expandedAlarms.remove(key);
-                              } else {
-                                _expandedAlarms.add(key);
-                              }
-                            }),
-                          ),
                         ],
                       ),
-                      // 展开的按条设置：值班次日时间 + 值班当天跳过。
-                      if (_expandedAlarms.contains('$index-$k'))
+                      // 方案三：行内小标签 —— 不用展开，直接显示两个规则标签。
+                      // 点「次日」标签改时间，点「值班跳过」切换开关。
                         Padding(
                           padding: const EdgeInsets.only(
                             top: AppTokens.spaceXs,
@@ -840,87 +822,114 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                                           ? '跟平时一样'
                                           : null,
                                       onPick: (m) => setState(() =>
-                                          _classes[index] = _editClass(
-                                              _classes[index],
-                                              alarms: [
-                                                for (var j = 0;
-                                                    j < c.alarms.length;
-                                                    j++)
-                                                  j == k
-                                                      ? ShiftAlarm(
-                                                          minute: c
-                                                              .alarms[j].minute,
-                                                          label: c.alarms[j]
-                                                              .label,
-                                                          postDutyMinute: m,
-                                                          skipOnDutyDay: c
-                                                              .alarms[j]
-                                                              .skipOnDutyDay,
-                                                        )
-                                                      : c.alarms[j],
-                                              ])),
-                                    ),
+                      // 方案三：行内小标签 —— 不用展开，直接显示两个规则标签。
+                      // 点「次日」标签改时间，点「值班跳过」切换开关。
+                      Padding(
+                        padding: const EdgeInsets.only(
+                          top: AppTokens.spaceXs,
+                          left: AppTokens.spaceMd,
+                        ),
+                        child: Row(
+                          children: [
+                            // 次日时间标签：点一下弹时间选择器。
+                            GestureDetector(
+                              onTap: () async {
+                                final picked = await showGlassTimePicker(
+                                  context,
+                                  initial: c.alarms[k].postDutyMinute == null
+                                      ? TimeOfDay.fromDateTime(DateTime.now())
+                                      : TimeOfDay(
+                                          hour: c.alarms[k].postDutyMinute! ~/ 60,
+                                          minute: c.alarms[k].postDutyMinute! % 60),
+                                );
+                                if (picked != null) {
+                                  setState(() => _classes[index] = _editClass(
+                                      _classes[index],
+                                      alarms: [
+                                        for (var j = 0; j < c.alarms.length; j++)
+                                          j == k
+                                              ? ShiftAlarm(
+                                                  minute: c.alarms[j].minute,
+                                                  label: c.alarms[j].label,
+                                                  postDutyMinute: picked.hour * 60 + picked.minute,
+                                                  skipOnDutyDay: c.alarms[j].skipOnDutyDay,
+                                                )
+                                              : c.alarms[j],
+                                      ]));
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppTokens.spaceSm,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: c.alarms[k].postDutyMinute == null
+                                      ? AppTokens.chipWorkBg
+                                      : AppTokens.primary.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(AppTokens.radiusFull),
+                                  border: Border.all(
+                                    color: c.alarms[k].postDutyMinute == null
+                                        ? AppTokens.chipWorkBorder
+                                        : AppTokens.primary,
                                   ),
-                                  // 清除按钮：把「值班次日时间」设回 null（跟平时一样）。
-                                  if (c.alarms[k].postDutyMinute != null)
-                                    IconButton(
-                                      icon: const Icon(Icons.clear_outlined,
-                                          size: AppTokens.iconSm),
-                                      onPressed: () => setState(() =>
-                                          _classes[index] = _editClass(
-                                              _classes[index],
-                                              alarms: [
-                                                for (var j = 0;
-                                                    j < c.alarms.length;
-                                                    j++)
-                                                  j == k
-                                                      ? ShiftAlarm(
-                                                          minute: c
-                                                              .alarms[j].minute,
-                                                          label: c.alarms[j]
-                                                              .label,
-                                                          postDutyMinute: null,
-                                                          skipOnDutyDay: c
-                                                              .alarms[j]
-                                                              .skipOnDutyDay,
-                                                        )
-                                                      : c.alarms[j],
-                                              ])),
-                                    ),
-                                ],
-                              ),
-                              const SizedBox(height: AppTokens.spaceXs),
-                              // 「值班当天跳过」单独一行，避免跟时间 chip 挤。
-                              Row(
-                                children: [
-                                  const Text('值班当天跳过'),
-                                  const Spacer(),
-                                  GlassSwitch(
-                                    value: c.alarms[k].skipOnDutyDay,
-                                    onChanged: (v) => setState(() =>
-                                        _classes[index] =
-                                            _editClass(_classes[index], alarms: [
-                                              for (var j = 0;
-                                                  j < c.alarms.length;
-                                                  j++)
-                                                j == k
-                                                    ? ShiftAlarm(
-                                                        minute: c
-                                                            .alarms[j].minute,
-                                                        label:
-                                                            c.alarms[j].label,
-                                                        postDutyMinute: c
-                                                            .alarms[j]
-                                                            .postDutyMinute,
-                                                        skipOnDutyDay: v,
-                                                      )
-                                                    : c.alarms[j],
-                                            ])),
+                                ),
+                                child: Text(
+                                  c.alarms[k].postDutyMinute == null
+                                      ? '次日跟平时'
+                                      : '次日 ${formatClock(c.alarms[k].postDutyMinute!)}',
+                                  style: AppTokens.tinyLabel.copyWith(
+                                    color: c.alarms[k].postDutyMinute == null
+                                        ? AppTokens.inkMuted(context)
+                                        : AppTokens.primary,
                                   ),
-                                ],
+                                ),
                               ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(width: AppTokens.spaceXs),
+                            // 值班跳过标签：点一下切换。
+                            GestureDetector(
+                              onTap: () => setState(() => _classes[index] =
+                                  _editClass(_classes[index], alarms: [
+                                for (var j = 0; j < c.alarms.length; j++)
+                                  j == k
+                                      ? ShiftAlarm(
+                                          minute: c.alarms[j].minute,
+                                          label: c.alarms[j].label,
+                                          postDutyMinute: c.alarms[j].postDutyMinute,
+                                          skipOnDutyDay: !c.alarms[j].skipOnDutyDay,
+                                        )
+                                      : c.alarms[j],
+                              ])),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppTokens.spaceSm,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: c.alarms[k].skipOnDutyDay
+                                      ? AppTokens.primary.withOpacity(0.15)
+                                      : AppTokens.chipWorkBg,
+                                  borderRadius: BorderRadius.circular(AppTokens.radiusFull),
+                                  border: Border.all(
+                                    color: c.alarms[k].skipOnDutyDay
+                                        ? AppTokens.primary
+                                        : AppTokens.chipWorkBorder,
+                                  ),
+                                ),
+                                child: Text(
+                                  '值班跳过',
+                                  style: AppTokens.tinyLabel.copyWith(
+                                    color: c.alarms[k].skipOnDutyDay
+                                        ? AppTokens.primary
+                                        : AppTokens.inkMuted(context),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                         ),
                     ],
                   ),
