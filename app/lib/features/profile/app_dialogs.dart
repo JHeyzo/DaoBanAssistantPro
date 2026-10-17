@@ -39,7 +39,13 @@ void showAppInfoDialog(
   );
 }
 
-const String _changelogZh = 'v0.11.1\n'
+const String _changelogZh = 'v0.11.2\n'
+    '· 去掉每次打开 App 都会跳出来的「全屏通知」授权：ColorOS 适配版的闹钟走系统时钟响，本来就不需要这个权限，之前是每次冷启动白跳一次设置页\n'
+    '· 新增「值班次日闹钟」：前一天是值班时，次日第一条班次闹钟自动改用单独设的时间（只换起床那条）。在「闹钟」页开关、设时间、认值班班种；排定与闹钟页显示是同一套算法，不会对不上\n'
+    '· 从模板新建排班时，可以选「周期第 1 天是几号」了（默认今天，可拨到昨天/明天/任意天）—— 此前写死当天，值班相位对不上只能去编辑器里手动挪\n'
+    '\n'
+
+    'v0.11.1\n'
     '· 系统闹钟通道（ColorOS 适配）：App 不再自己响铃 —— 每天 00:30 按排班表把当天闹钟静默写入系统时钟，由系统时钟响铃；OPPO 手表通过「手机闹钟提醒」同步（免打扰+睡眠模式下仍跟随）\n'
     '· 新增 28 天排班模板「长白班，每 4 天值一次班，每周休一天」：白班 08:30–17:00、值班 17:00–次日 08:30，每 4 天一值、每周休一天（周六/周日）；28 天循环自动延展，配一年只需按季度衔接多套（周期起始日须锚定周一）\n'
     '· 待办提醒统一走普通通知（不再有全屏响铃样式）\n'
@@ -101,16 +107,16 @@ const String _changelogZh = 'v0.11.1\n'
     '· 修好上一版带进来的一处问题：拖完日历上那枚选中的块、再点一下日期，它会自己抽一下（陈旧的速度被反复灌回来）\n'
     '· 按住那枚块不动时，它的形变现在会自己收回去（之前会一直挂着）\n\n'
 
-    'v0.10.15\n'
-    '· 日历上那枚选中的方块，在「液态玻璃」档下变成一枚真的玻璃透镜：按住时四面鼓出来、底下浮起一层影子\n'
-    '· 拖动时它跟着手指的方向拉长、变扁，边上带一圈彩色折射光（停下就没了）\n'
-    '· 它扫过哪一天，那一天的字（日期 / 班次 / 农历）就被它的边缘轻轻挤一下\n'
-    '· 液态玻璃关着的时候，日历与之前一模一样（一个像素都没动）\n\n'
-
         '\n'
 ;
 
-const String _changelogEn = 'v0.11.1\n'
+const String _changelogEn = 'v0.11.2\n'
+    '· Removed the full-screen notification permission prompt that popped up on every launch: the ColorOS build rings via the system clock and never needed that permission — it was a dead settings page every cold start\n'
+    '· New \"Post-duty alarm\": when the previous day was a duty shift, the first shift alarm the next day automatically uses a separate time (only the wake-up one). Toggle it, set the time and pick the duty shift on the Alarm tab; scheduling and display share the same logic\n'
+    '· Creating a schedule from a template now asks \"which date is day 1 of the cycle?\" (defaults to today, can be yesterday / tomorrow / any day) — it used to be hard-coded to today, forcing phase fixes through the editor\n'
+    '\n'
+
+    'v0.11.1\n'
     '· System alarm channel (ColorOS): the app no longer rings by itself — every day at 00:30 it silently writes that day\'s alarms into the system clock, which rings instead; OPPO watches sync via "phone alarm alerts" (follows even under DND + sleep mode)\n'
     '· New 28-day template "Day shift, on duty every 4 days, one rest day per week": day 08:30–17:00, duty 17:00–08:30 next day, duty every 4 days, one rest day (Sat/Sun) per week; the 28-day cycle extends indefinitely — chain quarterly sets to cover a year (cycle start must anchor on Monday)\n'
     '· Todo reminders are plain notifications now (no more full-screen ringing style)\n'
@@ -171,12 +177,6 @@ const String _changelogEn = 'v0.11.1\n'
     'v0.10.16\n'
     '· Fixed a regression from the previous version: after dragging the calendar selection block, tapping a day made it stretch and flash once (a stale drag velocity was re-applied)\n'
     '· Holding the block still now lets its stretch relax (it used to stay stretched)\n\n'
-
-    'v0.10.15\n'
-    '· The selected day block on the calendar becomes a real glass lens in the Liquid Glass tier: it bulges out on all four sides while held, with a lifted shadow\n'
-    '· While you drag it stretches along the direction of travel and flattens, with a prismatic rim that only shows while it is moving\n'
-    '· As it sweeps over a day, that day text (date / shift / lunar) gets a slight squeeze at its edge\n'
-    '· With Liquid Glass off the calendar is pixel-for-pixel what it was\n\n'
 
         '\n'
 ;

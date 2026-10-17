@@ -77,6 +77,23 @@ class _AlarmScreenState extends ConsumerState<AlarmScreen>
     final overrides = ref.watch(shiftAlarmOverridesProvider).valueOrNull ??
         const <int, bool>{};
     ref.watch(appSettingsProvider.select((s) => s.language)); // 语言切换时重建（**只订阅语言** —— 全量 watch 会让拨触觉开关也白重建整页）
+    // 值班次日规则：显示与排定必须同解（见 `effectiveDayAlarms` 的注释）。
+    final postDutyState = ref.watch(appSettingsProvider.select((s) => (
+          s.postDutyAlarmEnabled,
+          s.postDutyAlarmMinute,
+          s.postDutyClassName,
+        )));
+    final postDutyRule = postDutyState.$1 &&
+            postDutyState.$2 != null &&
+            postDutyState.$3.trim().isNotEmpty
+        ? PostDutyAlarmRule(
+            dutyClassName: postDutyState.$3.trim(),
+            minute: postDutyState.$2!)
+        : null;
+    final dutyClasses = (async.valueOrNull?.currentDomain?.classes ??
+            const <ShiftClass>[])
+        .where((c) => !c.isRest)
+        .toList();
 
     final now = DateTime.now();
     final today = dateOnly(now);
@@ -88,10 +105,15 @@ class _AlarmScreenState extends ConsumerState<AlarmScreen>
         if (t == null || t.isRest || !t.alarmEnabled || t.alarms.isEmpty) {
           continue;
         }
+        // 值班次日命中的那天，显示的必须是规则时刻（与实际排定同解）。
+        final effAlarms = effectiveDayAlarms(chain, date, t, postDutyRule);
         // 这个班次当天**只要还有没响过的闹钟**就保留这一行（响过的自动隐藏）。
         // 判据不能只看第一条 —— 见 `hasPendingShiftAlarm`。
-        if (!hasPendingShiftAlarm(t, date, now)) continue;
-        shiftAlarms.add(_ShiftAlarmEntry(date, t, overrides[dayNumber(date)] ?? true));
+        if (!effAlarms.any((a) => shiftAlarmFireAt(date, t, a).isAfter(now))) {
+          continue;
+        }
+        shiftAlarms.add(_ShiftAlarmEntry(
+            date, t, overrides[dayNumber(date)] ?? true, effAlarms));
       }
     }
 
@@ -136,6 +158,9 @@ class _AlarmScreenState extends ConsumerState<AlarmScreen>
               ),
             ),
             const SizedBox(height: 12),
+            // 值班次日闹钟：前一天是值班时，次日第一条班次闹钟改用此时刻。
+            _postDutyCard(context, dutyClasses),
+            const SizedBox(height: 12),
             _sectionTitleRow(context, L10n.upcoming30),
             Expanded(child: _shiftAlarmSection(context, chain, shiftAlarms)),
             const SizedBox(height: 8),
@@ -154,6 +179,154 @@ class _AlarmScreenState extends ConsumerState<AlarmScreen>
       floatingActionButtonLocation: const _AboveCapsuleBarLocation(),
       floatingActionButton: _bottomActionBar(context),
     );
+  }
+
+  /// 「值班次日闹钟」设置卡。
+  ///
+  /// 规则存 SharedPreferences（`AppSettings`）：排定（`rescheduleAll` 经
+  /// `loadPostDutyRule`）与显示（build 里同一份 select）读的是同一处。
+  /// 每次改动都立即 `_reschedule()`，未来 30 天的计划当场重算。
+  Widget _postDutyCard(BuildContext context, List<ShiftClass> dutyClasses) {
+    final s = ref.watch(appSettingsProvider.select((p) => (
+          p.postDutyAlarmEnabled,
+          p.postDutyAlarmMinute,
+          p.postDutyClassName,
+        )));
+    final enabled = s.$1;
+    final minute = s.$2;
+    final className = s.$3;
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.all(AppTokens.spaceMd),
+        decoration: BoxDecoration(
+          color: cs.primaryContainer,
+          borderRadius: BorderRadius.circular(AppTokens.radiusS),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.bedtime_outlined, color: cs.primary),
+                const SizedBox(width: AppTokens.spaceSm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(L10n.postDutyAlarmTitle,
+                          style: AppTokens.titleStrong),
+                      Text(L10n.postDutyAlarmHint,
+                          style: Theme.of(context).textTheme.bodySmall),
+                    ],
+                  ),
+                ),
+                GlassSwitch(
+                  value: enabled,
+                  onChanged: (v) async {
+                    final notifier = ref.read(appSettingsProvider.notifier);
+                    if (v) {
+                      // 首次打开：自动认值班班种、给一个默认时刻，省两次手。
+                      if (className.trim().isEmpty) {
+                        final sug = suggestDutyClassName(dutyClasses);
+                        if (sug.isNotEmpty) {
+                          await notifier.setPostDutyClassName(sug);
+                        }
+                      }
+                      if (minute == null) {
+                        await notifier.setPostDutyAlarmMinute(
+                            defaultPostDutyMinute(dutyClasses));
+                      }
+                    }
+                    await notifier.setPostDutyAlarmEnabled(v);
+                    _reschedule();
+                  },
+                ),
+              ],
+            ),
+            if (enabled) ...[
+              const SizedBox(height: 4),
+              _postDutyRow(
+                context,
+                icon: Icons.schedule_outlined,
+                label: L10n.postDutyAlarmTime,
+                value: minute == null ? L10n.notSet : _fmt(minute),
+                onTap: () async {
+                  final tod = await showGlassTimePicker(
+                    context,
+                    initialTime: minute == null
+                        ? const TimeOfDay(hour: 7, minute: 45)
+                        : TimeOfDay(
+                            hour: minute ~/ 60, minute: minute % 60),
+                  );
+                  if (tod == null || !context.mounted) return;
+                  await ref
+                      .read(appSettingsProvider.notifier)
+                      .setPostDutyAlarmMinute(tod.hour * 60 + tod.minute);
+                  _reschedule();
+                },
+              ),
+              _postDutyRow(
+                context,
+                icon: Icons.work_outline,
+                label: L10n.postDutyAlarmClass,
+                value:
+                    className.trim().isEmpty ? L10n.notSet : className.trim(),
+                onTap: dutyClasses.isEmpty
+                    ? null
+                    : () async {
+                        final picked =
+                            await showGlassOptionPicker<String>(
+                          context,
+                          title: L10n.postDutyAlarmClass,
+                          options:
+                              dutyClasses.map((c) => c.name).toList(),
+                          labelOf: (n) => n,
+                          selected: className,
+                        );
+                        if (picked == null || !context.mounted) return;
+                        await ref
+                            .read(appSettingsProvider.notifier)
+                            .setPostDutyClassName(picked);
+                        _reschedule();
+                      },
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _postDutyRow(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+    required VoidCallback? onTap,
+  }) {
+    final tile = ListTile(
+      contentPadding: EdgeInsets.zero,
+      dense: true,
+      leading: Icon(icon,
+          size: 20, color: Theme.of(context).colorScheme.primary),
+      title: Text(label),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(value, style: AppTokens.titleStrong),
+          const SizedBox(width: 4),
+          Icon(Icons.chevron_right_outlined,
+              color: AppTokens.inkMuted(context)),
+        ],
+      ),
+      onTap: onTap,
+    );
+    if (onTap == null) {
+      return Opacity(opacity: 0.4, child: tile);
+    }
+    return GlassPressable(child: tile);
   }
 
   Widget _sectionTitleRow(BuildContext context, String title) {
@@ -303,24 +476,23 @@ class _AlarmScreenState extends ConsumerState<AlarmScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                for (var k = 0; k < e.shift.alarms.length; k++)
+                for (var k = 0; k < e.alarms.length; k++)
                   Column(
                     key: Key('alarm-block-${dayNumber(e.date)}-$k'),
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        e.shift.alarms[k].label == null ||
-                                e.shift.alarms[k].label!.trim().isEmpty
-                            ? _fmt(e.shift.alarms[k].minute)
-                            : '${_fmt(e.shift.alarms[k].minute)} '
-                                '${e.shift.alarms[k].label!.trim()}',
+                        e.alarms[k].label == null ||
+                                e.alarms[k].label!.trim().isEmpty
+                            ? _fmt(e.alarms[k].minute)
+                            : '${_fmt(e.alarms[k].minute)} '
+                                '${e.alarms[k].label!.trim()}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTokens.titleStrong,
                       ),
-                      if (alarmFallsOnPreviousDay(
-                          e.shift, e.shift.alarms[k]))
+                      if (alarmFallsOnPreviousDay(e.shift, e.alarms[k]))
                         Text(
                           L10n.prevDay,
                           style: AppTokens.microText.copyWith(color: muted),
@@ -547,10 +719,13 @@ class _AlarmScreenState extends ConsumerState<AlarmScreen>
 }
 
 class _ShiftAlarmEntry {
-  const _ShiftAlarmEntry(this.date, this.shift, this.enabled);
+  const _ShiftAlarmEntry(this.date, this.shift, this.enabled, this.alarms);
   final DateTime date;
   final ShiftClass shift;
   final bool enabled;
+
+  /// 当天实际显示/排定的闹钟（值班次日规则命中时，第一条已被换成规则时刻）。
+  final List<ShiftAlarm> alarms;
 }
 
 String _repeatLabel(CustomAlarm a) {
