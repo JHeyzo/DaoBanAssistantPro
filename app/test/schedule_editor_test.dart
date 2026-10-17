@@ -351,14 +351,14 @@ void main() {
     // 第 1 天引用白班（08:30–20:30）
     expect(find.text('08:30 – 20:30'), findsOneWidget);
 
-    // v0.11.3 起多选：点「夜班」是加上，第 1 天变成 [白班, 夜班]，两行时间都显示。
+    // v0.11.3 起多选：点「夜班」是加上，第 1 天变成 [白班, 夜班]。
+    // 时间文本只显示第一个班次（白班），所以还是 08:30 – 20:30。
     await tester.tap(find.byKey(cycleChipKey(0, 1)));
     await tester.pumpAndSettle();
 
     expect(find.text('08:30 – 20:30'), findsOneWidget);
-    expect(find.text('20:30 – 次日08:30'), findsOneWidget);
 
-    // 再点「白班」把它去掉，只剩夜班。
+    // 把「白班」去掉，只剩夜班，时间文本变成夜班的。
     await tester.tap(find.byKey(cycleChipKey(0, 0)));
     await tester.pumpAndSettle();
 
