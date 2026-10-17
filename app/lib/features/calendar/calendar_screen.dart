@@ -398,10 +398,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     final days = DateTime(_month.year, _month.month + 1, 0).day;
     for (var d = 1; d <= days; d++) {
       final shifts = chain.shiftsOn(DateTime(_month.year, _month.month, d));
-      // 按天互斥计数，优先级休 > 值 > 白（用户 2026-10-17 定）。
-      final primary = primaryByPriority(shifts);
-      if (primary == null) continue;
-      counts.update(primary.shortLabel, (n) => n + 1, ifAbsent: () => 1);
+      // 按标签独立计数（用户 2026-10-17 改）：一天可同时计入多个标签。
+      // 如白+值那天，白和值各+1；只有纯休息日才只计休。
+      // 保持用 shortLabel 做 key（跨方案同名合并，如两个方案的"休"合计数）。
+      final seen = <String>{};
+      for (final s in shifts) {
+        // 同一天同标签只计一次（如有两个白班，白只+1）。
+        if (seen.add(s.shortLabel)) {
+          counts.update(s.shortLabel, (n) => n + 1, ifAbsent: () => 1);
+        }
+      }
     }
     if (counts.isEmpty) return null;
     final parts = [for (final e in counts.entries) '${e.key}${e.value}'];
