@@ -13,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shiftassistantpro/core/design_tokens.dart';
 import 'package:shiftassistantpro/core/glass/glass.dart';
 import 'package:shiftassistantpro/core/l10n.dart';
@@ -299,6 +300,9 @@ void main() {
   setUpAll(() async {
     await initializeDateFormatting('zh');
   });
+  // v0.11.2 起保存会走 rescheduleAll → AppSettings.loadPostDutyRule()
+  // 读 SharedPreferences；测试里给个空 mock，规则默认关闭。
+  setUp(() => SharedPreferences.setMockInitialValues({}));
 
   testWidgets('周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰',
       (tester) async {
