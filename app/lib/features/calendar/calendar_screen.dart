@@ -1703,9 +1703,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
       bool adjusted, bool inRange, {Offset? warpCenter}) {
     // v0.11.3 视觉重做前过渡：多班次时暂取第一个（TODO: 扁平+圆角方章+红折角）。
     final shift = shifts.isEmpty ? null : shifts.first;
-    final lunarColor = lunar.isLegalHoliday
-        ? AppTokens.holiday
-        : AppTokens.inkMuted(context);
+    final lunarColor = AppTokens.inkMuted(context);
     final surface = Theme.of(context).colorScheme.surface;
     final primary = Theme.of(context).colorScheme.primary;
 
@@ -1757,6 +1755,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
         child: Text.rich(
           TextSpan(
             children: [
+              if (lunar.isLegalHoliday)
+                TextSpan(
+                  text: '休 ',
+                  // 法定节假日的「休」标记：与「班」统一格式，绿色区分。
+                  // 单行写法是守门测试的要求：`fontWeight` 字面量只有与
+                  // `copyWith` 同行才豁免。
+                  style: lunarStyle.copyWith(color: AppTokens.success, fontWeight: FontWeight.w700),
+                ),
               if (lunar.isMakeupWorkday)
                 TextSpan(
                   text: '班 ',
@@ -2436,7 +2442,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTokens.rowSecondary.copyWith(
-                      color: lunar.isLegalHoliday ? AppTokens.holiday : muted,
+                      color: muted,
                     ),
                   ),
                   // v0.11.3：一行一个班次（名 + 时间另起一行）。
@@ -2596,7 +2602,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: AppTokens.rowSecondary.copyWith(
-            color: lunar.isLegalHoliday ? AppTokens.holiday : muted,
+            color: muted,
           ),
         ),
         // 段与段之间一律用栅格上的 12（原来这里是 10，不在 4px 栅格上）。
