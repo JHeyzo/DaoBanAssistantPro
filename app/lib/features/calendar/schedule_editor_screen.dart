@@ -1446,7 +1446,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
   }
 
   /// 行政班值班制预设：周四值→周六休，周五值→周日休，周六值→周日休，周日值→周六休。
-  static const Map<int, int> _dutyPresetMap = {4: 6, 5: 7, 6: 7, 7: 6};
+  static const Map<int, int> _dutyPresetMap = {3: 6, 4: 6, 5: 7, 6: 7};
 
   Widget _presetChip(
       BuildContext context, String label, Map<int, int> map) {
