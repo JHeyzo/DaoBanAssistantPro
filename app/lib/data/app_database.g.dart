@@ -1575,8 +1575,25 @@ class $ShiftClassAlarmsTable extends ShiftClassAlarms
   late final GeneratedColumn<String> label = GeneratedColumn<String>(
       'label', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _postDutyMinuteMeta =
+      const VerificationMeta('postDutyMinute');
   @override
-  List<GeneratedColumn> get $columns => [classId, order, minute, label];
+  late final GeneratedColumn<int> postDutyMinute = GeneratedColumn<int>(
+      'post_duty_minute', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _skipOnDutyDayMeta =
+      const VerificationMeta('skipOnDutyDay');
+  @override
+  late final GeneratedColumn<bool> skipOnDutyDay = GeneratedColumn<bool>(
+      'skip_on_duty_day', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("skip_on_duty_day" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  @override
+  List<GeneratedColumn> get $columns =>
+      [classId, order, minute, label, postDutyMinute, skipOnDutyDay];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1609,6 +1626,18 @@ class $ShiftClassAlarmsTable extends ShiftClassAlarms
       context.handle(
           _labelMeta, label.isAcceptableOrUnknown(data['label']!, _labelMeta));
     }
+    if (data.containsKey('post_duty_minute')) {
+      context.handle(
+          _postDutyMinuteMeta,
+          postDutyMinute.isAcceptableOrUnknown(
+              data['post_duty_minute']!, _postDutyMinuteMeta));
+    }
+    if (data.containsKey('skip_on_duty_day')) {
+      context.handle(
+          _skipOnDutyDayMeta,
+          skipOnDutyDay.isAcceptableOrUnknown(
+              data['skip_on_duty_day']!, _skipOnDutyDayMeta));
+    }
     return context;
   }
 
@@ -1626,6 +1655,10 @@ class $ShiftClassAlarmsTable extends ShiftClassAlarms
           .read(DriftSqlType.int, data['${effectivePrefix}minute'])!,
       label: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}label']),
+      postDutyMinute: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}post_duty_minute']),
+      skipOnDutyDay: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}skip_on_duty_day'])!,
     );
   }
 
@@ -1640,11 +1673,15 @@ class ShiftClassAlarm extends DataClass implements Insertable<ShiftClassAlarm> {
   final int order;
   final int minute;
   final String? label;
+  final int? postDutyMinute;
+  final bool skipOnDutyDay;
   const ShiftClassAlarm(
       {required this.classId,
       required this.order,
       required this.minute,
-      this.label});
+      this.label,
+      this.postDutyMinute,
+      required this.skipOnDutyDay});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -1654,6 +1691,10 @@ class ShiftClassAlarm extends DataClass implements Insertable<ShiftClassAlarm> {
     if (!nullToAbsent || label != null) {
       map['label'] = Variable<String>(label);
     }
+    if (!nullToAbsent || postDutyMinute != null) {
+      map['post_duty_minute'] = Variable<int>(postDutyMinute);
+    }
+    map['skip_on_duty_day'] = Variable<bool>(skipOnDutyDay);
     return map;
   }
 
@@ -1664,6 +1705,10 @@ class ShiftClassAlarm extends DataClass implements Insertable<ShiftClassAlarm> {
       minute: Value(minute),
       label:
           label == null && nullToAbsent ? const Value.absent() : Value(label),
+      postDutyMinute: postDutyMinute == null && nullToAbsent
+          ? const Value.absent()
+          : Value(postDutyMinute),
+      skipOnDutyDay: Value(skipOnDutyDay),
     );
   }
 
@@ -1675,6 +1720,8 @@ class ShiftClassAlarm extends DataClass implements Insertable<ShiftClassAlarm> {
       order: serializer.fromJson<int>(json['order']),
       minute: serializer.fromJson<int>(json['minute']),
       label: serializer.fromJson<String?>(json['label']),
+      postDutyMinute: serializer.fromJson<int?>(json['postDutyMinute']),
+      skipOnDutyDay: serializer.fromJson<bool>(json['skipOnDutyDay']),
     );
   }
   @override
@@ -1685,6 +1732,8 @@ class ShiftClassAlarm extends DataClass implements Insertable<ShiftClassAlarm> {
       'order': serializer.toJson<int>(order),
       'minute': serializer.toJson<int>(minute),
       'label': serializer.toJson<String?>(label),
+      'postDutyMinute': serializer.toJson<int?>(postDutyMinute),
+      'skipOnDutyDay': serializer.toJson<bool>(skipOnDutyDay),
     };
   }
 
@@ -1692,12 +1741,17 @@ class ShiftClassAlarm extends DataClass implements Insertable<ShiftClassAlarm> {
           {int? classId,
           int? order,
           int? minute,
-          Value<String?> label = const Value.absent()}) =>
+          Value<String?> label = const Value.absent(),
+          Value<int?> postDutyMinute = const Value.absent(),
+          bool? skipOnDutyDay}) =>
       ShiftClassAlarm(
         classId: classId ?? this.classId,
         order: order ?? this.order,
         minute: minute ?? this.minute,
         label: label.present ? label.value : this.label,
+        postDutyMinute:
+            postDutyMinute.present ? postDutyMinute.value : this.postDutyMinute,
+        skipOnDutyDay: skipOnDutyDay ?? this.skipOnDutyDay,
       );
   ShiftClassAlarm copyWithCompanion(ShiftClassAlarmsCompanion data) {
     return ShiftClassAlarm(
@@ -1705,6 +1759,12 @@ class ShiftClassAlarm extends DataClass implements Insertable<ShiftClassAlarm> {
       order: data.order.present ? data.order.value : this.order,
       minute: data.minute.present ? data.minute.value : this.minute,
       label: data.label.present ? data.label.value : this.label,
+      postDutyMinute: data.postDutyMinute.present
+          ? data.postDutyMinute.value
+          : this.postDutyMinute,
+      skipOnDutyDay: data.skipOnDutyDay.present
+          ? data.skipOnDutyDay.value
+          : this.skipOnDutyDay,
     );
   }
 
@@ -1714,13 +1774,16 @@ class ShiftClassAlarm extends DataClass implements Insertable<ShiftClassAlarm> {
           ..write('classId: $classId, ')
           ..write('order: $order, ')
           ..write('minute: $minute, ')
-          ..write('label: $label')
+          ..write('label: $label, ')
+          ..write('postDutyMinute: $postDutyMinute, ')
+          ..write('skipOnDutyDay: $skipOnDutyDay')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(classId, order, minute, label);
+  int get hashCode =>
+      Object.hash(classId, order, minute, label, postDutyMinute, skipOnDutyDay);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1728,7 +1791,9 @@ class ShiftClassAlarm extends DataClass implements Insertable<ShiftClassAlarm> {
           other.classId == this.classId &&
           other.order == this.order &&
           other.minute == this.minute &&
-          other.label == this.label);
+          other.label == this.label &&
+          other.postDutyMinute == this.postDutyMinute &&
+          other.skipOnDutyDay == this.skipOnDutyDay);
 }
 
 class ShiftClassAlarmsCompanion extends UpdateCompanion<ShiftClassAlarm> {
@@ -1736,12 +1801,16 @@ class ShiftClassAlarmsCompanion extends UpdateCompanion<ShiftClassAlarm> {
   final Value<int> order;
   final Value<int> minute;
   final Value<String?> label;
+  final Value<int?> postDutyMinute;
+  final Value<bool> skipOnDutyDay;
   final Value<int> rowid;
   const ShiftClassAlarmsCompanion({
     this.classId = const Value.absent(),
     this.order = const Value.absent(),
     this.minute = const Value.absent(),
     this.label = const Value.absent(),
+    this.postDutyMinute = const Value.absent(),
+    this.skipOnDutyDay = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ShiftClassAlarmsCompanion.insert({
@@ -1749,6 +1818,8 @@ class ShiftClassAlarmsCompanion extends UpdateCompanion<ShiftClassAlarm> {
     required int order,
     required int minute,
     this.label = const Value.absent(),
+    this.postDutyMinute = const Value.absent(),
+    this.skipOnDutyDay = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : classId = Value(classId),
         order = Value(order),
@@ -1758,6 +1829,8 @@ class ShiftClassAlarmsCompanion extends UpdateCompanion<ShiftClassAlarm> {
     Expression<int>? order,
     Expression<int>? minute,
     Expression<String>? label,
+    Expression<int>? postDutyMinute,
+    Expression<bool>? skipOnDutyDay,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1765,6 +1838,8 @@ class ShiftClassAlarmsCompanion extends UpdateCompanion<ShiftClassAlarm> {
       if (order != null) 'order': order,
       if (minute != null) 'minute': minute,
       if (label != null) 'label': label,
+      if (postDutyMinute != null) 'post_duty_minute': postDutyMinute,
+      if (skipOnDutyDay != null) 'skip_on_duty_day': skipOnDutyDay,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1774,12 +1849,16 @@ class ShiftClassAlarmsCompanion extends UpdateCompanion<ShiftClassAlarm> {
       Value<int>? order,
       Value<int>? minute,
       Value<String?>? label,
+      Value<int?>? postDutyMinute,
+      Value<bool>? skipOnDutyDay,
       Value<int>? rowid}) {
     return ShiftClassAlarmsCompanion(
       classId: classId ?? this.classId,
       order: order ?? this.order,
       minute: minute ?? this.minute,
       label: label ?? this.label,
+      postDutyMinute: postDutyMinute ?? this.postDutyMinute,
+      skipOnDutyDay: skipOnDutyDay ?? this.skipOnDutyDay,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1799,6 +1878,12 @@ class ShiftClassAlarmsCompanion extends UpdateCompanion<ShiftClassAlarm> {
     if (label.present) {
       map['label'] = Variable<String>(label.value);
     }
+    if (postDutyMinute.present) {
+      map['post_duty_minute'] = Variable<int>(postDutyMinute.value);
+    }
+    if (skipOnDutyDay.present) {
+      map['skip_on_duty_day'] = Variable<bool>(skipOnDutyDay.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1812,6 +1897,8 @@ class ShiftClassAlarmsCompanion extends UpdateCompanion<ShiftClassAlarm> {
           ..write('order: $order, ')
           ..write('minute: $minute, ')
           ..write('label: $label, ')
+          ..write('postDutyMinute: $postDutyMinute, ')
+          ..write('skipOnDutyDay: $skipOnDutyDay, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4571,6 +4658,8 @@ typedef $$ShiftClassAlarmsTableCreateCompanionBuilder
   required int order,
   required int minute,
   Value<String?> label,
+  Value<int?> postDutyMinute,
+  Value<bool> skipOnDutyDay,
   Value<int> rowid,
 });
 typedef $$ShiftClassAlarmsTableUpdateCompanionBuilder
@@ -4579,6 +4668,8 @@ typedef $$ShiftClassAlarmsTableUpdateCompanionBuilder
   Value<int> order,
   Value<int> minute,
   Value<String?> label,
+  Value<int?> postDutyMinute,
+  Value<bool> skipOnDutyDay,
   Value<int> rowid,
 });
 
@@ -4602,6 +4693,13 @@ class $$ShiftClassAlarmsTableFilterComposer
 
   ColumnFilters<String> get label => $composableBuilder(
       column: $table.label, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get postDutyMinute => $composableBuilder(
+      column: $table.postDutyMinute,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get skipOnDutyDay => $composableBuilder(
+      column: $table.skipOnDutyDay, builder: (column) => ColumnFilters(column));
 }
 
 class $$ShiftClassAlarmsTableOrderingComposer
@@ -4624,6 +4722,14 @@ class $$ShiftClassAlarmsTableOrderingComposer
 
   ColumnOrderings<String> get label => $composableBuilder(
       column: $table.label, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get postDutyMinute => $composableBuilder(
+      column: $table.postDutyMinute,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get skipOnDutyDay => $composableBuilder(
+      column: $table.skipOnDutyDay,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$ShiftClassAlarmsTableAnnotationComposer
@@ -4646,6 +4752,12 @@ class $$ShiftClassAlarmsTableAnnotationComposer
 
   GeneratedColumn<String> get label =>
       $composableBuilder(column: $table.label, builder: (column) => column);
+
+  GeneratedColumn<int> get postDutyMinute => $composableBuilder(
+      column: $table.postDutyMinute, builder: (column) => column);
+
+  GeneratedColumn<bool> get skipOnDutyDay => $composableBuilder(
+      column: $table.skipOnDutyDay, builder: (column) => column);
 }
 
 class $$ShiftClassAlarmsTableTableManager extends RootTableManager<
@@ -4679,6 +4791,8 @@ class $$ShiftClassAlarmsTableTableManager extends RootTableManager<
             Value<int> order = const Value.absent(),
             Value<int> minute = const Value.absent(),
             Value<String?> label = const Value.absent(),
+            Value<int?> postDutyMinute = const Value.absent(),
+            Value<bool> skipOnDutyDay = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ShiftClassAlarmsCompanion(
@@ -4686,6 +4800,8 @@ class $$ShiftClassAlarmsTableTableManager extends RootTableManager<
             order: order,
             minute: minute,
             label: label,
+            postDutyMinute: postDutyMinute,
+            skipOnDutyDay: skipOnDutyDay,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -4693,6 +4809,8 @@ class $$ShiftClassAlarmsTableTableManager extends RootTableManager<
             required int order,
             required int minute,
             Value<String?> label = const Value.absent(),
+            Value<int?> postDutyMinute = const Value.absent(),
+            Value<bool> skipOnDutyDay = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ShiftClassAlarmsCompanion.insert(
@@ -4700,6 +4818,8 @@ class $$ShiftClassAlarmsTableTableManager extends RootTableManager<
             order: order,
             minute: minute,
             label: label,
+            postDutyMinute: postDutyMinute,
+            skipOnDutyDay: skipOnDutyDay,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
