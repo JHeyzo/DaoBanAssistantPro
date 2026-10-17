@@ -701,6 +701,19 @@ void main() {
     await tester.tap(find.text(target.title));
     await tester.pumpAndSettle();
 
+    // v0.11.2 起选完模板会先弹「周期第 1 天是几号」：在弹层里点今天确认。
+    // 日历页底下也有日期数字，所以把查找限定在弹层子树里。
+    expect(find.text(L10n.anchorDateTitle), findsOneWidget);
+    final sheet = find.ancestor(
+      of: find.text(L10n.anchorDateTitle),
+      matching: find.byType(GlassPanel),
+    );
+    await tester.tap(find.descendant(
+      of: sheet,
+      matching: find.text('${DateTime.now().day}'),
+    ));
+    await tester.pumpAndSettle();
+
     // 新方案按模板落库：名字 = 模板副标题，周期长度 = 模板周期。
     expect(await _scheduleCount(db), 2);
     final rows = await db.select(db.shiftScheduleRows).get();
