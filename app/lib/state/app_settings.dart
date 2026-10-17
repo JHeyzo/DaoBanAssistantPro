@@ -6,10 +6,11 @@ import '../core/glass/glass.dart';
 import '../core/haptics.dart';
 import '../core/l10n.dart';
 import '../core/theme/app_colors.dart';
+import '../domain/shift_rotation.dart';
 
 enum AppThemeMode { system, light, dark }
 
-/// 外观设置（主题模式 + 主色调 + 语言），持久化到 SharedPreferences。
+/// 外观设置（主题模式 + 主色调 + 语言）与少量全局开关，持久化到 SharedPreferences。
 class AppSettings {
   const AppSettings({
     this.themeMode = AppThemeMode.system,
@@ -17,6 +18,9 @@ class AppSettings {
     this.language = 'zh',
     this.liquidGlass = false,
     this.hapticsEnabled = true,
+    this.postDutyAlarmEnabled = false,
+    this.postDutyAlarmMinute,
+    this.postDutyClassName = '',
   });
 
   final AppThemeMode themeMode;
@@ -37,6 +41,16 @@ class AppSettings {
   /// 触觉反馈：true=状态改变与不可逆动作时轻微震动（默认），false=完全不震。
   final bool hapticsEnabled;
 
+  /// 「值班次日」闹钟规则总开关：前一天是值班班种时，当天第一条班次闹钟改用
+  /// [postDutyAlarmMinute]（见 `PostDutyAlarmRule`）。
+  final bool postDutyAlarmEnabled;
+
+  /// 值班次日改用的钟点（自午夜分钟数）；null = 还没设。
+  final int? postDutyAlarmMinute;
+
+  /// 值班班种的班次名（按名认，不按 id —— 季度轮换重建排班后 id 会变）。
+  final String postDutyClassName;
+
   Color get accentColor => AppColors.accentPalette[accentIndex];
 
   AppSettings copyWith({
@@ -45,6 +59,9 @@ class AppSettings {
     String? language,
     bool? liquidGlass,
     bool? hapticsEnabled,
+    bool? postDutyAlarmEnabled,
+    int? postDutyAlarmMinute,
+    String? postDutyClassName,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -52,7 +69,23 @@ class AppSettings {
       language: language ?? this.language,
       liquidGlass: liquidGlass ?? this.liquidGlass,
       hapticsEnabled: hapticsEnabled ?? this.hapticsEnabled,
+      postDutyAlarmEnabled: postDutyAlarmEnabled ?? this.postDutyAlarmEnabled,
+      postDutyAlarmMinute: postDutyAlarmMinute ?? this.postDutyAlarmMinute,
+      postDutyClassName: postDutyClassName ?? this.postDutyClassName,
     );
+  }
+
+  /// 读出值班次日规则；未启用或没配齐（没设时间/没认到值班班种）返回 null。
+  ///
+  /// 静态方法是因为 `AlarmService.rescheduleAll` 是静态的、拿不到 Riverpod，
+  /// 而「读齐参数」只该有一份（见那里的注释）。
+  static Future<PostDutyAlarmRule?> loadPostDutyRule() async {
+    final sp = await SharedPreferences.getInstance();
+    if (!(sp.getBool('postDutyAlarmEnabled') ?? false)) return null;
+    final minute = sp.getInt('postDutyAlarmMinute');
+    final name = (sp.getString('postDutyClassName') ?? '').trim();
+    if (minute == null || name.isEmpty) return null;
+    return PostDutyAlarmRule(dutyClassName: name, minute: minute);
   }
 }
 
@@ -74,6 +107,9 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
       final language = sp.getString('language') ?? 'zh';
       final liquidGlass = sp.getBool('liquidGlass') ?? false;
       final hapticsEnabled = sp.getBool('hapticsEnabled') ?? true;
+      final postDutyAlarmEnabled = sp.getBool('postDutyAlarmEnabled') ?? false;
+      final postDutyAlarmMinute = sp.getInt('postDutyAlarmMinute');
+      final postDutyClassName = sp.getString('postDutyClassName') ?? '';
       L10n.locale = language;
       liquidGlassEnabled.value = liquidGlass;
       hapticsDisabled = !hapticsEnabled;
@@ -87,6 +123,9 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
         language: language,
         liquidGlass: liquidGlass,
         hapticsEnabled: hapticsEnabled,
+        postDutyAlarmEnabled: postDutyAlarmEnabled,
+        postDutyAlarmMinute: postDutyAlarmMinute,
+        postDutyClassName: postDutyClassName,
       );
     } catch (_) {
       // 忽略读取失败，使用默认值
@@ -134,6 +173,24 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
     state = state.copyWith(hapticsEnabled: value);
     final sp = await SharedPreferences.getInstance();
     await sp.setBool('hapticsEnabled', value);
+  }
+
+  Future<void> setPostDutyAlarmEnabled(bool value) async {
+    state = state.copyWith(postDutyAlarmEnabled: value);
+    final sp = await SharedPreferences.getInstance();
+    await sp.setBool('postDutyAlarmEnabled', value);
+  }
+
+  Future<void> setPostDutyAlarmMinute(int minute) async {
+    state = state.copyWith(postDutyAlarmMinute: minute);
+    final sp = await SharedPreferences.getInstance();
+    await sp.setInt('postDutyAlarmMinute', minute);
+  }
+
+  Future<void> setPostDutyClassName(String name) async {
+    state = state.copyWith(postDutyClassName: name);
+    final sp = await SharedPreferences.getInstance();
+    await sp.setString('postDutyClassName', name);
   }
 
   /// 把外观这一组**在内存里**拨回默认（跟随系统 / 首个主色调 / 中文 / 液态玻璃关 /

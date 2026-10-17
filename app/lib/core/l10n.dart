@@ -118,8 +118,6 @@ class L10n {
   static String get permOverlayHint => t(
       '不开，App 退到后台后弹不出响铃界面',
       'Off: the alarm screen cannot pop up from the background');
-  static String get permFsi => t('全屏通知', 'Full-screen notifications');
-  static String get permFsiHint => t('否则只弹一条通知，不弹全屏响铃', 'Otherwise only a notification shows');
   static String get permMiuiPopup =>
       t('后台弹出界面（小米）', 'Background pop-up (MIUI)');
   static String get permMiuiPopupHint => t(
@@ -368,6 +366,12 @@ class L10n {
   static String get testAlarmFailed => t('测试闹钟排定失败：', 'Test alarm failed: ');
   static String get editAlarm => t('编辑闹钟', 'Edit alarm');
   static String get time => t('时间', 'Time');
+  static String get postDutyAlarmTitle => t('值班次日闹钟', 'Post-duty alarm');
+  static String get postDutyAlarmHint =>
+      t('前一天是值班时，次日第一条班次闹钟改用此时刻（只换起床那条）',
+          'When the previous day was a duty shift, the first shift alarm the next day uses this time instead (only the wake-up one)');
+  static String get postDutyAlarmTime => t('改用时间', 'Use this time');
+  static String get postDutyAlarmClass => t('值班班种', 'Duty shift');
   static String get once => t('一次性', 'Once');
   static String get daily => t('每天', 'Daily');
   static String get weekly => t('每周', 'Weekly');
@@ -625,6 +629,8 @@ class L10n {
       : '将删除「$name」，此操作不可撤销。';
   static String get newSchedule => t('新排班', 'New schedule');
   static String teamCountN(int n) => isEn ? '$n teams' : '$n 个班组';
+  static String get anchorDateTitle =>
+      t('周期第 1 天是几号？', 'Which date is day 1 of the cycle?');
 
   // 选择倒班方式
   static String get pickShiftPattern => t('选择你的倒班方式', 'Pick your shift pattern');
@@ -839,8 +845,8 @@ class L10n {
       ];
   static String get guidePermTitle => t('权限', 'Permissions');
   static List<String> get guidePermDesc => [
-        t('首次使用务必到「我的 → 权限」逐项开齐：通知、闹钟和提醒（精确闹钟）、显示悬浮窗、全屏通知、自启动、电池优化',
-            'On first use, enable all under Me → Permissions: notifications, alarms & reminders (exact alarm), display over other apps, full-screen notifications, auto-start and battery optimization'),
+        t('首次使用务必到「我的 → 权限」逐项开齐：通知、闹钟和提醒（精确闹钟）、显示悬浮窗、自启动、电池优化',
+            'On first use, enable all under Me → Permissions: notifications, alarms & reminders (exact alarm), display over other apps, auto-start and battery optimization'),
         t('小米机型还要在系统的「应用 → 权限 → 其他权限」里开「后台弹出界面」和「锁屏显示」',
             'On Xiaomi devices also turn on "Open new windows while running in the background" and "Show on Lock screen" under the system app permissions'),
         t('这两项不开，闹钟到点只会响、不会弹出响铃界面',

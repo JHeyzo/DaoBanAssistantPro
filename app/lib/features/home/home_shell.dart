@@ -246,6 +246,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
       alarms,
       overrides: overrides,
       events: await repo.listEvents(),
+      postDutyRule: await AppSettings.loadPostDutyRule(),
     );
   }
 
