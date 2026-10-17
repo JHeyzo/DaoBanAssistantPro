@@ -376,6 +376,76 @@ enum RestRuleMode {
   followDuty,
 }
 
+/// 值班顺序轮换周期。
+enum RotationPeriod {
+  /// 按季度轮换。
+  quarterly,
+
+  /// 按月轮换。
+  monthly,
+}
+
+/// 值班顺序轮换（一套方案一条；null = 不轮换）。
+///
+/// 序列如 ['1234', '3421', '2143', '4312']，每个元素是一轮的班组顺序（1-indexed 数字串，
+/// 长度须等于 teamCount）。
+/// 切换时机：周期（季度/月）起始日所在的排班周期走完后，在下一排班周期起始日切换，
+/// 不在周期起始日硬切。
+class DutyRotation {
+  const DutyRotation({
+    required this.sequence,
+    required this.period,
+    required this.sequenceStartDate,
+  });
+
+  /// 轮换序列，如 ['1234', '3421']。
+  final List<String> sequence;
+
+  /// 轮换周期。
+  final RotationPeriod period;
+
+  /// 序列中第一个顺序的生效起始日（通常是某个季度/月的第 1 天）。
+  final DateTime sequenceStartDate;
+
+  DutyRotation copyWith({
+    List<String>? sequence,
+    RotationPeriod? period,
+    DateTime? sequenceStartDate,
+  }) {
+    return DutyRotation(
+      sequence: sequence ?? this.sequence,
+      period: period ?? this.period,
+      sequenceStartDate: sequenceStartDate ?? this.sequenceStartDate,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'sequence': sequence,
+        'period': period.index,
+        'sequenceStartDate': sequenceStartDate.toIso8601String(),
+      };
+
+  factory DutyRotation.fromJson(Map<String, dynamic> json) {
+    return DutyRotation(
+      sequence: (json['sequence'] as List).cast<String>(),
+      period: RotationPeriod.values[json['period'] as int],
+      sequenceStartDate: DateTime.parse(json['sequenceStartDate'] as String),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DutyRotation &&
+          sequence.toString() == other.sequence.toString() &&
+          period == other.period &&
+          sequenceStartDate == other.sequenceStartDate;
+
+  @override
+  int get hashCode =>
+      sequence.toString().hashCode ^ period.hashCode ^ sequenceStartDate.hashCode;
+}
+
 /// 休息规则（一套方案一条；null / mode=none = 不用规则）。
 ///
 /// 设计见 v0.11.3：「休息跟星期走 → 用规则；休息跟节奏走 → 写进周期」。
@@ -493,6 +563,7 @@ class ShiftSchedule implements ShiftSource {
     this.teamOffsets = const [],
     this.dayOverrides = const {},
     this.restRule = const RestRule(),
+    this.dutyRotation,
   });
 
   /// 空白表（跟随法定节假日）：周期为空。
@@ -523,6 +594,9 @@ class ShiftSchedule implements ShiftSource {
   /// 每个班组相对基准日的天数偏移（长度与 teamCount 一致）；
   /// 为空时回退到旧的「按 ourTeamIndex 错开」逻辑。
   final List<int> teamOffsets;
+
+  /// 值班顺序轮换（null = 不轮换）。
+  final DutyRotation? dutyRotation;
 
   /// 按天改班覆盖：`dayNumber(日期) → classes 下标`。
   ///
@@ -564,8 +638,10 @@ class ShiftSchedule implements ShiftSource {
   /// 别用这个判空。
   List<ShiftClass> teamShifts(int teamIndex, DateTime date) {
     if (cycle.isEmpty) return const [];
-    final base = (teamIndex >= 0 && teamIndex < teamOffsets.length)
-        ? teamOffsets[teamIndex]
+    // v0.12.0：考虑值班顺序轮换，取指定日期实际生效的 offsets。
+    final offsets = effectiveTeamOffsets(this, date);
+    final base = (teamIndex >= 0 && teamIndex < offsets.length)
+        ? offsets[teamIndex]
         : teamIndex - ourTeamIndex; // 回退：旧的按班组错开
     final offset = daysBetween(anchorDate, date) + base;
     var idx = offset % cycleLength;
@@ -776,4 +852,146 @@ ShiftSchedule defaultSchedule() {
       ),
     ],
   );
+}
+
+/// 计算指定日期实际生效的 teamOffsets（考虑值班顺序轮换）。
+///
+/// 无轮换时直接返回 [schedule.teamOffsets]。
+/// 有轮换时：按轮换周期确定日期落在序列的哪一轮，取对应的顺序字符串，
+/// 按该顺序重排 offsets；切换日为轮换周期起始日所在排班周期走完后的
+/// 下一排班周期起始日（不对齐硬切）。
+List<int> effectiveTeamOffsets(ShiftSchedule schedule, DateTime date) {
+  final rotation = schedule.dutyRotation;
+  if (rotation == null || rotation.sequence.isEmpty) {
+    return schedule.teamOffsets;
+  }
+  if (schedule.teamOffsets.isEmpty) {
+    return schedule.teamOffsets;
+  }
+
+  final order = _orderForDate(schedule, date);
+  if (order == null) {
+    return schedule.teamOffsets;
+  }
+  return _permuteOffsets(schedule.teamOffsets, order);
+}
+
+/// 确定指定日期适用的轮换顺序字符串（1-indexed，如 '3421'）。
+///
+/// 返回 null 表示用默认（不轮换）。
+String? _orderForDate(ShiftSchedule schedule, DateTime date) {
+  final rotation = schedule.dutyRotation!;
+  final seq = rotation.sequence;
+  if (seq.isEmpty) return null;
+
+  // 1. 计算日期落在第几个轮换周期（从 sequenceStartDate 起）。
+  final periodIndex = _periodIndex(rotation, date);
+  if (periodIndex < 0) return null; // 早于起始日，用默认
+
+  // 2. 映射到序列下标（循环）。
+  final seqIndex = periodIndex % seq.length;
+
+  // 3. 计算本轮的 nominal 起始日。
+  final nominalStart = _periodStartDate(rotation, periodIndex);
+
+  // 4. 周期边界对齐：切换日为 nominalStart 所在排班周期走完后的下一周期起始日。
+  final actualSwitchDate = _nextCycleBoundaryAfter(
+    schedule.anchorDate,
+    schedule.cycle.length,
+    nominalStart,
+  );
+
+  // 5. 如果查询日期早于实际切换日，用上一轮的顺序。
+  if (date.isBefore(actualSwitchDate)) {
+    final prevSeqIndex = (seqIndex - 1 + seq.length) % seq.length;
+    // 如果是第一轮且日期早于首次切换，用默认（不轮换）
+    if (periodIndex == 0) return null;
+    return seq[prevSeqIndex];
+  }
+
+  return seq[seqIndex];
+}
+
+/// 计算从 sequenceStartDate 起，日期落在第几个轮换周期（0-indexed）。
+int _periodIndex(DutyRotation rotation, DateTime date) {
+  final start = DateTime(
+      rotation.sequenceStartDate.year, rotation.sequenceStartDate.month, rotation.sequenceStartDate.day);
+  final d = DateTime(date.year, date.month, date.day);
+  if (d.isBefore(start)) return -1;
+
+  switch (rotation.period) {
+    case RotationPeriod.quarterly:
+      // 季度差
+      final startQuarter = (start.month - 1) ~/ 3;
+      final dateQuarter = (d.month - 1) ~/ 3;
+      final yearDiff = d.year - start.year;
+      return yearDiff * 4 + (dateQuarter - startQuarter);
+    case RotationPeriod.monthly:
+      return (d.year - start.year) * 12 + (d.month - start.month);
+  }
+}
+
+/// 计算第 periodIndex 个轮换周期的 nominal 起始日。
+DateTime _periodStartDate(DutyRotation rotation, int periodIndex) {
+  final start = rotation.sequenceStartDate;
+  switch (rotation.period) {
+    case RotationPeriod.quarterly:
+      // 每 3 个月
+      var year = start.year;
+      var month = start.month + periodIndex * 3;
+      while (month > 12) {
+        month -= 12;
+        year++;
+      }
+      // 季度第 1 天
+      final quarterStartMonth = ((month - 1) ~/ 3) * 3 + 1;
+      return DateTime(year, quarterStartMonth, 1);
+    case RotationPeriod.monthly:
+      var year = start.year;
+      var month = start.month + periodIndex;
+      while (month > 12) {
+        month -= 12;
+        year++;
+      }
+      return DateTime(year, month, 1);
+  }
+}
+
+/// 找到 strict 大于 nominalDate 的下一个排班周期边界日。
+///
+/// 排班周期起始日为 anchor + k*cycleLength（k=0,1,2…）。
+/// 如果 nominalDate 恰好是周期起始日，返回 nominalDate 当天（当天切）。
+DateTime _nextCycleBoundaryAfter(
+    DateTime anchor, int cycleLength, DateTime nominalDate) {
+  if (cycleLength <= 0) return nominalDate;
+  final a = DateTime(anchor.year, anchor.month, anchor.day);
+  final n = DateTime(nominalDate.year, nominalDate.month, nominalDate.day);
+  final days = n.difference(a).inDays;
+  // 找到 >= days 的最小 k*cycleLength
+  var k = days ~/ cycleLength;
+  if (days % cycleLength != 0 || days < 0) {
+    // 不在边界上，或早于 anchor，取下一个边界
+    if (days >= 0) k += 1;
+  }
+  // days < 0 时 k=0（anchor 当天）
+  if (k < 0) k = 0;
+  return a.add(Duration(days: k * cycleLength));
+}
+
+/// 按顺序字符串重排 offsets。
+///
+/// order 如 '3421'（1-indexed），返回 newOffsets[team] = 该 team 在顺序中的位置
+/// 对应的基准偏移（保持原有的偏移间距，只重排归属）。
+List<int> _permuteOffsets(List<int> baseOffsets, String order) {
+  final n = order.length;
+  if (baseOffsets.length != n) return baseOffsets;
+  // 基准间距：排序后的 offsets
+  final sorted = [...baseOffsets]..sort();
+  final newOffsets = List<int>.filled(n, 0);
+  for (var pos = 0; pos < n; pos++) {
+    final team = int.parse(order[pos]) - 1; // 1-indexed → 0-indexed
+    if (team < 0 || team >= n) return baseOffsets; // 非法顺序，回退
+    newOffsets[team] = sorted[pos];
+  }
+  return newOffsets;
 }
