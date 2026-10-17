@@ -12,6 +12,7 @@ import '../../core/widgets/glass_button.dart';
 import '../../core/widgets/glass_delete_button.dart';
 import '../../core/widgets/glass_dialog.dart';
 import '../../core/widgets/glass_pickers.dart';
+import '../../core/widgets/glass_pressable.dart';
 import '../../core/widgets/glass_segment.dart';
 import '../../core/widgets/glass_snackbar.dart';
 import '../../core/widgets/glass_switch.dart';
@@ -310,7 +311,7 @@ class _AlarmScreenState extends ConsumerState<AlarmScreen>
       contentPadding: EdgeInsets.zero,
       dense: true,
       leading: Icon(icon,
-          size: 20, color: Theme.of(context).colorScheme.primary),
+          size: AppTokens.iconMd, color: Theme.of(context).colorScheme.primary),
       title: Text(label),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
