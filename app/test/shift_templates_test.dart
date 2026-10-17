@@ -37,6 +37,7 @@ const _zhBaseline = <String, (String, String)>{
   'duty_24_24': ('上 24 小时，休 24 小时', '上 24 休 24'),
   'duty_24_48': ('上 24 小时，休 48 小时', '上 24 休 48'),
   'duty_24_72': ('上 24 小时，休 72 小时', '上 24 休 72'),
+  'day_duty_28d': ('长白班，每 4 天值一次班，每周休一天', '白班 + 值班 · 28 天循环'),
   'standard_week': ('周一到周五上班，周末休息', '长白班 · 双休'),
   'big_small_week': ('这周休一天，下周休两天', '大小周'),
   'work_1_rest_1': ('上一天休一天', '做一休一'),
@@ -61,6 +62,7 @@ const _zhClassBaseline = <String, List<String>>{
   'duty_24_24': ['值班/值', '休息/休'],
   'duty_24_48': ['值班/值', '休息/休'],
   'duty_24_72': ['值班/值', '休息/休'],
+  'day_duty_28d': ['白班/白', '值班/值', '休班/休'],
   'standard_week': ['白班/白', '休息/休'],
   'big_small_week': ['白班/白', '休息/休'],
   'work_1_rest_1': ['白班/白', '休班/休'],
@@ -221,5 +223,44 @@ void main() {
     final eight = t('four_crew_three_shift').classes;
     expect(eight.firstWhere((c) => c.startMinute == 0).alarms.single.minute,
         23 * 60);
+  });
+
+  test('28天模板：值班每4天、每周休一天且只落在周六/周日', () {
+    // 第 0 天为周一（模板要求周期起始日锚定周一）。
+    final t = findTemplate('day_duty_28d')!;
+    expect(t.cycleLength, 28);
+    // 班次：0=白班，1=值班，2=休班
+    expect(t.classes[2].isRest, isTrue);
+
+    final dutyDays = [
+      for (var i = 0; i < 28; i++)
+        if (t.cycle[i] == 1) i
+    ];
+    expect(dutyDays, [3, 7, 11, 15, 19, 23, 27], reason: '值班必须每 4 天一次');
+
+    final restDays = [
+      for (var i = 0; i < 28; i++)
+        if (t.cycle[i] == 2) i
+    ];
+    expect(restDays, [5, 13, 20, 26]);
+
+    for (var w = 0; w < 4; w++) {
+      final duties = dutyDays.where((d) => d ~/ 7 == w).toList();
+      final rests = restDays.where((d) => d ~/ 7 == w).toList();
+      expect(rests.length, 1, reason: '第 $w 周必须恰好休一天');
+      // 休息日只许是周六（%7==5）或周日（%7==6）
+      expect([5, 6], contains(rests.single % 7), reason: '第 $w 周的休息日不在周末');
+      // 休息规则：看这周最后一次值班在周几
+      // 周四(3)→周六(5)，周五(4)→周日(6)，周六(5)→周日(6)，周日(6)→周六(5)
+      const restFor = {3: 5, 4: 6, 5: 6, 6: 5};
+      expect(rests.single % 7, restFor[duties.last % 7],
+          reason: '第 $w 周的休息日不符合「看最后一次值班」规则');
+    }
+
+    // 每周第一次值班日的星期 +1 递进：周四 → 周一 → 周二 → 周三
+    final firstDutyWeekday = [
+      for (var w = 0; w < 4; w++) dutyDays.firstWhere((d) => d ~/ 7 == w) % 7
+    ];
+    expect(firstDutyWeekday, [3, 0, 1, 2]);
   });
 }

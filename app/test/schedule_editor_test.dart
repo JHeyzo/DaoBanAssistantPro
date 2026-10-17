@@ -4,6 +4,8 @@
 //
 // 本机没有可运行目标（无 Android 设备 / 无 VS 工具链 / web 被本地通知插件挡住），
 // 所以界面行为全部靠 widget 测试覆盖。
+import 'dart:convert';
+
 import 'package:drift/native.dart';
 import 'package:flutter/cupertino.dart' show CupertinoPicker;
 import 'package:flutter/material.dart';
@@ -853,8 +855,15 @@ void main() {
     final labels = <String>[];
     tester.binding.defaultBinaryMessenger
         .setMockMethodCallHandler(settings, (call) async {
-      if (call.method == 'scheduleNativeAlarm') {
-        labels.add(((call.arguments as Map)['label']) as String);
+      // 系统闹钟通道：一次推 30 天表的 JSON，从里面取文案
+      if (call.method == 'scheduleSystemAlarmHousekeeping') {
+        final json = (call.arguments as Map)['daysJson'] as String;
+        final days = (jsonDecode(json) as List).cast<Map<String, dynamic>>();
+        for (final d in days) {
+          for (final a in (d['alarms'] as List).cast<Map<String, dynamic>>()) {
+            labels.add(a['msg'] as String);
+          }
+        }
       }
       return null;
     });

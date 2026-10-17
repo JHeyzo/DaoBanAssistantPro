@@ -32,9 +32,6 @@ const List<String> _allowed = <String>[
   'lib/core/widgets/glass_check.dart', // 待办那个勾
   'lib/core/widgets/glass_segment.dart', // 分段器
   'lib/core/widgets/glass_switch.dart', // 开关
-  // 响铃页那枚「上滑关闭」的药丸（2026-10-01 用户拍板：「同时挂在液态玻璃开关
-  // 后面……要像底栏那样分一棵树出来」）。
-  'lib/features/alarm/alarm_ringing_screen.dart',
   // 日历那枚选中块（v0.10.15）。判据只在这一个文件里读 —— 它分两处岔口
   // （`_glassBlock` 与 `AnimatedScale`），但都在同一棵子树里。
   // ⚠️ **`calendar_lens.dart` 不进名单**：它不读档位（与 `liquid_track.dart` 同一条纪律）。
@@ -91,11 +88,10 @@ void main() {
         'lib/core/widgets/glass_check.dart',
         'lib/core/widgets/glass_segment.dart',
         'lib/core/widgets/glass_switch.dart',
-        'lib/features/alarm/alarm_ringing_screen.dart',
         'lib/features/calendar/calendar_screen.dart',
         'lib/features/home/glass_nav_bar.dart',
       ],
-      reason: '去掉豁免后应**恰好**命中这几处（定义处 + 六个调用点）：\n'
+      reason: '去掉豁免后应**恰好**命中这几处（定义处 + 五个调用点）：\n'
           '  少命中 = 扫描 / 匹配 / 剥壳坏了，上一条守门会变成永远为真的空话；\n'
           '  多命中 = 真有文件在允许的位置之外读了它（上一条也该同时红）。\n'
           '  底栏在 Task 2 从 `home_shell.dart` 搬进了 `glass_nav_bar.dart` —— '

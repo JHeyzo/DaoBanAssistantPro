@@ -73,12 +73,13 @@ void main() {
   });
 
   test('「仅震动」哨兵在 Dart 与 Kotlin 两侧逐字一致', () {
+    // AlarmSound.kt 已随 App 自响铃一起删除；哨兵现在是 MainActivity 里试听分支的字面量。
     final kotlin = File(
-            'android/app/src/main/kotlin/com/daoban/shiftassistantpro/AlarmSound.kt')
+            'android/app/src/main/kotlin/com/daoban/shiftassistantpro/MainActivity.kt')
         .readAsStringSync();
-    final m = RegExp(r'VIBRATE_ONLY\s*=\s*"([^"]*)"').firstMatch(kotlin);
+    final m = RegExp(r'uriStr == "([^"]*)"').firstMatch(kotlin);
     expect(m, isNotNull,
-        reason: 'AlarmSound.kt 里找不到 VIBRATE_ONLY 的字面量 —— 哨兵被改名或搬走了？');
+        reason: 'MainActivity.kt 里找不到 vibrateOnly 的字面量 —— 哨兵被改名或搬走了？');
     expect(m!.group(1), AlarmService.vibrateOnlyRingtone,
         reason: 'Dart 侧存进设置的值必须与 Kotlin 侧认的值逐字相同，'
             '否则用户选了静音、闹钟回落到内置铃声照响');
