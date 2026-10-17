@@ -27,15 +27,6 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     companion object {
-        /** 由原生闹钟拉起时待处理的闹钟标签（Flutter 启动后读取）。 */
-        var pendingAlarmLabel: String? = null
-
-        /**
-         * 与 [pendingAlarmLabel] 配套的说明（标题下面那行）。班次/自定义闹钟为空，
-         * 待办的联动闹钟会带上「9月15日 周二 · 14:30」这样一行。
-         */
-        var pendingAlarmDetail: String? = null
-
         /**
          * 由待办提醒的通知冷启动拉起时待处理的待办 id（Flutter 启动后读取）。
          * -1 = 没有。热启动不走这里，直接推 `onTodoTapped` 给已经在跑的 Dart。
@@ -49,34 +40,6 @@ class MainActivity : FlutterActivity() {
          */
         var pendingWidgetDay: Int = -1
 
-        /**
-         * 当前活着的 Activity。只为**响铃超时自停**服务 —— 见 [onAlarmAutoStopped]。
-         *
-         * 用同进程的静态引用而不是「发个 Intent 把它拉起来」：拉 Activity 正是
-         * MIUI「后台弹出界面」不开时会**静默拒绝**的那件事，而自停要干的恰恰是在
-         * 那条路走不通时收尾。同进程直接调，不经过系统那一层。
-         */
-        @Volatile
-        private var instance: MainActivity? = null
-
-        /**
-         * 响铃超时自停：`AlarmRingService` 到点后回来收尾。
-         *
-         * 做的是与用户手动关闭**完全相同**的两件事 —— 撤锁屏标志
-         * （`setShowWhenLocked`/`setTurnScreenOn` 是只进不出的，不撤就等于把
-         * 「锁屏下能直接操作 App」那个洞重新打开，v0.8.0 修过一次），
-         * 并让 Dart 把那层响铃界面收掉。
-         *
-         * Activity 已经没了就什么都不做：没有界面要收、也没有锁屏标志要撤。
-         */
-        fun onAlarmAutoStopped() {
-            val a = instance ?: return
-            a.runOnUiThread {
-                a.exitLockScreenMode()
-                a.flutterChannel?.invokeMethod("onAlarmAutoStopped", null)
-                AlarmLog.info(a, "MainActivity: 响铃自停 —— 已撤锁屏标志并通知 Dart 收界面")
-            }
-        }
 
         /** 自选铃声请求码 —— 与插件占用的请求码区分开。 */
         private const val REQ_PICK_RINGTONE = 40071
@@ -94,7 +57,6 @@ class MainActivity : FlutterActivity() {
     private val settingsChannel = "com.daoban.shiftassistantpro/settings"
     private var flutterChannel: MethodChannel? = null
     private var playingRingtone: android.media.Ringtone? = null
-    private var alarmPlayer: MediaPlayer? = null
     private var alarmVibrator: Vibrator? = null
 
     /** 等文件选择器回来的那个 Flutter 回调（同一时刻只允许一个）。 */
@@ -135,92 +97,6 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun applyShowWhenLocked(intent: Intent?) {
-        val label = intent?.getStringExtra("alarm_label")
-        if (label != null && Build.VERSION.SDK_INT >= 27) {
-            setShowWhenLocked(true)
-            setTurnScreenOn(true)
-            AlarmLog.info(this, "MainActivity: (onCreate 前) 已 setShowWhenLocked+setTurnScreenOn")
-        }
-    }
-
-    /**
-     * 撤掉「盖在锁屏上」的状态 —— 与 [applyShowWhenLocked] 成对。
-     *
-     * `setShowWhenLocked(true)` 是**只进不出**的：不显式关掉，这个 Activity 会一直
-     * 处于「可以盖在锁屏上」的状态，直到进程被杀。后果是用户关掉响铃界面之后，露
-     * 出来的是 **App 主界面**、锁屏回不来 —— 真人测试反馈，这也意味着锁屏下能直接
-     * 看到并操作 App 内容。
-     *
-     * 响铃一停就撤掉这两个标志，系统会把锁屏盖回来，正好是「关掉响铃 → 回到锁屏」。
-     */
-    private fun exitLockScreenMode() {
-        if (Build.VERSION.SDK_INT >= 27) {
-            setShowWhenLocked(false)
-            setTurnScreenOn(false)
-            AlarmLog.info(this, "MainActivity: 已 setShowWhenLocked(false)+setTurnScreenOn(false)")
-        }
-    }
-
-    /**
-     * 小米机型的 App 权限页 —— 「后台弹出界面」「锁屏显示」这两项都在那里。
-     *
-     * 这不是标准 Android 权限：MIUI 的 `ActivityStarterImpl` 会**静默**拒绝从后台
-     * 拉起 Activity（logcat 里只有一行 `MIUILOG- Permission Denied Activity`），
-     * 表现就是闹钟只响、不弹界面。它没有公开 API，状态也读不到，只能把用户送到
-     * 这个页面自己开。
-     */
-    private fun miuiPermissionEditor(): Intent =
-        Intent("miui.intent.action.APP_PERM_EDITOR").apply {
-            putExtra("extra_pkgname", packageName)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-
-    /** 这台机器上有没有那个页面（非小米机型解析不到）。 */
-    private fun miuiPermissionPageAvailable(): Boolean = try {
-        if (Build.VERSION.SDK_INT >= 33) {
-            packageManager.resolveActivity(
-                miuiPermissionEditor(), PackageManager.ResolveInfoFlags.of(0L)
-            ) != null
-        } else {
-            @Suppress("DEPRECATION")
-            (packageManager.resolveActivity(miuiPermissionEditor(), 0) != null)
-        }
-    } catch (_: Exception) {
-        false
-    }
-
-    private fun handleAlarmIntent(intent: Intent?) {
-        val label = intent?.getStringExtra("alarm_label")
-        val detail = intent?.getStringExtra("alarm_detail")
-        AlarmLog.info(
-            this,
-            "MainActivity.handleAlarmIntent: label=$label, ${AlarmLog.deviceState(this)}"
-        )
-        if (label != null) {
-            // **只有 Dart 还没就绪（冷启动）时才暂存**，由它 init 时来取；热启动直接
-            // 推过去就行。以前这里是无条件暂存的，而清空只发生在 `getPendingAlarm`
-            // —— Dart 每次引擎启动只调那一次。于是热启动留下的值没人清：界面销毁重建
-            // 时 Dart 会把这枚**陈旧的**值当成新闹钟读出来，再弹一次响铃界面，而且
-            // 没有声音（根本没有闹钟在响）。与下面 todo_id 那段同一套写法。
-            if (flutterChannel == null) {
-                pendingAlarmLabel = label
-                pendingAlarmDetail = detail
-            }
-            if (Build.VERSION.SDK_INT >= 27) {
-                setShowWhenLocked(true)
-                setTurnScreenOn(true)
-                AlarmLog.info(this, "MainActivity: 已 setShowWhenLocked(true)+setTurnScreenOn(true)")
-            }
-            AlarmLog.info(this, "MainActivity: invokeMethod(onAlarmFired, $label)")
-            // 两张牌一起给：响铃界面除了标题还要显示说明（待办的联动闹钟靠它
-            // 交代「什么事、几点」）。
-            flutterChannel?.invokeMethod(
-                "onAlarmFired", mapOf("label" to label, "detail" to detail)
-            )
-        }
-
-        // 待办提醒的通知被点开：冷启动时 Dart 还没就绪，先记下来由它 `init` 时取；
-        // 热启动时 Dart 已经在跑，直接推给它（与闹钟的 onAlarmFired 同一套）。
         val todoId = intent?.getIntExtra("todo_id", -1) ?: -1
         if (todoId >= 0) {
             AlarmLog.info(this, "MainActivity: 收到待办提醒点击 todo_id=$todoId")
@@ -488,7 +364,7 @@ class MainActivity : FlutterActivity() {
                             // `Uri.parse("vibrateOnly")` 上** —— 那会当成一个坏音源，
                             // 被 RingtoneManager 静默忽略或抛异常，用户按了试听
                             // 什么都不发生，看着就像这个选项坏了。
-                            if (uriStr == AlarmSound.VIBRATE_ONLY) {
+                            if (uriStr == "vibrateOnly") {
                                 val v = getSystemService(VIBRATOR_SERVICE) as Vibrator
                                 v.vibrate(
                                     VibrationEffect.createOneShot(
@@ -528,33 +404,6 @@ class MainActivity : FlutterActivity() {
                         } catch (e: Exception) {
                             result.error("STOP_RINGTONE_FAILED", e.message, null)
                         }
-                    }
-                    "startAlarm" -> {
-                        try {
-                            stopAlarmInternal()
-                            // 音源挑选与「自选铃声坏了回落内置」都在 AlarmSound 里
-                            // （后台那条链路 AlarmRingService 用的是同一份）。
-                            alarmPlayer = AlarmSound.start(
-                                this, call.argument<String>("uri")
-                            )
-
-                            val v = getSystemService(VIBRATOR_SERVICE) as Vibrator
-                            alarmVibrator = v
-                            v.vibrate(
-                                VibrationEffect.createWaveform(longArrayOf(0, 700, 400), 0)
-                            )
-                            result.success(null)
-                        } catch (e: Exception) {
-                            result.error("START_ALARM_FAILED", e.message, null)
-                        }
-                    }
-                    "stopAlarm" -> {
-                        stopAlarmInternal()
-                        stopService(Intent(this, AlarmRingService::class.java))
-                        // 响铃结束，把「盖在锁屏上」一起撤掉：滑块关闭与「再睡一会」
-                        // 两条路都走这里，主界面不会留在锁屏上。
-                        exitLockScreenMode()
-                        result.success(null)
                     }
                     "scheduleNativeAlarm" -> {
                         try {
@@ -613,6 +462,40 @@ class MainActivity : FlutterActivity() {
                             }
                         }.start()
                     }
+                    // ---- 系统闹钟通道（ColorOS 适配）：App 不再自己响铃，
+                    // 把算好的闹钟静默写入系统时钟，手表通过「手机闹钟提醒」同步 ----
+                    "createSystemAlarm" -> {
+                        try {
+                            val hour = call.argument<Int>("hour") ?: 0
+                            val minute = call.argument<Int>("minute") ?: 0
+                            val message = call.argument<String>("message") ?: "闹钟"
+                            @Suppress("UNCHECKED_CAST")
+                            val days = (call.argument<List<Int>>("days")
+                                ?: call.argument<ArrayList<Int>>("days")?.toList())
+                            val ok = SystemAlarmBridge.create(this, hour, minute, message, days)
+                            result.success(ok)
+                        } catch (e: Exception) {
+                            result.error("CREATE_SYSTEM_ALARM_FAILED", e.message, null)
+                        }
+                    }
+                    "scheduleSystemAlarmHousekeeping" -> {
+                        try {
+                            val daysJson = call.argument<String>("daysJson") ?: "[]"
+                            HousekeepingReceiver.scheduleAll(this, daysJson)
+                            result.success(null)
+                        } catch (e: Exception) {
+                            AlarmLog.error(this, "scheduleSystemAlarmHousekeeping 失败: ${e.message}")
+                            result.error("SCHEDULE_HOUSEKEEPING_FAILED", e.message, null)
+                        }
+                    }
+                    "cancelSystemAlarmHousekeeping" -> {
+                        try {
+                            HousekeepingReceiver.cancelAll(this)
+                            result.success(null)
+                        } catch (e: Exception) {
+                            result.error("CANCEL_HOUSEKEEPING_FAILED", e.message, null)
+                        }
+                    }
                     "cancelAllNotificationAlarms" -> {
                         Thread {
                             try {
@@ -625,17 +508,6 @@ class MainActivity : FlutterActivity() {
                                 result.error("CANCEL_ALL_NOTIF_ALARM_FAILED", e.message, null)
                             }
                         }.start()
-                    }
-                    "getPendingAlarm" -> {
-                        // 冷启动那次：把标签与说明一起给出去，读完两个都清空。
-                        val label = pendingAlarmLabel
-                        val detail = pendingAlarmDetail
-                        pendingAlarmLabel = null
-                        pendingAlarmDetail = null
-                        result.success(
-                            if (label == null) null
-                            else mapOf("label" to label, "detail" to detail)
-                        )
                     }
                     "getPendingTodoId" -> {
                         val id = pendingTodoId
@@ -827,19 +699,6 @@ class MainActivity : FlutterActivity() {
 
     private fun clearLog() = AlarmLog.clear(this)
 
-    private fun stopAlarmInternal() {
-        try {
-            alarmPlayer?.stop()
-            alarmPlayer?.release()
-        } catch (_: Exception) {
-        }
-        alarmPlayer = null
-        try {
-            alarmVibrator?.cancel()
-        } catch (_: Exception) {
-        }
-        alarmVibrator = null
-    }
 
     private fun nativePendingIntent(id: Int): PendingIntent {
         val intent = Intent(this, AlarmReceiver::class.java)
