@@ -39,7 +39,14 @@ void showAppInfoDialog(
   );
 }
 
-const String _changelogZh = 'v0.11.0\n'
+const String _changelogZh = 'v0.11.1\n'
+    '· 系统闹钟通道（ColorOS 适配）：App 不再自己响铃 —— 每天 00:30 按排班表把当天闹钟静默写入系统时钟，由系统时钟响铃；OPPO 手表通过「手机闹钟提醒」同步（免打扰+睡眠模式下仍跟随）\n'
+    '· 新增 28 天排班模板「长白班，每 4 天值一次班，每周休一天」：白班 08:30–17:00、值班 17:00–次日 08:30，每 4 天一值、每周休一天（周六/周日）；28 天循环自动延展，配一年只需按季度衔接多套（周期起始日须锚定周一）\n'
+    '· 待办提醒统一走普通通知（不再有全屏响铃样式）\n'
+    '· 「检查更新」已指向本 fork 的 Releases\n'
+    '\n'
+
+    'v0.11.0\n'
     '· 液态玻璃铺满全 app：底栏重做成一枚真的、会动的玻璃滴 —— 按住它吸附到手指上、放大并凸出胶囊，拖动时形状沿运动方向拉伸，松手带过冲地落回，边缘一圈彩色的折射光。随后分段器、开关、日历上那枚选中的块也换成同一套玻璃：按住时四面鼓出来、底下浮起一层影子，边上那圈彩色折射光一动就亮、停下就没了\n'
     '· 日历上多了两处「水」的动作：点别的日期再点「今天」，那枚选中的块是飞回去的（途中彩边亮起、形状按飞行方向拉长压扁、飞过哪几格哪几格的字被轻轻挤一下）；长按拖选一段日子时，逐格的淡色方块换成一条连着的水带，同一周里是一整条、格子之间的缝也盖住\n'
     '· 弹窗与底部弹层出现时从模糊里凝出来、关掉时化开散掉；响铃页的「上滑关闭」从圆钮换成一枚玻璃药丸\n'
@@ -100,16 +107,17 @@ const String _changelogZh = 'v0.11.0\n'
     '· 它扫过哪一天，那一天的字（日期 / 班次 / 农历）就被它的边缘轻轻挤一下\n'
     '· 液态玻璃关着的时候，日历与之前一模一样（一个像素都没动）\n\n'
 
-    'v0.10.14\n'
-    '· 修好上一版带进来的一处问题：弹窗会顶到状态栏 / 手势条里（21 个弹窗都受影响）\n'
-    '· 底部弹层往下拖着要关掉时，不再被压暗、发糊\n'
-    '· 响铃页那枚「上滑关闭」的形变在高刷新率屏幕上不再只有一半（同一个拖动速度应当有同一个形状）\n'
-    '· 四个弹窗的遮罩浓度统一成与其余弹窗一样（模板管理 / 改名 / 删除、存为模板）\n\n'
-
         '\n'
 ;
 
-const String _changelogEn = 'v0.11.0\n'
+const String _changelogEn = 'v0.11.1\n'
+    '· System alarm channel (ColorOS): the app no longer rings by itself — every day at 00:30 it silently writes that day\'s alarms into the system clock, which rings instead; OPPO watches sync via "phone alarm alerts" (follows even under DND + sleep mode)\n'
+    '· New 28-day template "Day shift, on duty every 4 days, one rest day per week": day 08:30–17:00, duty 17:00–08:30 next day, duty every 4 days, one rest day (Sat/Sun) per week; the 28-day cycle extends indefinitely — chain quarterly sets to cover a year (cycle start must anchor on Monday)\n'
+    '· Todo reminders are plain notifications now (no more full-screen ringing style)\n'
+    '· "Check for updates" now points at this fork\'s Releases\n'
+    '\n'
+
+    'v0.11.0\n'
     '· Liquid Glass across the whole app: the tab bar is now a real, moving glass drop — hold it and it sticks to your finger, growing and swelling out past the capsule; drag and it stretches along the direction of travel, then overshoots back on release, with a prismatic rim around it. The segmented control, the switch and the calendar selection block then got the same glass: it swells on all four sides while held, lifts a shadow, and the prismatic rim lights up only while it is moving\n'
     '· Two new "water" motions on the calendar: tapping another date and then Today flies the selected block back (the rim lights up on the way, the shape stretches along its direction of travel, and every day it sweeps over gets a slight squeeze); long-press selecting a run of days draws one continuous water band that covers the gaps between cells\n'
     '· Dialogs and bottom sheets condense out of blur and dissolve away; the ringing screen\'s "swipe up to dismiss" knob became a glass pill\n'
@@ -169,12 +177,6 @@ const String _changelogEn = 'v0.11.0\n'
     '· While you drag it stretches along the direction of travel and flattens, with a prismatic rim that only shows while it is moving\n'
     '· As it sweeps over a day, that day text (date / shift / lunar) gets a slight squeeze at its edge\n'
     '· With Liquid Glass off the calendar is pixel-for-pixel what it was\n\n'
-
-    'v0.10.14\n'
-    '· Fixed a regression from the previous version: dialogs could sit under the status bar or gesture bar (21 of them were affected)\n'
-    '· A bottom sheet no longer dims and blurs while you drag it down to dismiss it\n'
-    '· The ringing screen pill deforms correctly on high-refresh-rate screens (the same drag speed now gives the same shape)\n'
-    '· Four dialogs\' backdrop dim now matches the rest (template manage / rename / delete, save as template)\n\n'
 
         '\n'
 ;

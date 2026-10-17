@@ -2,13 +2,9 @@
 //
 // 护栏：一次 `rescheduleAll` 到底往原生发多少次跨端调用。
 //
-// 每个闹钟后面跟一条 `logInfo`，就是**每次跨端之后再跨一次** —— 本用例实测 99 次里
-// 46 次是它（一次 `rescheduleAll` 排 46 条班次闹钟 + 2 条收尾汇总）。真机上每次
-// `invokeMethod` 都是一次平台线程往返，而这条链路上还有原生侧 `AlarmStore` 的全量
-// 读写，所以「多跨一次端」不是免费的。这条用例把那份浪费钉住，免得哪天又长回来。
-//
-// **反向验证过**：把 `scheduleNativeAlarm` 里那句 `logInfo` 加回去，
-// 这条立刻红（99 > 55）。
+// 旧版是每条闹钟一次 `scheduleNativeAlarm`（46 条 + 日志 = 99 次跨端）。
+// 新版走系统闹钟通道：一次 `scheduleSystemAlarmHousekeeping` 推 30 天表，
+// 今天剩下的才逐条 `createSystemAlarm`。跨端次数从 99 降到个位数。
 import 'package:drift/drift.dart' as drift show driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
@@ -68,12 +64,14 @@ void main() {
 
     final int total = calls.values.fold<int>(0, (a, b) => a + b);
     expect(total, lessThanOrEqualTo(55),
-        reason: '99 次里有 46 次是「每排一条闹钟就跟一条日志」—— 那条不该再跟着跨端。'
-            '实测本次：$total');
+        reason: '系统闹钟通道下跨端应该是个位数。实测本次：$total');
     expect(calls['logInfo'] ?? 0, lessThanOrEqualTo(3),
         reason: '只许剩收尾那几条汇总，不许逐条记');
-    // 反面：别把「排闹钟」本身也砍了
-    expect(calls['scheduleNativeAlarm'] ?? 0, greaterThan(30),
-        reason: '排班闹钟还是要一条一条排出去的');
+    // 正面：30 天表必须一次推过去
+    expect(calls['scheduleSystemAlarmHousekeeping'] ?? 0, equals(1),
+        reason: '未来 30 天的闹钟表要一次推给原生 housekeeping');
+    // 反面：不再逐条排原生响铃闹钟
+    expect(calls['scheduleNativeAlarm'] ?? 0, equals(0),
+        reason: 'App 不再自己响铃，不该再调 scheduleNativeAlarm');
   });
 }

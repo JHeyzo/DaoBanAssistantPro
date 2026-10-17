@@ -13,7 +13,6 @@ import '../../core/update_checker.dart';
 import '../../data/app_repository.dart';
 import '../../domain/shift_rotation.dart';
 import '../../state/app_settings.dart';
-import '../alarm/alarm_ringing_screen.dart';
 import '../alarm/alarm_screen.dart';
 import '../alarm/alarm_service.dart';
 import '../calendar/calendar_screen.dart';
@@ -34,14 +33,6 @@ class _HomeShellState extends ConsumerState<HomeShell>
     with WidgetsBindingObserver {
   late final PageController _controller;
   bool _startupRescheduled = false;
-
-  /// 响铃那层全屏路由此刻是不是挂着。
-  ///
-  /// 它只为一件事服务：**原生那条响铃超时自停的路**要把那层路由收掉，而
-  /// `ringingAlarm` 变成 null 并不能反推「路由还在不在」（用户手动关闭时也是先
-  /// `popUntil` 再清值）。没有这个位就会在用户已经关掉之后再 `popUntil` 一次 ——
-  /// 那会把他自己打开的页面一起弹掉。
-  bool _ringingUp = false;
 
   static List<(IconData, String)> get _items => [
         (Icons.calendar_month_outlined, L10n.navCalendar),
@@ -69,8 +60,6 @@ class _HomeShellState extends ConsumerState<HomeShell>
     // 首帧后再请求权限（Activity 就绪后请求才会弹系统对话框）
     WidgetsBinding.instance.addPostFrameCallback((_) {
       AlarmService.requestPermissions();
-      // 冷启动由闹钟通知拉起的情况
-      if (AlarmService.ringingAlarm.value != null) _showRinging();
       // 冷启动由待办提醒的通知拉起的情况：直接落到「待办」页
       if (AlarmService.openTodoRequested.value) _openTodoPage();
       _maybeShowLaunchDialogs();
@@ -80,7 +69,6 @@ class _HomeShellState extends ConsumerState<HomeShell>
       // 首帧推一次快照，桌面上的卡片立刻与 App 对齐（去抖之后 340ms 发出去）。
       _scheduleWidgetPush();
     });
-    AlarmService.ringingAlarm.addListener(_onRingingChanged);
     AlarmService.openTodoRequested.addListener(_onTodoRequested);
     // 排班数据与外观设置任一变化就重推快照 —— 这是「改完排班桌面立刻变」的那条路。
     ref.listenManual(activeScheduleProvider, (_, __) => _scheduleWidgetPush());
@@ -140,7 +128,6 @@ class _HomeShellState extends ConsumerState<HomeShell>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    AlarmService.ringingAlarm.removeListener(_onRingingChanged);
     AlarmService.openTodoRequested.removeListener(_onTodoRequested);
     WidgetService.widgetLaunchRequested.removeListener(_onWidgetDayRequested);
     _pushDebounce?.cancel();
@@ -178,25 +165,6 @@ class _HomeShellState extends ConsumerState<HomeShell>
     _pushDebounce = Timer(AppTokens.durSlow, () {
       if (mounted) _pushWidgetSnapshot();
     });
-  }
-
-  void _onRingingChanged() {
-    final ring = AlarmService.ringingAlarm.value;
-    if (ring != null) {
-      _showRinging();
-      return;
-    }
-    // 从「有」变成「没有」= **原生那条响铃超时自停的路**。
-    //
-    // ⚠️ 用户手动关闭那条路**也会走到这里**（`AlarmRingingScreen._finish` 是先把
-    // `ringingAlarm` 清成 null、**再**自己 `popUntil`），所以这一处实际上是先弹的那个，
-    // 它那次 `popUntil` 是幂等的、无害。第一版注释写反了（写成了「手动关闭时路由已经
-    // 不在」），最终审查指出来的。
-    //
-    // 不在这里收的话，声音停了、屏幕还被那层全屏路由占着 —— 看着像卡死。
-    if (!_ringingUp || !mounted) return;
-    _ringingUp = false;
-    Navigator.of(context).popUntil((Route<dynamic> r) => r.isFirst);
   }
 
   /// 用户点了待办提醒的通知：切到「待办」页，并把请求清掉。
@@ -253,28 +221,6 @@ class _HomeShellState extends ConsumerState<HomeShell>
       settings: ref.read(appSettingsProvider),
       todayTodoCount: todoCount,
     );
-  }
-
-  void _showRinging() {
-    final ring = AlarmService.ringingAlarm.value;
-    // ⚠️ **`_ringingUp` 那一支是一处行为变化**（v0.10.22 加的，最终审提醒要写下来）：
-    // 前一个响铃界面还挂着时又来一个闹钟，**不再叠第二层** —— 屏幕上那层留着原来的
-    // 标签。从前会叠上去。叠上去的话，用户在两层之间「上滑关闭」只会关掉最上面那层、
-    // 露出下面那一层，看着像关不掉；现在最坏是标签是前一个的。
-    if (ring == null || !mounted || _ringingUp) return;
-    AlarmService.logInfo('HomeShell: 弹出全屏响铃界面 label=${ring.title}');
-    _ringingUp = true;
-    Navigator.of(context)
-        .push(
-          MaterialPageRoute<void>(
-            fullscreenDialog: true,
-            builder: (_) =>
-                AlarmRingingScreen(label: ring.title, detail: ring.detail),
-          ),
-        )
-        // 路由以任何方式离开（用户上滑关闭 / 再睡一会 / 原生自停）都要把这个位清掉，
-        // 否则下一次响铃会因为「以为已经开着」而弹不出来。
-        .whenComplete(() => _ringingUp = false);
   }
 
   Future<void> _tryStartupReschedule() async {
