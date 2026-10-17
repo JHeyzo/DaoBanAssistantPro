@@ -24,6 +24,7 @@ class _RecordingRepository extends AppRepository {
   List<String> lastTeamNames = const [];
   String lastScheduleName = '';
   List<ShiftClass> lastClasses = const [];
+  DateTime? lastAnchorDate;
 
   @override
   Future<int> saveSchedule({
@@ -43,6 +44,7 @@ class _RecordingRepository extends AppRepository {
     lastTeamNames = List.of(teamNames);
     lastScheduleName = name;
     lastClasses = List.of(classes);
+    lastAnchorDate = anchorDate;
     return 1;
   }
 }
@@ -248,12 +250,63 @@ void main() {
     await tester.tap(find.text(six.title));
     await tester.pumpAndSettle();
 
+    // v0.11.2 起选完模板会先弹「周期第 1 天是几号」：点今天确认走创建路径。
+    expect(find.text(L10n.anchorDateTitle), findsOneWidget);
+    await tester.tap(find.text('${DateTime.now().day}'));
+    await tester.pumpAndSettle();
+
     expect(repo.saveCalls, 1);
     expect(repo.lastTeamCount, 6);
     expect(repo.lastTeamNames, hasLength(6),
         reason: '班组名必须给满 teamCount 个，不能只给 4 个再靠兜底补位');
     expect(repo.lastTeamNames.any((n) => n.contains('班')), isFalse,
         reason: '英文界面下不该出现中文班组名');
+  });
+
+  testWidgets('周期第 1 天可选非今天：anchorDate 落库的是选的那天', (tester) async {
+    // v0.11.2 新流程：选完模板先弹「周期第 1 天是几号」，点的那天必须
+    // 原样传给 saveSchedule（用户要的就是「1 对应昨天/明天」这种相位）。
+    final raw = sqlite3.sqlite3.openInMemory();
+    final db = AppDatabase.forTesting(NativeDatabase.opened(raw));
+    addTearDown(db.close);
+    final repo = _RecordingRepository(db);
+
+    await tester.pumpWidget(ProviderScope(
+      overrides: [appRepositoryProvider.overrideWithValue(repo)],
+      child: MaterialApp(
+        home: Consumer(
+          builder: (context, ref, _) => Scaffold(
+            body: Center(
+              child: ElevatedButton(
+                onPressed: () => createScheduleFromTemplatePicker(context, ref,
+                    makeCurrent: false),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), '四班三倒');
+    await tester.pumpAndSettle();
+    final target = findTemplate('four_crew_three_shift')!;
+    await tester.tap(find.text(target.title));
+    await tester.pumpAndSettle();
+
+    expect(find.text(L10n.anchorDateTitle), findsOneWidget);
+    // 选一个非今天的日子（月初就选明天，避免跨月；其余选昨天）。
+    final now = DateTime.now();
+    final targetDay = now.day > 1 ? now.day - 1 : now.day + 1;
+    await tester.tap(find.text('$targetDay'));
+    await tester.pumpAndSettle();
+
+    expect(repo.saveCalls, 1);
+    final anchor = repo.lastAnchorDate!;
+    expect(dateOnly(DateTime(now.year, now.month, targetDay)), anchor,
+        reason: '点的那天必须原样落库为 anchorDate');
   });
 
   test('每个分组标题都有英文映射，不会原样露出中文键', () {
