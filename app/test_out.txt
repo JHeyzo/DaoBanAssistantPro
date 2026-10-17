@@ -1,0 +1,1181 @@
+Resolving dependencies...
+Downloading packages...
+  _fe_analyzer_shared 96.0.0 (109.0.0 available)
+  analyzer 10.2.0 (14.5.0 available)
+  build 4.0.7 (5.0.0 available)
+  build_config 1.3.2 (1.4.0 available)
+  build_daemon 4.1.5 (4.1.7 available)
+  build_runner 2.15.1 (2.17.1 available)
+  built_collection 5.1.1 (5.1.2 available)
+  built_value 8.12.7 (8.13.0 available)
+  cli_util 0.4.2 (0.6.0 available)
+  code_assets 1.2.1 (2.1.0 available)
+  cupertino_icons 1.0.9 (2.0.0 available)
+  dart_style 3.1.7 (3.1.14 available)
+  dbus 0.7.15 (0.8.0 available)
+  drift 2.31.0 (2.35.2 available)
+  drift_dev 2.31.0 (2.35.1 available)
+  drift_flutter 0.2.8 (0.3.1 available)
+  flutter_lints 4.0.0 (6.0.0 available)
+  flutter_local_notifications 17.2.4 (22.3.2 available)
+  flutter_local_notifications_linux 4.0.1 (8.0.2 available)
+  flutter_local_notifications_platform_interface 7.2.0 (12.2.0 available)
+  flutter_riverpod 2.6.1 (3.4.3 available)
+  hooks 2.0.2 (2.2.0 available)
+  jni 1.0.3 (1.1.0 available)
+  jni_flutter 1.0.2 (1.0.4+1 available)
+  lints 4.0.0 (6.1.0 available)
+  lunar_plus 1.7.1 (discontinued)
+  material_color_utilities 0.13.0 (0.13.1 available)
+  meta 1.18.3 (1.19.0 available)
+  objective_c 9.5.0 (9.6.2 available)
+  package_config 2.2.0 (3.0.0 available)
+  petitparser 7.0.2 (7.1.0 available)
+  platform 3.1.6 (3.2.0 available)
+  record_use 0.6.0 (1.1.1 available)
+  riverpod 2.6.1 (3.4.3 available)
+  shared_preferences 2.5.5 (2.5.6 available)
+  shared_preferences_android 2.4.28 (2.5.0 available)
+  shelf 1.4.2 (1.4.3 available)
+  source_gen 4.2.4 (4.3.1 available)
+  sqlite3 2.9.4 (3.7.1 available)
+  sqlite3_flutter_libs 0.5.42 (0.6.0+eol available)
+  sqlparser 0.43.1 (0.45.0 available)
+  test_api 0.7.12 (0.7.15 available)
+  timezone 0.9.4 (0.11.2 available)
+  vector_math 2.4.0 (2.4.3 available)
+  vm_service 15.3.0 (15.4.0 available)
+  xml 7.0.1 (7.1.0 available)
+Got dependencies!
+1 package is discontinued.
+45 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+00:00 +0: loading D:/DaoBanAssistantPro/app/test/advance_recurring_test.dart
+00:00 +0: D:/DaoBanAssistantPro/app/test/advance_recurring_test.dart: 没有未完成的行 → 新建一条，日期是当前这一次
+00:00 +1: D:/DaoBanAssistantPro/app/test/advance_recurring_test.dart: 再跑一次不会多建一条（幂等）
+00:00 +2: D:/DaoBanAssistantPro/app/test/advance_recurring_test.dart: 过期未勾 → **就地顺延**，行的 id 不变
+00:00 +3: D:/DaoBanAssistantPro/app/test/advance_recurring_test.dart: 跨两周没打开 App → 只顺延到**最近一次**，不补中间那几次
+00:00 +4: D:/DaoBanAssistantPro/app/test/alarm_reschedule_budget_test.dart: (setUpAll)
+00:00 +5: D:/DaoBanAssistantPro/app/test/alarm_reschedule_budget_test.dart: (setUpAll)
+00:00 +5: D:/DaoBanAssistantPro/app/test/advance_recurring_test.dart: 删掉当前那条（跳过）之后再跑 → **不补回来**
+00:00 +6: D:/DaoBanAssistantPro/app/test/alarm_reschedule_budget_test.dart: 一次 rescheduleAll 的跨端调用不超过 55 次
+00:00 +7: D:/DaoBanAssistantPro/app/test/alarm_reschedule_budget_test.dart: 一次 rescheduleAll 的跨端调用不超过 55 次
+00:00 +8: D:/DaoBanAssistantPro/app/test/alarm_reschedule_budget_test.dart: 一次 rescheduleAll 的跨端调用不超过 55 次
+00:00 +9: D:/DaoBanAssistantPro/app/test/alarm_reschedule_budget_test.dart: 一次 rescheduleAll 的跨端调用不超过 55 次
+00:00 +10: D:/DaoBanAssistantPro/app/test/alarm_reschedule_budget_test.dart: 一次 rescheduleAll 的跨端调用不超过 55 次
+00:00 +11: D:/DaoBanAssistantPro/app/test/alarm_reschedule_budget_test.dart: 一次 rescheduleAll 的跨端调用不超过 55 次
+00:00 +12: D:/DaoBanAssistantPro/app/test/alarm_reschedule_budget_test.dart: 一次 rescheduleAll 的跨端调用不超过 55 次
+00:00 +13: D:/DaoBanAssistantPro/app/test/alarm_reschedule_budget_test.dart: 一次 rescheduleAll 的跨端调用不超过 55 次
+00:00 +14: D:/DaoBanAssistantPro/app/test/alarm_reschedule_budget_test.dart: 一次 rescheduleAll 的跨端调用不超过 55 次
+00:00 +15: D:/DaoBanAssistantPro/app/test/alarm_screen_test.dart: (setUpAll)
+00:00 +15: D:/DaoBanAssistantPro/app/test/alarm_screen_test.dart: 一个班次两条闹钟：同一天两行都列出来
+00:00 +16: D:/DaoBanAssistantPro/app/test/alarm_screen_test.dart: 一个班次两条闹钟：同一天两行都列出来
+00:01 +17: D:/DaoBanAssistantPro/app/test/alarm_screen_test.dart: 一个班次两条闹钟：同一天两行都列出来
+00:01 +18: D:/DaoBanAssistantPro/app/test/alarm_screen_test.dart: 一个班次两条闹钟：同一天两行都列出来
+00:01 +19: D:/DaoBanAssistantPro/app/test/alarm_screen_test.dart: 一个班次两条闹钟：同一天两行都列出来
+00:01 +20: D:/DaoBanAssistantPro/app/test/alarm_screen_test.dart: 一个班次两条闹钟：同一天两行都列出来
+00:01 +21: D:/DaoBanAssistantPro/app/test/alarm_screen_test.dart: 一个班次两条闹钟：同一天两行都列出来
+00:01 +22: D:/DaoBanAssistantPro/app/test/alarm_screen_test.dart: 一个班次两条闹钟：同一天两行都列出来
+00:01 +23: D:/DaoBanAssistantPro/app/test/alarm_screen_test.dart: 一个班次两条闹钟：同一天两行都列出来
+00:01 +24: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:01 +25: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:01 +26: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:01 +27: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:01 +28: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +29: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +30: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +31: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +32: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +33: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +34: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +35: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +36: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +37: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +38: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +39: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +40: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +41: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +42: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +43: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +44: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +45: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +46: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +47: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +48: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +49: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +50: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +51: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +52: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +53: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:02 +54: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +55: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +56: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +57: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +58: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +59: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +60: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +61: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +62: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +63: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +64: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +65: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +66: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +67: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +68: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +69: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +70: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +71: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +72: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +73: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +73: D:/DaoBanAssistantPro/app/test/design_tokens_test.dart: 界面层不写数值
+间距类常量的具名豁免（design-tokens-ignore）：
+lib/core/widgets/glass_choice_chip.dart:40  _hitPad = 6.0 —— 命中区补到 44dp 触摸目标的推导值，不是设计间距
+00:03 +73 -1: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +73 -1: D:/DaoBanAssistantPro/app/test/design_tokens_test.dart: 界面层不写数值 [E]
+  Expected: empty
+    Actual: [
+              'lib/features/calendar/schedule_editor_screen.dart:2023  字号字面量（改用角色令牌）\n'
+                '      style: const TextStyle(fontFamily: \'monospace\', fontSize: 12),',
+              'lib/features/calendar/schedule_editor_screen.dart:1503  颜色字面量（改用令牌）\n'
+                '      color: const Color(0xFF2F7CF6),',
+              'lib/features/calendar/schedule_editor_screen.dart:1589  颜色字面量（改用令牌）\n'
+                '      color: const Color(0xFF2F7CF6),',
+              'lib/features/calendar/schedule_editor_screen.dart:1615  颜色字面量（改用令牌）\n'
+                '      color: const Color(0xFF2F7CF6),',
+              'lib/features/calendar/shift_template_picker_screen.dart:101  图标尺寸字面量（改用 iconSm/Md/Lg）\n'
+                '      Icon(icon, size: 32, color: cs.primary),'
+            ]
+  界面层只能引用令牌，发现 5 处字面量：
+  lib/features/calendar/schedule_editor_screen.dart:2023  字号字面量（改用角色令牌）
+        style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+  lib/features/calendar/schedule_editor_screen.dart:1503  颜色字面量（改用令牌）
+        color: const Color(0xFF2F7CF6),
+  lib/features/calendar/schedule_editor_screen.dart:1589  颜色字面量（改用令牌）
+        color: const Color(0xFF2F7CF6),
+  lib/features/calendar/schedule_editor_screen.dart:1615  颜色字面量（改用令牌）
+        color: const Color(0xFF2F7CF6),
+  lib/features/calendar/shift_template_picker_screen.dart:101  图标尺寸字面量（改用 iconSm/Md/Lg）
+        Icon(icon, size: 32, color: cs.primary),
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\design_tokens_test.dart 586:5                  main.<fn>
+  
+00:03 +74 -1: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +75 -1: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +76 -1: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +77 -1: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +78 -1: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +79 -1: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +80 -1: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +81 -1: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +82 -1: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +83 -1: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +84 -1: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +85 -1: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +86 -1: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +87 -1: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +88 -1: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +89 -1: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +90 -1: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +91 -1: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +92 -1: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +93 -1: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +94 -1: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +95 -1: D:/DaoBanAssistantPro/app/test/calendar_chain_test.dart: 长按拖选跨过时段边界 → 拦下并说明，不弹选择层
+00:03 +96 -1: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 宽屏：日历改左右分栏，信息卡在右不在下
+00:03 +97 -1: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 宽屏：日历改左右分栏，信息卡在右不在下
+00:03 +98 -1: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 宽屏：日历改左右分栏，信息卡在右不在下
+00:03 +99 -1: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 宽屏：日历改左右分栏，信息卡在右不在下
+00:03 +100 -1: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 宽屏：日历改左右分栏，信息卡在右不在下
+00:03 +101 -1: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 宽屏：日历改左右分栏，信息卡在右不在下
+00:03 +102 -1: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 宽屏：日历改左右分栏，信息卡在右不在下
+00:03 +103 -1: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 宽屏：日历改左右分栏，信息卡在右不在下
+00:03 +104 -1: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 宽屏：日历改左右分栏，信息卡在右不在下
+00:03 +105 -1: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 宽屏：日历改左右分栏，信息卡在右不在下
+00:04 +106 -1: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 宽屏：日历改左右分栏，信息卡在右不在下
+00:04 +107 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:04 +108 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:04 +109 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:04 +110 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:04 +111 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:04 +112 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:04 +113 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:04 +114 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:04 +115 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:04 +116 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:04 +117 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:05 +118 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:05 +119 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:05 +120 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:05 +121 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:05 +122 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:05 +123 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:05 +124 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:05 +125 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:05 +126 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:05 +127 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:06 +127 -1: D:/DaoBanAssistantPro/app/test/glass_saturation_test.dart: 探针：ColorFilter 嵌进 BackdropFilter 后，像素真的被提饱和
+[probe] 通道极差：基线 32 → 提饱和 39（底色 0xFF7A8A9A）
+00:06 +128 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:06 +129 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:06 +130 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:06 +131 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:06 +132 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:06 +133 -1: D:/DaoBanAssistantPro/app/test/calendar_frame_budget_test.dart: 液态档：长按拖选一段日子时，一帧重建的 widget 数 ≤ 80
+00:06 +134 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:06 +135 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:06 +136 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:06 +137 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:07 +138 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:07 +139 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:07 +140 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:07 +141 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:07 +142 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:07 +143 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:07 +144 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:07 +145 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:07 +146 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:07 +147 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:07 +148 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:07 +149 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:07 +150 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:07 +151 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:07 +152 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:07 +153 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:07 +154 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:07 +155 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:08 +156 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:08 +157 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:08 +158 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:08 +159 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:08 +160 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:08 +161 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:08 +162 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:08 +163 -1: D:/DaoBanAssistantPro/app/test/factory_reset_test.dart: 界面层：确认之后库、外观设置、首启标记一起回到出厂
+00:08 +164 -1: D:/DaoBanAssistantPro/app/test/glass_tile_backdrop_test.dart: GlassTile 不挂 BackdropFilter
+00:08 +165 -1: D:/DaoBanAssistantPro/app/test/glass_tile_backdrop_test.dart: GlassTile 不挂 BackdropFilter
+00:08 +166 -1: D:/DaoBanAssistantPro/app/test/glass_tile_backdrop_test.dart: GlassTile 不挂 BackdropFilter
+00:08 +167 -1: D:/DaoBanAssistantPro/app/test/glass_tile_backdrop_test.dart: GlassTile 不挂 BackdropFilter
+00:08 +168 -1: D:/DaoBanAssistantPro/app/test/glass_weekday_picker_test.dart: 点一下加一位，再点一下减一位；位序是「周一 = 1 << 0」
+00:08 +169 -1: D:/DaoBanAssistantPro/app/test/glass_weekday_picker_test.dart: 点一下加一位，再点一下减一位；位序是「周一 = 1 << 0」
+00:08 +170 -1: D:/DaoBanAssistantPro/app/test/glass_weekday_picker_test.dart: 点一下加一位，再点一下减一位；位序是「周一 = 1 << 0」
+00:08 +171 -1: D:/DaoBanAssistantPro/app/test/glass_weekday_picker_test.dart: 点一下加一位，再点一下减一位；位序是「周一 = 1 << 0」
+00:08 +172 -1: D:/DaoBanAssistantPro/app/test/glass_weekday_picker_test.dart: 点一下加一位，再点一下减一位；位序是「周一 = 1 << 0」
+00:08 +173 -1: D:/DaoBanAssistantPro/app/test/glass_weekday_picker_test.dart: 点一下加一位，再点一下减一位；位序是「周一 = 1 << 0」
+00:08 +174 -1: D:/DaoBanAssistantPro/app/test/glass_weekday_picker_test.dart: 点一下加一位，再点一下减一位；位序是「周一 = 1 << 0」
+00:08 +175 -1: D:/DaoBanAssistantPro/app/test/glass_weekday_picker_test.dart: 点一下加一位，再点一下减一位；位序是「周一 = 1 << 0」
+00:08 +176 -1: D:/DaoBanAssistantPro/app/test/glass_weekday_picker_test.dart: 点一下加一位，再点一下减一位；位序是「周一 = 1 << 0」
+00:08 +177 -1: D:/DaoBanAssistantPro/app/test/glass_weekday_picker_test.dart: 点一下加一位，再点一下减一位；位序是「周一 = 1 << 0」
+00:08 +178 -1: D:/DaoBanAssistantPro/app/test/glass_weekday_picker_test.dart: 点一下加一位，再点一下减一位；位序是「周一 = 1 << 0」
+00:08 +179 -1: D:/DaoBanAssistantPro/app/test/glass_weekday_picker_test.dart: 点一下加一位，再点一下减一位；位序是「周一 = 1 << 0」
+00:08 +180 -1: D:/DaoBanAssistantPro/app/test/glass_weekday_picker_test.dart: 点一下加一位，再点一下减一位；位序是「周一 = 1 << 0」
+00:08 +181 -1: D:/DaoBanAssistantPro/app/test/glass_weekday_picker_test.dart: 点一下加一位，再点一下减一位；位序是「周一 = 1 << 0」
+00:08 +182 -1: D:/DaoBanAssistantPro/app/test/glass_weekday_picker_test.dart: 点一下加一位，再点一下减一位；位序是「周一 = 1 << 0」
+00:08 +183 -1: D:/DaoBanAssistantPro/app/test/glass_weekday_picker_test.dart: 点一下加一位，再点一下减一位；位序是「周一 = 1 << 0」
+00:08 +184 -1: D:/DaoBanAssistantPro/app/test/glass_weekday_picker_test.dart: 点一下加一位，再点一下减一位；位序是「周一 = 1 << 0」
+00:09 +185 -1: D:/DaoBanAssistantPro/app/test/glass_weekday_picker_test.dart: 点一下加一位，再点一下减一位；位序是「周一 = 1 << 0」
+00:09 +186 -1: D:/DaoBanAssistantPro/app/test/glass_weekday_picker_test.dart: 点一下加一位，再点一下减一位；位序是「周一 = 1 << 0」
+00:09 +187 -1: D:/DaoBanAssistantPro/app/test/glass_weekday_picker_test.dart: 点一下加一位，再点一下减一位；位序是「周一 = 1 << 0」
+00:09 +188 -1: D:/DaoBanAssistantPro/app/test/glass_weekday_picker_test.dart: 点一下加一位，再点一下减一位；位序是「周一 = 1 << 0」
+00:09 +189 -1: D:/DaoBanAssistantPro/app/test/glass_weekday_picker_test.dart: 点一下加一位，再点一下减一位；位序是「周一 = 1 << 0」
+00:09 +190 -1: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 日历 → 排班时段 → 管理排班时段 → 新增排班：弹「选择你的倒班方式」；返回键放弃不建方案
+00:09 +191 -1: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 日历 → 排班时段 → 管理排班时段 → 新增排班：弹「选择你的倒班方式」；返回键放弃不建方案
+00:09 +192 -1: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 日历 → 排班时段 → 管理排班时段 → 新增排班：弹「选择你的倒班方式」；返回键放弃不建方案
+00:09 +193 -1: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 日历 → 排班时段 → 管理排班时段 → 新增排班：弹「选择你的倒班方式」；返回键放弃不建方案
+00:09 +194 -1: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 日历 → 排班时段 → 管理排班时段 → 新增排班：弹「选择你的倒班方式」；返回键放弃不建方案
+00:09 +195 -1: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 日历 → 排班时段 → 管理排班时段 → 新增排班：弹「选择你的倒班方式」；返回键放弃不建方案
+00:09 +196 -1: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 日历 → 排班时段 → 管理排班时段 → 新增排班：弹「选择你的倒班方式」；返回键放弃不建方案
+00:09 +197 -1: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 日历 → 排班时段 → 管理排班时段 → 新增排班：弹「选择你的倒班方式」；返回键放弃不建方案
+00:09 +198 -1: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 日历 → 排班时段 → 管理排班时段 → 新增排班：弹「选择你的倒班方式」；返回键放弃不建方案
+00:09 +199 -1: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 日历 → 排班时段 → 管理排班时段 → 新增排班：弹「选择你的倒班方式」；返回键放弃不建方案
+00:09 +200 -1: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 日历 → 排班时段 → 管理排班时段 → 新增排班：弹「选择你的倒班方式」；返回键放弃不建方案
+00:10 +201 -1: D:/DaoBanAssistantPro/app/test/glow_layer_test.dart: 光晕每一帧只重绘自己（不再牵动整页）
+00:10 +202 -1: D:/DaoBanAssistantPro/app/test/glow_layer_test.dart: 光晕每一帧只重绘自己（不再牵动整页）
+00:10 +203 -1: D:/DaoBanAssistantPro/app/test/glow_layer_test.dart: 光晕每一帧只重绘自己（不再牵动整页）
+00:10 +204 -1: D:/DaoBanAssistantPro/app/test/glow_layer_test.dart: 光晕每一帧只重绘自己（不再牵动整页）
+00:10 +205 -1: D:/DaoBanAssistantPro/app/test/glow_layer_test.dart: 光晕每一帧只重绘自己（不再牵动整页）
+00:10 +206 -1: D:/DaoBanAssistantPro/app/test/glow_layer_test.dart: 光晕每一帧只重绘自己（不再牵动整页）
+00:10 +207 -1: D:/DaoBanAssistantPro/app/test/glow_layer_test.dart: 光晕每一帧只重绘自己（不再牵动整页）
+00:10 +208 -1: D:/DaoBanAssistantPro/app/test/glow_layer_test.dart: 光晕每一帧只重绘自己（不再牵动整页）
+00:10 +209 -1: D:/DaoBanAssistantPro/app/test/glow_layer_test.dart: 光晕每一帧只重绘自己（不再牵动整页）
+00:10 +210 -1: D:/DaoBanAssistantPro/app/test/glow_layer_test.dart: 光晕每一帧只重绘自己（不再牵动整页）
+00:10 +211 -1: D:/DaoBanAssistantPro/app/test/glow_layer_test.dart: 光晕每一帧只重绘自己（不再牵动整页）
+00:10 +212 -1: D:/DaoBanAssistantPro/app/test/glow_layer_test.dart: 光晕每一帧只重绘自己（不再牵动整页）
+00:10 +213 -1: D:/DaoBanAssistantPro/app/test/glow_layer_test.dart: 光晕每一帧只重绘自己（不再牵动整页）
+00:10 +214 -1: D:/DaoBanAssistantPro/app/test/glow_layer_test.dart: 光晕每一帧只重绘自己（不再牵动整页）
+00:10 +215 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:11 +216 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:11 +217 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:11 +218 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:11 +219 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:11 +220 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:11 +221 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:11 +221 -1: D:/DaoBanAssistantPro/app/test/lens_magnify_probe_test.dart: 探针：透镜里用 ImageFilter.matrix 放大，底下的东西真的被搬动了吗
+[probe] 黑竖线的列位置：无透镜 15 → 单位矩阵 15 → 2× 11（原始 16.0，透镜中心 20.0）
+00:11 +222 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:11 +223 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:11 +224 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:11 +224 -1: D:/DaoBanAssistantPro/app/test/lens_magnify_probe_test.dart: 探针：胶囊自己套着 BackdropFilter 时，上面的透镜还看得见它吗
+[probe] 透镜区域内最暗的列：不放大 15 → 2× 11（线原本在 16.0，透镜中心 20.0）
+00:11 +225 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:11 +226 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:11 +227 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:11 +228 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:11 +228 -1: D:/DaoBanAssistantPro/app/test/lens_magnify_probe_test.dart: 探针：放大中心是根坐标还是局部坐标
+[probe] 透镜内的黑线落在 x = 47（根坐标解释 → 48；局部坐标解释 → 28）
+00:11 +229 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:11 +230 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:11 +230 -1: D:/DaoBanAssistantPro/app/test/lens_magnify_probe_test.dart: 探针：Transform 会不会把 backdrop 的坐标空间一起搬走
+[probe] 线落在根坐标 x = 27（空间被搬走 → 48；仍是根坐标 → 68）
+00:11 +231 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:11 +232 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:11 +232 -1: D:/DaoBanAssistantPro/app/test/lens_magnify_probe_test.dart: 探针：BackdropGroup 会不会把滤镜空间限定到组内
+[probe] 线落在根坐标 x = 20（组内局部 → 48；仍是根坐标 → 68）
+00:11 +233 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +234 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +235 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +236 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +237 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +238 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +239 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +240 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +241 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +242 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +243 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +244 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +245 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +246 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +247 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +247 -1: D:/DaoBanAssistantPro/app/test/liquid_lens_test.dart: 提起与落下是两条不同的弹簧：落下明显更从容
+[probe] 弹簧整定：提起 232.0ms / 落下 440.0ms
+00:12 +248 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +249 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +250 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +251 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +252 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +253 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +254 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +255 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +256 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +257 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +258 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +259 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +260 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +261 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +262 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +263 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +264 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +265 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +266 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +267 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +268 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +269 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +270 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +271 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +272 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +273 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +274 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +275 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +276 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +277 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +278 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +279 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +280 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:12 +281 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +282 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +283 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +284 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +285 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +286 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +287 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +288 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +289 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +290 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +291 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +292 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +293 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +294 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +295 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +296 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +297 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +298 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +299 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +300 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +301 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +302 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +303 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +304 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:13 +305 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:14 +305 -1: D:/DaoBanAssistantPro/app/test/liquid_lens_test.dart: 彩边是「光晕」不是「等宽的带」：颜色往轮廓里会衰减
+[probe] 剖面 1:139  3:64  5:23  6:17  8:9  10:2  12:0
+00:14 +306 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:14 +307 -1: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:14 +307 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:14 +307 -2: D:/DaoBanAssistantPro/app/test/migration_v10_to_v11_test.dart: v10 → v11：老待办一条不丢、series_id 为空、新表能写能读 [E]
+  Expected: <13>
+    Actual: <15>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\migration_v10_to_v11_test.dart 90:5            main.<fn>
+  
+00:14 +308 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:14 +309 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:14 +310 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:14 +311 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:14 +312 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:14 +313 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:14 +314 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:14 +315 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:14 +316 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:14 +317 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:14 +318 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:14 +319 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:14 +320 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:14 +321 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:14 +322 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:14 +323 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:14 +324 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 交互契约两档一致：按住期间页面不动、松手才提交
+00:14 +325 -2: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 日历页挂着光晕背景，且它不是逐帧驱动的
+00:14 +325 -2: D:/DaoBanAssistantPro/app/test/liquid_lens_test.dart: 四层都跟着亮度走：motion=0.3 留下的痕迹约为满档的三成
+[probe] 满档最大差 = 195，三成档 = 84
+00:14 +326 -2: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 日历页挂着光晕背景，且它不是逐帧驱动的
+00:14 +327 -2: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 日历页挂着光晕背景，且它不是逐帧驱动的
+00:14 +328 -2: D:/DaoBanAssistantPro/app/test/home_shell_nav_test.dart: 上一次推失败：回前台必须重试一次
+00:14 +329 -2: D:/DaoBanAssistantPro/app/test/home_shell_nav_test.dart: 上一次推失败：回前台必须重试一次
+00:14 +330 -2: D:/DaoBanAssistantPro/app/test/home_shell_nav_test.dart: 上一次推失败：回前台必须重试一次
+00:14 +331 -2: D:/DaoBanAssistantPro/app/test/home_shell_nav_test.dart: 上一次推失败：回前台必须重试一次
+00:14 +332 -2: D:/DaoBanAssistantPro/app/test/home_shell_nav_test.dart: 上一次推失败：回前台必须重试一次
+00:14 +333 -2: D:/DaoBanAssistantPro/app/test/home_shell_nav_test.dart: 上一次推失败：回前台必须重试一次
+00:14 +334 -2: D:/DaoBanAssistantPro/app/test/home_shell_nav_test.dart: 上一次推失败：回前台必须重试一次
+00:14 +335 -2: D:/DaoBanAssistantPro/app/test/home_shell_nav_test.dart: 上一次推失败：回前台必须重试一次
+00:14 +336 -2: D:/DaoBanAssistantPro/app/test/home_shell_nav_test.dart: 上一次推失败：回前台必须重试一次
+00:14 +337 -2: D:/DaoBanAssistantPro/app/test/home_shell_nav_test.dart: 上一次推失败：回前台必须重试一次
+00:14 +338 -2: D:/DaoBanAssistantPro/app/test/home_shell_nav_test.dart: 上一次推失败：回前台必须重试一次
+00:14 +339 -2: D:/DaoBanAssistantPro/app/test/home_shell_nav_test.dart: 上一次推失败：回前台必须重试一次
+00:14 +340 -2: D:/DaoBanAssistantPro/app/test/home_shell_nav_test.dart: 上一次推失败：回前台必须重试一次
+00:14 +341 -2: D:/DaoBanAssistantPro/app/test/home_shell_nav_test.dart: 上一次推失败：回前台必须重试一次
+00:14 +342 -2: D:/DaoBanAssistantPro/app/test/home_shell_nav_test.dart: 上一次推失败：回前台必须重试一次
+00:14 +343 -2: D:/DaoBanAssistantPro/app/test/home_shell_nav_test.dart: 上一次推失败：回前台必须重试一次
+00:14 +344 -2: D:/DaoBanAssistantPro/app/test/home_shell_nav_test.dart: 上一次推失败：回前台必须重试一次
+00:14 +345 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 标准档的底栏树里没有透镜
+00:14 +346 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 标准档的底栏树里没有透镜
+00:14 +347 -2: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 长按拖选一段日子后弹层改多天
+00:14 +348 -2: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 长按拖选一段日子后弹层改多天
+00:14 +349 -2: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 长按拖选一段日子后弹层改多天
+00:14 +350 -2: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 长按拖选一段日子后弹层改多天
+00:14 +351 -2: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 长按拖选一段日子后弹层改多天
+00:15 +352 -2: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 长按拖选一段日子后弹层改多天
+00:15 +353 -2: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 长按拖选一段日子后弹层改多天
+00:15 +354 -2: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 长按拖选一段日子后弹层改多天
+00:15 +355 -2: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 长按拖选一段日子后弹层改多天
+00:15 +356 -2: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 长按拖选一段日子后弹层改多天
+00:15 +357 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 静止时透镜正对着选中那一格的中心
+00:15 +358 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 静止时透镜正对着选中那一格的中心
+00:15 +359 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 静止时透镜正对着选中那一格的中心
+test/post_duty_alarm_test.dart:72:37: Error: Too many positional arguments: 3 allowed, but 4 found.
+Try removing the extra positional arguments.
+      final eff = effectiveDayAlarms(s, DateTime(2026, 9, 22), t, _rule);
+                                    ^
+lib/features/alarm/alarm_service.dart:86:18: Context: Found this candidate, but the arguments don't match.
+List<ShiftAlarm> effectiveDayAlarms(
+                 ^^^^^^^^^^^^^^^^^^
+test/post_duty_alarm_test.dart:80:42: Error: Too many positional arguments: 3 allowed, but 4 found.
+Try removing the extra positional arguments.
+      expect(identical(effectiveDayAlarms(s, DateTime(2026, 9, 23), t, _rule),
+                                         ^
+lib/features/alarm/alarm_service.dart:86:18: Context: Found this candidate, but the arguments don't match.
+List<ShiftAlarm> effectiveDayAlarms(
+                 ^^^^^^^^^^^^^^^^^^
+test/post_duty_alarm_test.dart:88:39: Error: Too many positional arguments: 3 allowed, but 4 found.
+Try removing the extra positional arguments.
+          identical(effectiveDayAlarms(s, DateTime(2026, 9, 22), t, null),
+                                      ^
+lib/features/alarm/alarm_service.dart:86:18: Context: Found this candidate, but the arguments don't match.
+List<ShiftAlarm> effectiveDayAlarms(
+                 ^^^^^^^^^^^^^^^^^^
+test/post_duty_alarm_test.dart:117:37: Error: Too many positional arguments: 3 allowed, but 4 found.
+Try removing the extra positional arguments.
+      final eff = effectiveDayAlarms(s, DateTime(2026, 9, 22), t, _rule);
+                                    ^
+lib/features/alarm/alarm_service.dart:86:18: Context: Found this candidate, but the arguments don't match.
+List<ShiftAlarm> effectiveDayAlarms(
+                 ^^^^^^^^^^^^^^^^^^
+test/post_duty_alarm_test.dart:130:49: Error: No named parameter with the name 'postDutyRule'.
+          from: DateTime(2026, 9, 21), days: 3, postDutyRule: _rule);
+                                                ^^^^^^^^^^^^
+lib/features/alarm/alarm_service.dart:152:22: Context: Found this candidate, but the arguments don't match.
+List<ShiftAlarmPlan> planShiftAlarms(
+                     ^^^^^^^^^^^^^^^
+test/post_duty_alarm_test.dart:157:49: Error: No named parameter with the name 'postDutyRule'.
+          from: DateTime(2026, 9, 21), days: 3, postDutyRule: nightRule);
+                                                ^^^^^^^^^^^^
+lib/features/alarm/alarm_service.dart:152:22: Context: Found this candidate, but the arguments don't match.
+List<ShiftAlarmPlan> planShiftAlarms(
+                     ^^^^^^^^^^^^^^^
+00:15 +360 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 静止时透镜正对着选中那一格的中心
+00:15 +361 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 静止时透镜正对着选中那一格的中心
+00:15 +362 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 静止时透镜正对着选中那一格的中心
+00:15 +363 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 静止时透镜正对着选中那一格的中心
+00:15 +364 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 静止时透镜正对着选中那一格的中心
+00:15 +365 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 静止时透镜正对着选中那一格的中心
+00:15 +366 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 静止时透镜正对着选中那一格的中心
+00:15 +367 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 静止时透镜正对着选中那一格的中心
+00:15 +368 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 静止时透镜正对着选中那一格的中心
+00:15 +369 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 静止时透镜正对着选中那一格的中心
+00:15 +370 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 静止时透镜正对着选中那一格的中心
+00:15 +371 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 静止时透镜正对着选中那一格的中心
+00:15 +372 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 静止时透镜正对着选中那一格的中心
+00:15 +373 -2: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 静止时透镜正对着选中那一格的中心
+00:15 +373 -3: loading D:/DaoBanAssistantPro/app/test/post_duty_alarm_test.dart [E]
+  Failed to load "D:/DaoBanAssistantPro/app/test/post_duty_alarm_test.dart":
+  Compilation failed for testPath=D:/DaoBanAssistantPro/app/test/post_duty_alarm_test.dart: test/post_duty_alarm_test.dart:72:37: Error: Too many positional arguments: 3 allowed, but 4 found.
+  Try removing the extra positional arguments.
+        final eff = effectiveDayAlarms(s, DateTime(2026, 9, 22), t, _rule);
+                                      ^
+  lib/features/alarm/alarm_service.dart:86:18: Context: Found this candidate, but the arguments don't match.
+  List<ShiftAlarm> effectiveDayAlarms(
+                   ^^^^^^^^^^^^^^^^^^
+  test/post_duty_alarm_test.dart:80:42: Error: Too many positional arguments: 3 allowed, but 4 found.
+  Try removing the extra positional arguments.
+        expect(identical(effectiveDayAlarms(s, DateTime(2026, 9, 23), t, _rule),
+                                           ^
+  lib/features/alarm/alarm_service.dart:86:18: Context: Found this candidate, but the arguments don't match.
+  List<ShiftAlarm> effectiveDayAlarms(
+                   ^^^^^^^^^^^^^^^^^^
+  test/post_duty_alarm_test.dart:88:39: Error: Too many positional arguments: 3 allowed, but 4 found.
+  Try removing the extra positional arguments.
+            identical(effectiveDayAlarms(s, DateTime(2026, 9, 22), t, null),
+                                        ^
+  lib/features/alarm/alarm_service.dart:86:18: Context: Found this candidate, but the arguments don't match.
+  List<ShiftAlarm> effectiveDayAlarms(
+                   ^^^^^^^^^^^^^^^^^^
+  test/post_duty_alarm_test.dart:117:37: Error: Too many positional arguments: 3 allowed, but 4 found.
+  Try removing the extra positional arguments.
+        final eff = effectiveDayAlarms(s, DateTime(2026, 9, 22), t, _rule);
+                                      ^
+  lib/features/alarm/alarm_service.dart:86:18: Context: Found this candidate, but the arguments don't match.
+  List<ShiftAlarm> effectiveDayAlarms(
+                   ^^^^^^^^^^^^^^^^^^
+  test/post_duty_alarm_test.dart:130:49: Error: No named parameter with the name 'postDutyRule'.
+            from: DateTime(2026, 9, 21), days: 3, postDutyRule: _rule);
+                                                  ^^^^^^^^^^^^
+  lib/features/alarm/alarm_service.dart:152:22: Context: Found this candidate, but the arguments don't match.
+  List<ShiftAlarmPlan> planShiftAlarms(
+                       ^^^^^^^^^^^^^^^
+  test/post_duty_alarm_test.dart:157:49: Error: No named parameter with the name 'postDutyRule'.
+            from: DateTime(2026, 9, 21), days: 3, postDutyRule: nightRule);
+                                                  ^^^^^^^^^^^^
+  lib/features/alarm/alarm_service.dart:152:22: Context: Found this candidate, but the arguments don't match.
+  List<ShiftAlarmPlan> planShiftAlarms(
+                       ^^^^^^^^^^^^^^^
+  .
+00:15 +374 -3: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 长按向上拖选：起点在终点之后，区间要归一成正序
+00:15 +375 -3: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 长按向上拖选：起点在终点之后，区间要归一成正序
+00:15 +376 -3: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 长按向上拖选：起点在终点之后，区间要归一成正序
+00:15 +377 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 点按换页：透镜是滑过去的，不是瞬移过去的
+00:15 +378 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 点按换页：透镜是滑过去的，不是瞬移过去的
+00:15 +379 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 点按换页：透镜是滑过去的，不是瞬移过去的
+00:15 +380 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 点按换页：透镜是滑过去的，不是瞬移过去的
+00:15 +381 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 点按换页：透镜是滑过去的，不是瞬移过去的
+00:15 +382 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 点按换页：透镜是滑过去的，不是瞬移过去的
+00:15 +383 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 点按换页：透镜是滑过去的，不是瞬移过去的
+00:15 +384 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 点按换页：透镜是滑过去的，不是瞬移过去的
+00:15 +385 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 点按换页：透镜是滑过去的，不是瞬移过去的
+00:15 +386 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 点按换页：透镜是滑过去的，不是瞬移过去的
+00:15 +387 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 点按换页：透镜是滑过去的，不是瞬移过去的
+00:15 +388 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 点按换页：透镜是滑过去的，不是瞬移过去的
+00:15 +389 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 点按换页：透镜是滑过去的，不是瞬移过去的
+00:16 +390 -3: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 空白表方案：整月一天胶囊都不画，但也不说「没有排班」
+00:16 +391 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 点按不提起：全程高度不超过胶囊
+00:16 +392 -3: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 长按落在本月之外的空白格：不画范围，玻璃块也不能卡在放大态
+00:16 +393 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 按住才提起：超过 lensHoldDelay 之后高度必须超过胶囊
+00:16 +394 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 按住才提起：超过 lensHoldDelay 之后高度必须超过胶囊
+00:16 +395 -3: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 长按进入多选态震一次，每进一格再震一次
+00:16 +396 -3: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 长按进入多选态震一次，每进一格再震一次
+00:16 +397 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 点按被取消（竖直滑走）：透镜落回，不许卡在提起状态
+00:17 +398 -3: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 单格滑块拖到新的一格时震，没换格不震
+00:17 +399 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +400 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +401 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +402 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +403 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +404 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +405 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +406 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +407 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +408 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +409 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +410 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +411 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +412 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +413 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +414 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +415 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +416 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +417 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +418 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +419 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +420 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +421 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +422 -3: D:/DaoBanAssistantPro/app/test/glass_tier_test.dart: 液态档**真的画了东西**：关 / 开两态的光栅化像素必须不同
+00:17 +423 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +424 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +425 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +426 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +427 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +428 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +429 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +430 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +431 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +432 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +433 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +434 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +435 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +436 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +437 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +438 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +439 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +440 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +441 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +442 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +443 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +444 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +445 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +446 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +447 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +448 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +449 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +450 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +451 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +452 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +453 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +454 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +455 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:18 +456 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:19 +457 -3: D:/DaoBanAssistantPro/app/test/recurring_advance_hooks_test.dart: 进待办页会把「当前这一次」补齐
+00:19 +458 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +459 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +460 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +461 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +462 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +463 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +464 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +465 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +466 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +467 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +468 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +469 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +470 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +471 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +472 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +473 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +474 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +475 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +476 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +477 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +478 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +479 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +480 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +481 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +482 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +483 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +484 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +485 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +486 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +487 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +488 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +489 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +490 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +491 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +492 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +493 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:19 +494 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +495 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +496 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +497 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +498 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +499 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +500 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +501 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +502 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +503 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +504 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +505 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +506 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +507 -3: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +507 -4: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +507 -4: D:/DaoBanAssistantPro/app/test/schedule_template_test.dart: 模板从方案里取：我们班组转到第 0 位、错位归零 [E]
+  Expected: [0, 0, 1, 1, 3, 2, 2, 3, 3, 3]
+    Actual: [[0], [0], [1], [1], [3], [2], [2], [3], [3], [3]]
+     Which: at location [0] is [0] instead of <0>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\schedule_template_test.dart 74:5               main.<fn>
+  
+00:20 +508 -4: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +509 -4: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +510 -4: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +511 -4: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +512 -4: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +513 -4: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +514 -4: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +514 -5: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +514 -5: D:/DaoBanAssistantPro/app/test/schedule_template_test.dart: 编解码 周期与错位往返（含负错位） [E]
+  Expected: [0, 0, 1, 1, 3]
+    Actual: [[0], [0], [1], [1], [3]]
+     Which: at location [0] is [0] instead of <0>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\schedule_template_test.dart 148:7              main.<fn>.<fn>
+  
+00:20 +515 -5: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +516 -5: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +517 -5: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:20 +518 -5: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:21 +519 -5: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:21 +520 -5: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:21 +521 -5: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:21 +522 -5: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:21 +523 -5: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:21 +524 -5: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:21 +525 -5: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:21 +526 -5: D:/DaoBanAssistantPro/app/test/recurring_dialog_test.dart: 新建：选「每周」→ 只勾周三 → 添加，落成一个系列
+00:21 +527 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +528 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +529 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +530 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +531 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +532 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +533 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +534 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +535 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +536 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +537 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +538 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +539 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +540 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +541 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +542 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +543 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +544 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+test/system_alarm_days_test.dart:11:7: Error: The non-abstract class '_FixedSource' is missing implementations for these members:
+ - ShiftSource.shiftsOn
+Try to either
+ - provide an implementation,
+ - inherit an implementation from a superclass or mixin,
+ - mark the class as abstract, or
+ - provide a 'noSuchMethod' implementation.
+class _FixedSource implements ShiftSource {
+      ^^^^^^^^^^^^
+lib/domain/shift_rotation.dart:360:20: Context: 'ShiftSource.shiftsOn' is defined here.
+  List<ShiftClass> shiftsOn(DateTime date);
+                   ^^^^^^^^
+00:21 +545 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +546 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +547 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +548 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +549 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +550 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +551 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +552 -5: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:21 +552 -6: loading D:/DaoBanAssistantPro/app/test/system_alarm_days_test.dart [E]
+  Failed to load "D:/DaoBanAssistantPro/app/test/system_alarm_days_test.dart":
+  Compilation failed for testPath=D:/DaoBanAssistantPro/app/test/system_alarm_days_test.dart: test/system_alarm_days_test.dart:11:7: Error: The non-abstract class '_FixedSource' is missing implementations for these members:
+   - ShiftSource.shiftsOn
+  Try to either
+   - provide an implementation,
+   - inherit an implementation from a superclass or mixin,
+   - mark the class as abstract, or
+   - provide a 'noSuchMethod' implementation.
+  class _FixedSource implements ShiftSource {
+        ^^^^^^^^^^^^
+  lib/domain/shift_rotation.dart:360:20: Context: 'ShiftSource.shiftsOn' is defined here.
+    List<ShiftClass> shiftsOn(DateTime date);
+                     ^^^^^^^^
+  .
+00:21 +553 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +554 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +555 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +556 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +557 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +558 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +559 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +560 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +561 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +562 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +563 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +564 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +565 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +566 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +567 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +568 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +569 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +570 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +571 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +572 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +573 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +574 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +575 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +576 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +577 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +578 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +579 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +580 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +581 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +582 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +583 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +584 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +585 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +586 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +587 -6: D:/DaoBanAssistantPro/app/test/ringtone_vibrate_only_test.dart: 选择层里有「仅震动」；选了它，哨兵落到设置里、副标题跟着变
+00:22 +588 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:22 +589 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:22 +590 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:22 +591 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:22 +592 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:22 +593 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:22 +594 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:22 +595 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:22 +596 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:23 +597 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:23 +598 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:23 +599 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:23 +600 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:23 +601 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:23 +602 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:23 +603 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:24 +604 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:24 +605 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:24 +606 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:24 +607 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:24 +608 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:24 +609 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:24 +610 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:24 +611 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:24 +612 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度步进器：−/+ 改变行数，到 1 与 60 时对应按钮置灰
+00:24 +613 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:24 +614 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:24 +615 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:24 +616 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:24 +617 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:25 +618 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:25 +619 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:25 +620 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:25 +621 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:25 +622 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:25 +623 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:25 +624 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:25 +625 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:25 +626 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:25 +627 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:25 +628 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:25 +629 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:25 +630 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:25 +631 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:25 +632 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:25 +633 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:25 +634 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:25 +635 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:25 +636 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:25 +637 -6: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那枚块 滑行中：挤压场跟着那枚块走，不是一直盯着终点
+00:25 +638 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +639 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +640 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +641 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +642 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +643 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +644 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +645 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +646 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +647 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +648 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +649 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +650 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +651 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +652 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +653 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +654 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +655 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +656 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +657 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +658 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +659 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +660 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +661 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:25 +662 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:26 +663 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:26 +664 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:26 +665 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:26 +666 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:26 +667 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:26 +668 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:26 +669 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:26 +670 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:26 +671 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:26 +672 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:26 +673 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:26 +674 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:26 +675 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:26 +676 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:26 +677 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:26 +678 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 编辑弹窗：提醒档位弹得出选择器（v0.7.1 只会在两档之间跳）
+00:26 +679 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度上限 60：到顶后 + 置灰，减一次又可用
+00:26 +680 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度上限 60：到顶后 + 置灰，减一次又可用
+00:26 +681 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 添加弹窗：提醒档位同样弹得出选择器
+00:27 +682 -6: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 添加弹窗：提醒档位同样弹得出选择器
+00:27 +683 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期某天换成别的班次后，该行右侧时间文本跟着变
+00:27 +684 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期某天换成别的班次后，该行右侧时间文本跟着变
+00:27 +685 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期某天换成别的班次后，该行右侧时间文本跟着变
+00:27 +686 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期某天换成别的班次后，该行右侧时间文本跟着变
+00:27 +687 -6: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期某天换成别的班次后，该行右侧时间文本跟着变
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: no matching candidates
+  Actual: _TextWidgetFinder:<Found 1 widget with text "08:30 – 20:30": [
+            Text("08:30 – 20:30", inherit: true, color: Color(alpha: 0.6200, red: 0.1137, green:
+0.1059, blue: 0.1255, colorSpace: ColorSpace.sRGB), size: 13.0, weight: 400, dependencies:
+[DefaultSelectionStyle, DefaultTextStyle, MediaQuery]),
+          ]>
+   Which: means one was found but none were expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart:358:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart line 358
+The test description was:
+  周期某天换成别的班次后，该行右侧时间文本跟着变
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:27 +687 -7: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 键盘弹起把可用高压掉一大截时，保存按钮仍在弹窗里、点得动
+00:27 +687 -7: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期某天换成别的班次后，该行右侧时间文本跟着变 [E]
+  Test failed. See exception logs above.
+  The test description was: 周期某天换成别的班次后，该行右侧时间文本跟着变
+  
+00:28 +688 -7: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 液态档那条水带 松手之后静止：带子收干净、没有待处理的帧
+00:28 +689 -7: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 改「白班」的开始时间，周期里所有引用白班的行同步变
+00:28 +690 -7: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 改「白班」的开始时间，周期里所有引用白班的行同步变
+00:28 +691 -7: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 改「白班」的开始时间，周期里所有引用白班的行同步变
+00:28 +692 -7: D:/DaoBanAssistantPro/app/test/todo_dialog_test.dart: 点完「添加」立刻点「取消」：不黑屏
+00:28 +693 -7: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 光晕在交互时暂停 拖动中（每帧都有位移）光晕停；停手之后接着走
+00:28 +694 -7: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 光晕在交互时暂停 拖动中（每帧都有位移）光晕停；停手之后接着走
+00:28 +695 -7: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 删除仍被引用的班次定义被拦下，未被引用的可以删
+00:29 +696 -7: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 删除仍被引用的班次定义被拦下，未被引用的可以删
+00:29 +697 -7: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 删除仍被引用的班次定义被拦下，未被引用的可以删
+00:29 +698 -7: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 删除仍被引用的班次定义被拦下，未被引用的可以删
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "周期里还有 1 天在用这个班次，先把它们改成别的": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart:409:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart line 409
+The test description was:
+  删除仍被引用的班次定义被拦下，未被引用的可以删
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:29 +698 -8: D:/DaoBanAssistantPro/app/test/calendar_screen_test.dart: 日历页不再有卡片那一层 BackdropFilter
+00:29 +698 -8: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 删除仍被引用的班次定义被拦下，未被引用的可以删 [E]
+  Test failed. See exception logs above.
+  The test description was: 删除仍被引用的班次定义被拦下，未被引用的可以删
+  
+00:29 +699 -8: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 打开「跟随法定节假日」后班次与周期清空
+00:29 +700 -8: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 保存写入两层形状的 classes + cycle（不再是旧的一天一班）
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: [0, 0, 1, 1, 2, 2, 2]
+  Actual: [[0], [0], [1], [1], [2], [2], [2]]
+   Which: at location [0] is [0] instead of <0>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart:466:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart line 466
+The test description was:
+  保存写入两层形状的 classes + cycle（不再是旧的一天一班）
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:30 +700 -9: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 保存写入两层形状的 classes + cycle（不再是旧的一天一班） [E]
+  Test failed. See exception logs above.
+  The test description was: 保存写入两层形状的 classes + cycle（不再是旧的一天一班）
+  
+00:30 +700 -9: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 改「我这组从这个周期开始」→ 基准日整体平移，班组相对错位不变
+00:30 +701 -9: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 添加班次：新增一条定义，周期里没引用所以可以删掉
+00:31 +702 -9: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 把班次切成休息：时间被清空，周期里引用它的行显示「休息」
+00:31 +703 -9: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期长度与班组数是两个彼此独立的步进器
+00:31 +704 -9: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 点「设为我」选中其他班组后，顶部显示日期与该班组行一致
+00:32 +705 -9: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 改顶部起始日后，新日期的班次是周期第 1 天，且各组相对错位不变
+00:32 +706 -9: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 预览条：从今天起渲染 14 格，简称与引擎算出来的一致
+00:32 +707 -9: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 改周期里某天引用的班次，预览条对应格子跟着变
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: ['休', '夜', '夜', '休', '休', '夜', '夜', '休', '休', '夜', '夜', '休', '休', '夜']
+  Actual: ['休', '白', '夜', '休', '休', '白', '夜', '休', '休', '白', '夜', '休', '休', '白']
+   Which: at location [1] is '白' instead of '夜'
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart:694:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart line 694
+The test description was:
+  改周期里某天引用的班次，预览条对应格子跟着变
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:33 +707 -10: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 改周期里某天引用的班次，预览条对应格子跟着变 [E]
+  Test failed. See exception logs above.
+  The test description was: 改周期里某天引用的班次，预览条对应格子跟着变
+  
+00:33 +707 -10: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 改「我的班组起始日」→ 整条预览往前移一格
+00:33 +708 -10: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 空白表（跟随法定节假日）预览条 14 格全显示 —
+00:33 +709 -10: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: L10n.timeRange：英文界面下不露出「次日」
+00:33 +710 -10: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 值班（08:00–次日08:00）：结束时间选择器停在 08:00，确认后仍是 1920
+00:33 +711 -10: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 值班的结束时间在班次设置里显示「次日08:00」，而不是被回绕成 08:00
+00:33 +712 -10: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 中班（16:00–24:00）：显示 24:00，滚轮停在 00 且确认后仍是 1440
+00:34 +713 -10: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 上夜班（20:30–次日08:30）：靠 e < s 跨午夜，确认后不被抬高到 1440 以上
+00:34 +714 -10: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 保存一套非当前方案后，重排闹钟用的是当前方案
+00:34 +715 -10: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 删未被引用的班次：先确认，取消则不删
+00:34 +716 -10: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 删未被引用的班次：确认后删除，周期下标整体前移一位
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: [0, 1]
+  Actual: [[0], [1]]
+   Which: at location [0] is [0] instead of <0>
+C 的下标要从 2 前移到 1，否则周期会指向不存在的班次定义
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart:965:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart line 965
+The test description was:
+  删未被引用的班次：确认后删除，周期下标整体前移一位
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:35 +716 -11: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 删未被引用的班次：确认后删除，周期下标整体前移一位 [E]
+  Test failed. See exception logs above.
+  The test description was: 删未被引用的班次：确认后删除，周期下标整体前移一位
+  
+00:35 +716 -11: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 删仍被周期引用的班次：拦下并提示，不弹确认框
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: no matching candidates
+  Actual: _TypeWidgetFinder:<Found 1 widget with type "GlassDialog": [
+            GlassDialog(dependencies: [InheritedCupertinoTheme, _InheritedTheme,
+_LocalizationsScope-[GlobalKey#3dd01]], state: _GlassDialogState#0c8ad),
+          ]>
+   Which: means one was found but none were expected
+这条路径本来就删不掉，再问一次是多余的
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart:975:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart line 975
+The test description was:
+  删仍被周期引用的班次：拦下并提示，不弹确认框
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:35 +716 -12: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 删仍被周期引用的班次：拦下并提示，不弹确认框 [E]
+  Test failed. See exception logs above.
+  The test description was: 删仍被周期引用的班次：拦下并提示，不弹确认框
+  
+00:35 +716 -12: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 输入框字号与主题默认一致，不再被显式压小
+00:36 +717 -12: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 卡片标题与行内标签落在统一档位
+00:36 +718 -12: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 14 档的读数没被摊平成 w500：周期长度与时间值都是 labelStrong
+00:36 +719 -12: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 班组行里的标签保留各自的字重：chip 是 w700，日期值是 w600
+00:36 +720 -12: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期行把可选班次铺成 chip，点一下就切换
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: false
+  Actual: <true>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart:1086:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart line 1086
+The test description was:
+  周期行把可选班次铺成 chip，点一下就切换
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:37 +720 -13: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期行把可选班次铺成 chip，点一下就切换 [E]
+  Test failed. See exception logs above.
+  The test description was: 周期行把可选班次铺成 chip，点一下就切换
+  
+00:37 +720 -13: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期行不再有下拉控件
+00:37 +721 -13: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: chip 带上班次色与名称
+00:37 +722 -13: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 周期行放不下时隐藏只读时间
+00:37 +723 -13: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 改班次简称不会丢掉它的 id（丢了的话覆盖会指飞）
+00:37 +724 -13: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 预览不叠按天覆盖，并在有覆盖时给出提示
+00:37 +725 -13: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 删班次时确认框点名会连带丢掉多少天的按天调整
+00:37 +726 -13: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 删没被覆盖过的班次：确认框不提按天调整
+00:38 +727 -13: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 打开「跟随法定节假日」会丢掉按天调整：先确认；取消则开关不动
+00:38 +728 -13: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 撞班：提示点名相撞的班组，一键均分后提示消失、我组起始日不动
+00:38 +729 -13: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 不撞班的方案不出现这行提示
+00:38 +730 -13: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 给白班加两个闹钟：列表里两行、保存后落库两条（名字已 trim）
+00:39 +731 -13: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 闹钟到上限：不再出现「添加闹钟」，改为一行说明
+00:39 +732 -13: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 底部悬浮胶囊 正文铺到屏幕底：内容从胶囊下面穿过去，不再被一块板子硬切
+00:39 +733 -13: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 底部悬浮胶囊 滑到底：最后一张卡整个抬到胶囊之上，那块地方真的点得到（Size(420.0, 900.0)）
+00:40 +734 -13: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 底部悬浮胶囊 滑到底：最后一张卡整个抬到胶囊之上，那块地方真的点得到（Size(200.0, 400.0)）
+00:40 +735 -13: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 编辑排班页的 BackdropFilter 层数有上界
+00:40 +736 -13: D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: (tearDownAll)
+00:40 +736 -13: Some tests failed.
+
+Failing tests:
+  D:/DaoBanAssistantPro/app/test/design_tokens_test.dart: 界面层不写数值
+  D:/DaoBanAssistantPro/app/test/migration_v10_to_v11_test.dart: v10 → v11：老待办一条不丢、series_id 为空、新表能写能读
+  D:/DaoBanAssistantPro/app/test/post_duty_alarm_test.dart: loading D:/DaoBanAssistantPro/app/test/post_duty_alarm_test.dart
+  D:/DaoBanAssistantPro/app/test/schedule_editor_test.dart: 保存写入两层形状的 classes + cycle（不再是旧的一天一班）
+  ... and 9 more
