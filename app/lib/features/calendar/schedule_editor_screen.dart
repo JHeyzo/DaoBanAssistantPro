@@ -2050,7 +2050,8 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
   }
 
   Future<void> _deleteClass(int index) async {
-    final used = _cycle.where((c) => c == index).length;
+    // v0.11.3 起一天可含多个班次：检查该下标是否出现在任意一天的列表里。
+    final used = _cycle.where((day) => day.contains(index)).length;
     if (used > 0) {
       // 仍被周期引用：直接拦下，不弹确认 —— 这条路本来就删不掉。
       showGlassSnack(
