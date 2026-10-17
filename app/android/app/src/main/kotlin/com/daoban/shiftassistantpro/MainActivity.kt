@@ -192,32 +192,6 @@ class MainActivity : FlutterActivity() {
                             result.success(false)
                         }
                     }
-                    "checkFullScreenIntentPermission" -> {
-                        try {
-                            if (Build.VERSION.SDK_INT >= 34) {
-                                val nm = getSystemService(NOTIFICATION_SERVICE)
-                                        as android.app.NotificationManager
-                                result.success(nm.canUseFullScreenIntent())
-                            } else {
-                                result.success(true)
-                            }
-                        } catch (e: Exception) {
-                            result.success(false)
-                        }
-                    }
-                    "openFullScreenIntentSettings" -> {
-                        try {
-                            startActivity(
-                                Intent(
-                                    Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,
-                                    Uri.parse("package:$packageName")
-                                )
-                            )
-                            result.success(null)
-                        } catch (e: Exception) {
-                            result.error("OPEN_FSI_FAILED", e.message, null)
-                        }
-                    }
                     "requestIgnoreBatteryOptimizations" -> {
                         try {
                             startActivity(

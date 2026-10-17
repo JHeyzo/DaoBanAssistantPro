@@ -8,6 +8,7 @@ import '../../core/l10n.dart';
 import '../../data/app_repository.dart';
 import '../../domain/recurring_todo.dart';
 import '../../domain/shift_rotation.dart';
+import '../../state/app_settings.dart';
 import '../widget/widget_service.dart';
 
 /// 没设时间的待办，提醒以当天这个整点为基准（「全天」那类待办没有更准的时点）。
@@ -71,6 +72,26 @@ DateTime shiftAlarmFireAt(DateTime date, ShiftClass shift, ShiftAlarm alarm) {
           .add(Duration(minutes: clock));
 }
 
+/// 值班次日规则命中时当天实际要响的闹钟列表：只把第一条换成规则时刻，
+/// 其余各条原样。未命中或 [rule] 为 null 时返回 [shift.alarms] 本体。
+///
+/// 抽出来是因为排定（`planShiftAlarms`）与闹钟页显示各算一次，两处必须同解，
+/// 否则页上写的时间和实际响的时间对不上。
+List<ShiftAlarm> effectiveDayAlarms(
+  ShiftSource source,
+  DateTime date,
+  ShiftClass shift, [
+  PostDutyAlarmRule? rule,
+]) {
+  if (rule == null || shift.alarms.isEmpty) return shift.alarms;
+  if (!isPostDutyDay(source, date, rule)) return shift.alarms;
+  final first = shift.alarms.first;
+  return [
+    ShiftAlarm(minute: rule.minute, label: first.label),
+    ...shift.alarms.sublist(1),
+  ];
+}
+
 /// 决定「未来 [days] 天里哪些天要排班次联动闹钟、各排在几点」。
 ///
 /// 从 [AlarmService.reschedule] 的排定循环里抽出来的**纯**决策：不碰通知插件、
@@ -83,6 +104,9 @@ DateTime shiftAlarmFireAt(DateTime date, ShiftClass shift, ShiftAlarm alarm) {
 /// 那天没有班次 / 是休班 / 班次没开总开关 / 班次一条闹钟都没配 /
 /// 那天被「按天关闹钟」显式关过（[overrides] 里值为 `false`）/
 /// 算出来的触发时刻不晚于 [from]（今天这个点已经过去了）。
+///
+/// [postDutyRule] 命中时（前一天是值班班种），当天第一条闹钟改用规则时刻，
+/// 见 [effectiveDayAlarms] —— 只换第一条，原生 id 的「序号」不变，不换号。
 ///
 /// **一个班次挂了几个闹钟就出几条 plan**，各自算各自的触发时刻与落点。
 ///
@@ -106,6 +130,7 @@ List<ShiftAlarmPlan> planShiftAlarms(
   required DateTime from,
   required int days,
   Map<int, bool> overrides = const {},
+  PostDutyAlarmRule? postDutyRule,
 }) {
   final today = dateOnly(from);
   final plans = <ShiftAlarmPlan>[];
@@ -118,8 +143,11 @@ List<ShiftAlarmPlan> planShiftAlarms(
     // 按天覆盖：该天被单独关闭则跳过
     if (overrides[dayNumber(date)] == false) continue;
 
-    for (var i = 0; i < t.alarms.length; i++) {
-      final alarm = t.alarms[i];
+    // 值班次日规则：前一天是值班班种时，第一条闹钟改用规则时刻
+    // （只换第一条，「序号」不变，原生 id 不换号）。
+    final alarms = effectiveDayAlarms(source, date, t, postDutyRule);
+    for (var i = 0; i < alarms.length; i++) {
+      final alarm = alarms[i];
       final fireAt = shiftAlarmFireAt(date, t, alarm);
       if (!fireAt.isAfter(from)) continue;
       plans.add(ShiftAlarmPlan(
@@ -332,11 +360,15 @@ class AlarmService {
     // 通知点击只处理待办（openTodoRequested），闹钟已走系统时钟，不再经 App 响铃。
   }
 
-  /// 请求通知 + 精确闹钟 + 全屏通知权限（须在 runApp 后调用，否则 Activity 未就绪会静默失败）。
+  /// 请求通知 + 精确闹钟权限（须在 runApp 后调用，否则 Activity 未就绪会静默失败）。
+  ///
+  /// 注意：**不再请求全屏通知权限** —— ColorOS 适配版删掉了 App 自己的响铃链路，
+  /// 闹钟走系统时钟响，不需要 `USE_FULL_SCREEN_INTENT`。此前每次冷启动都会调
+  /// 全屏通知的权限请求，而 manifest 里根本没声明该权限，系统设置页的开关置灰、
+  /// 永远授权不了，于是每次打开 App 都白跳一次设置页（v0.11.1 用户反馈）。
   static Future<void> requestPermissions() async {
     await requestNotificationsPermission();
     await requestExactAlarmsPermission();
-    await requestFullScreenIntentPermission();
   }
 
   static Future<void> requestNotificationsPermission() async {
@@ -349,12 +381,6 @@ class AlarmService {
     final androidImpl = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     await androidImpl?.requestExactAlarmsPermission();
-  }
-
-  static Future<void> requestFullScreenIntentPermission() async {
-    final androidImpl = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
-    await androidImpl?.requestFullScreenIntentPermission();
   }
 
   /// 返回 (通知权限, 精确闹钟权限) 是否开启。
@@ -432,24 +458,6 @@ class AlarmService {
     }
   }
 
-  /// 本应用是否已获得「全屏通知」权限（Android 14+ 全屏闹钟需要）。
-  static Future<bool> checkFullScreenIntentPermission() async {
-    try {
-      return await _settingsChannel
-              .invokeMethod('checkFullScreenIntentPermission') ??
-          false;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  /// 打开「全屏通知」权限设置。
-  static Future<void> openFullScreenIntentSettings() async {
-    try {
-      await _settingsChannel.invokeMethod('openFullScreenIntentSettings');
-    } catch (_) {}
-  }
-
   /// 取消全部原生闹钟。
   static Future<void> cancelAllNativeAlarms() async {
     try {
@@ -523,6 +531,7 @@ class AlarmService {
     required DateTime from,
     int days = 30,
     Map<int, bool> overrides = const {},
+    PostDutyAlarmRule? postDutyRule,
   }) {
     final today = dateOnly(from);
     final byDay = <int, List<Map<String, dynamic>>>{};
@@ -540,8 +549,8 @@ class AlarmService {
     // 班次闹钟：planShiftAlarms 已算好触发时刻（含前一天落点）并滤掉已过的。
     // 注意 days+1：planShiftAlarms 的 days 含今天（offset 0），而这里只收明天起，
     // 多算一天才能凑满 days 天。
-    for (final p in planShiftAlarms(
-        source, from: from, days: days + 1, overrides: overrides)) {
+    for (final p in planShiftAlarms(source,
+        from: from, days: days + 1, overrides: overrides, postDutyRule: postDutyRule)) {
       add(p.fireAt, L10n.shiftAlarmTitle(p.shift.name, p.alarm.label));
     }
 
@@ -859,6 +868,7 @@ class AlarmService {
       await repo.listCustomAlarms(),
       overrides: await repo.listShiftAlarmOverrides(),
       events: await repo.listEvents(),
+      postDutyRule: await AppSettings.loadPostDutyRule(),
     );
     // 重复待办的提醒走独立号段，与上面那条链路互不影响（`reschedule` 里的
     // 待办那一段会跳过带 `seriesId` 的行）。
@@ -877,6 +887,7 @@ class AlarmService {
     int days = _shiftDaysHorizon,
     Map<int, bool> overrides = const {},
     List<ScheduleEvent> events = const [],
+    PostDutyAlarmRule? postDutyRule,
   }) async {
     // id 算式是 `序号 × _shiftDaysHorizon + 天数偏移`：`days` 一旦超过天数窗口，
     // 「某天的第 2 个闹钟」就会撞上「更晚那天的第 1 个闹钟」。今天两个调用点都走
@@ -910,7 +921,7 @@ class AlarmService {
     // 今天还没过的那几条，直接调系统闹钟（"下一次到这个点"就是今天）。
     final now = DateTime.now();
     final daysPlan = planSystemAlarmDays(source, customAlarms,
-        from: now, days: 30, overrides: overrides);
+        from: now, days: 30, overrides: overrides, postDutyRule: postDutyRule);
     try {
       final json = jsonEncode(daysPlan);
       await scheduleSystemAlarmHousekeeping(json);
@@ -920,7 +931,7 @@ class AlarmService {
     // 今天剩下的：直接建（此刻"下一次"就是今天）。
     final today = dateOnly(now);
     for (final p in planShiftAlarms(
-        source, from: now, days: 1, overrides: overrides)) {
+        source, from: now, days: 1, overrides: overrides, postDutyRule: postDutyRule)) {
       if (dateOnly(p.fireAt) != today) continue;
       try {
         await createSystemAlarm(p.fireAt.hour, p.fireAt.minute,

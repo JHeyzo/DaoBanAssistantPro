@@ -741,7 +741,6 @@ class _PermissionCheckState extends ConsumerState<_PermissionCheck>
   bool? _notif;
   bool? _exact;
   bool? _overlay;
-  bool? _fsi;
   bool? _battery;
   bool? _miui;
 
@@ -767,7 +766,6 @@ class _PermissionCheckState extends ConsumerState<_PermissionCheck>
   Future<void> _refresh() async {
     final (notif, exact) = await AlarmService.checkPermissions();
     final overlay = await AlarmService.checkOverlayPermission();
-    final fsi = await AlarmService.checkFullScreenIntentPermission();
     final battery = await AlarmService.checkBatteryOptimization();
     final miui = await AlarmService.checkMiuiPermissionPage();
     if (!mounted) return;
@@ -775,7 +773,6 @@ class _PermissionCheckState extends ConsumerState<_PermissionCheck>
       _notif = notif;
       _exact = exact;
       _overlay = overlay;
-      _fsi = fsi;
       _battery = battery;
       _miui = miui;
     });
@@ -807,11 +804,6 @@ class _PermissionCheckState extends ConsumerState<_PermissionCheck>
     await _refresh();
   }
 
-  Future<void> _openFullScreenIntent() async {
-    await AlarmService.openFullScreenIntentSettings();
-    await _refresh();
-  }
-
   Future<void> _openBattery() async {
     await AlarmService.requestIgnoreBatteryOptimizations();
     await _refresh();
@@ -823,7 +815,6 @@ class _PermissionCheckState extends ConsumerState<_PermissionCheck>
     final loading = _notif == null ||
         _exact == null ||
         _overlay == null ||
-        _fsi == null ||
         _battery == null;
     return GlassTile(
       translucentFill: false,
@@ -872,14 +863,6 @@ class _PermissionCheckState extends ConsumerState<_PermissionCheck>
                   subtitle: _overlay! ? L10n.enabled : L10n.permOverlayHint,
                   enabled: _overlay!,
                   onOpen: _openOverlay,
-                ),
-                const Divider(height: 1),
-                _permTile(
-                  icon: Icons.fullscreen_outlined,
-                  title: L10n.permFsi,
-                  subtitle: _fsi! ? L10n.enabled : L10n.permFsiHint,
-                  enabled: _fsi!,
-                  onOpen: _openFullScreenIntent,
                 ),
                 // 下面两行只在小米机型出现：它们是 MIUI 私有的权限，别家没有，摆出来
                 // 只会让人白跑一趟。状态都读不到（没有公开 API），所以是「去查看」
