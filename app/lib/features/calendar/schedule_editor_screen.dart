@@ -868,17 +868,18 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: AppTokens.spaceSm,
-                                  vertical: 4,
+                                  vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
                                   color: c.alarms[k].postDutyMinute == null
-                                      ? AppTokens.chipWorkBg
-                                      : AppTokens.primary.withOpacity(0.15),
+                                      ? AppTokens.chipWorkBase
+                                      : AppTokens.chipWorkText.withOpacity(0.12),
                                   borderRadius: BorderRadius.circular(AppTokens.radiusFull),
                                   border: Border.all(
                                     color: c.alarms[k].postDutyMinute == null
                                         ? AppTokens.chipWorkBorder
-                                        : AppTokens.primary,
+                                        : AppTokens.chipWorkText,
+                                    width: c.alarms[k].postDutyMinute == null ? 1 : 1.5,
                                   ),
                                 ),
                                 child: Text(
@@ -888,7 +889,10 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                                   style: AppTokens.tinyLabel.copyWith(
                                     color: c.alarms[k].postDutyMinute == null
                                         ? AppTokens.inkMuted(context)
-                                        : AppTokens.primary,
+                                        : AppTokens.chipWorkText,
+                                    fontWeight: c.alarms[k].postDutyMinute == null
+                                        ? FontWeight.normal
+                                        : FontWeight.w600,
                                   ),
                                 ),
                               ),
@@ -911,25 +915,29 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: AppTokens.spaceSm,
-                                  vertical: 4,
+                                  vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
                                   color: c.alarms[k].skipOnDutyDay
-                                      ? AppTokens.primary.withOpacity(0.15)
-                                      : AppTokens.chipWorkBg,
+                                      ? AppTokens.danger.withOpacity(0.1)
+                                      : AppTokens.chipWorkBase,
                                   borderRadius: BorderRadius.circular(AppTokens.radiusFull),
                                   border: Border.all(
                                     color: c.alarms[k].skipOnDutyDay
-                                        ? AppTokens.primary
+                                        ? AppTokens.danger
                                         : AppTokens.chipWorkBorder,
+                                    width: c.alarms[k].skipOnDutyDay ? 1.5 : 1,
                                   ),
                                 ),
                                 child: Text(
-                                  '值班跳过',
+                                  c.alarms[k].skipOnDutyDay ? '值班跳过' : '值班不跳过',
                                   style: AppTokens.tinyLabel.copyWith(
                                     color: c.alarms[k].skipOnDutyDay
-                                        ? AppTokens.primary
+                                        ? AppTokens.danger
                                         : AppTokens.inkMuted(context),
+                                    fontWeight: c.alarms[k].skipOnDutyDay
+                                        ? FontWeight.w600
+                                        : FontWeight.normal,
                                   ),
                                 ),
                               ),
