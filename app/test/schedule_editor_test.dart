@@ -1087,8 +1087,20 @@ void main() {
         tester.widget<GlassChoiceChip>(find.byKey(cycleChipKey(0, 1))).selected,
         isFalse);
 
-    // 第 1 天从「班次 0」改成「班次 2」
+    // v0.11.3 起多选切换：点「班次 2」是加上，不是替换（支持白+值同日）。
+    // 第 1 天从 [0] 变成 [0, 2]。
     await tester.tap(find.byKey(cycleChipKey(0, 2)));
+    await tester.pumpAndSettle();
+
+    expect(
+        tester.widget<GlassChoiceChip>(find.byKey(cycleChipKey(0, 0))).selected,
+        isTrue);
+    expect(
+        tester.widget<GlassChoiceChip>(find.byKey(cycleChipKey(0, 2))).selected,
+        isTrue);
+
+    // 再点「班次 0」把它去掉，第 1 天变回 [2]。
+    await tester.tap(find.byKey(cycleChipKey(0, 0)));
     await tester.pumpAndSettle();
 
     expect(
