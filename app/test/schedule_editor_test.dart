@@ -701,8 +701,12 @@ void main() {
     final before = _cellLabels(tester);
     expect(before, _expectedLabels(domain));
 
-    // 第 1 天从「白班」改成「夜班」（下标 1）
+    // v0.11.3 起多选：第 1 天从 [0] 改成 [1] 要两步：先加上 [1]，再去掉 [0]。
+    // （点一下是切换，不是替换。）
     await tester.tap(find.byKey(cycleChipKey(0, 1)));
+    await tester.pumpAndSettle();
+    // 此时第 1 天 = [0, 1]，预览仍显示第一个（白班）。
+    await tester.tap(find.byKey(cycleChipKey(0, 0)));
     await tester.pumpAndSettle();
 
     final after = _cellLabels(tester);
@@ -977,7 +981,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repo.saved!.classes.map((c) => c.name), ['A班', 'C班']);
-    expect(repo.saved!.cycle, [0, 1],
+    expect(repo.saved!.cycle, [
+      [0],
+      [1]
+    ],
         reason: 'C 的下标要从 2 前移到 1，否则周期会指向不存在的班次定义');
   });
 
