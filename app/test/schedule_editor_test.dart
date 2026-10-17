@@ -463,7 +463,15 @@ void main() {
     await tester.pumpAndSettle();
 
     final saved = repo.saved!;
-    expect(saved.cycle, [0, 0, 1, 1, 2, 2, 2]);
+    expect(saved.cycle, [
+      [0],
+      [0],
+      [1],
+      [1],
+      [2],
+      [2],
+      [2]
+    ]);
     expect(saved.classes.map((c) => c.name), ['白班', '夜班', '休班']);
     expect(saved.anchorDate, DateTime.utc(2025, 6, 1));
   });
