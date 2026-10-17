@@ -26,6 +26,10 @@ class ShiftScheduleRows extends Table {
   /// 休息规则（JSON；见 `RestRule.toJson`/`fromJson`）。
   /// null = 不用规则（`RestRuleMode.none`，休息日写进周期里）。
   TextColumn get restRule => text().nullable()();
+
+  /// 值班顺序轮换（JSON；见 `DutyRotation.toJson`/`fromJson`）。
+  /// null = 不轮换。
+  TextColumn get dutyRotation => text().nullable()();
 }
 
 /// 时间线上的一段：**这套方案从哪天到哪天生效**（多排班表按日期衔接）。
@@ -259,7 +263,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -277,6 +281,15 @@ class AppDatabase extends _$AppDatabase {
             try {
               await m.addColumn(
                   shiftClassAlarms, shiftClassAlarms.skipOnDutyDay);
+            } catch (_) {
+              // 表不存在时跳过（测试用的最小化旧库）
+            }
+          }
+          if (from < 16) {
+            // v0.12.0：值班顺序轮换 —— 方案加 `duty_rotation` 列（JSON，null = 不轮换）。
+            try {
+              await m.addColumn(
+                  shiftScheduleRows, shiftScheduleRows.dutyRotation);
             } catch (_) {
               // 表不存在时跳过（测试用的最小化旧库）
             }

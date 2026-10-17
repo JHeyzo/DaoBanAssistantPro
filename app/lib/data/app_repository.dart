@@ -100,8 +100,25 @@ class ActiveSchedule {
       ),
       dayOverrides: dayOverrides,
       restRule: parseRestRule(schedule.restRule),
+      dutyRotation: parseDutyRotation(schedule.dutyRotation),
     );
   }
+}
+
+/// `duty_rotation` 列 → [DutyRotation?]；null / 空 / 坏 JSON 都按「不轮换」处理。
+DutyRotation? parseDutyRotation(String? raw) {
+  if (raw == null || raw.isEmpty) return null;
+  try {
+    final map = jsonDecode(raw) as Map<String, dynamic>;
+    return DutyRotation.fromJson(map);
+  } catch (_) {
+    return null;
+  }
+}
+
+String? encodeDutyRotation(DutyRotation? rotation) {
+  if (rotation == null) return null;
+  return jsonEncode(rotation.toJson());
 }
 
 /// `rest_rule` 列 → [RestRule]；null / 空 / 坏 JSON 都按「不用规则」处理。
@@ -577,6 +594,7 @@ class AppRepository {
     required List<ShiftClass> classes,
     required List<List<int>> cycle,
     RestRule restRule = const RestRule(),
+    DutyRotation? dutyRotation,
     bool makeCurrent = true,
     int teamCount = 4,
     List<String> teamNames = const ['一班', '二班', '三班', '四班'],
@@ -599,6 +617,7 @@ class AppRepository {
                 ourTeamIndex: Value(ourTeamIndex),
                 teamOffsets: Value(joinTeamOffsets(teamOffsets)),
                 restRule: Value(encodeRestRule(restRule)),
+                dutyRotation: Value(encodeDutyRotation(dutyRotation)),
               ),
             );
       } else {
@@ -613,6 +632,7 @@ class AppRepository {
           ourTeamIndex: Value(ourTeamIndex),
           teamOffsets: Value(joinTeamOffsets(teamOffsets)),
           restRule: Value(encodeRestRule(restRule)),
+          dutyRotation: Value(encodeDutyRotation(dutyRotation)),
         ));
       }
 
