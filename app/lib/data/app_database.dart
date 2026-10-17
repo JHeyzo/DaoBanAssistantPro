@@ -98,6 +98,8 @@ class ShiftClassAlarms extends Table {
   IntColumn get order => integer()();
   IntColumn get minute => integer()();
   TextColumn get label => text().nullable()();
+  IntColumn get postDutyMinute => integer().nullable()();
+  BoolColumn get skipOnDutyDay => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {classId, order};
@@ -257,12 +259,28 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) => m.createAll(),
         onUpgrade: (m, from, to) async {
+          if (from < 15) {
+            // v0.11.4：闹钟规则引擎 —— 每条闹钟加「值班次日时间」与「值班当天跳过」。
+            // 两个都是可空/有默认值的，老数据自动填充（null / false），不丢数据。
+            try {
+              await m.addColumn(
+                  shiftClassAlarms, shiftClassAlarms.postDutyMinute);
+            } catch (_) {
+              // 表不存在时跳过（测试用的最小化旧库）
+            }
+            try {
+              await m.addColumn(
+                  shiftClassAlarms, shiftClassAlarms.skipOnDutyDay);
+            } catch (_) {
+              // 表不存在时跳过（测试用的最小化旧库）
+            }
+          }
           if (from < 14) {
             // v0.11.3：语义标记 + 休息规则 + 模板系统移除。
             // 1. 班次加 `is_duty` 列（语义标记：工作/值班/休息）。

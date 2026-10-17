@@ -57,20 +57,37 @@ String formatClock(int minutes) {
 /// 为空时响铃标题退回「白班提醒」。名字的空白由**输入侧**（编辑器）负责 trim，
 /// 值类型本身不做归一化 —— 它是纯数据，跟库里存的一致。
 class ShiftAlarm {
-  const ShiftAlarm({required this.minute, this.label});
+  const ShiftAlarm({
+    required this.minute,
+    this.label,
+    this.postDutyMinute,
+    this.skipOnDutyDay = false,
+  });
 
   final int minute;
   final String? label;
 
+  /// 值班次日的替代时间（null = 跟平时一样）。
+  final int? postDutyMinute;
+
+  /// 值班当天是否跳过这条闹钟。
+  final bool skipOnDutyDay;
+
   @override
   bool operator ==(Object other) =>
-      other is ShiftAlarm && other.minute == minute && other.label == label;
+      other is ShiftAlarm &&
+      other.minute == minute &&
+      other.label == label &&
+      other.postDutyMinute == postDutyMinute &&
+      other.skipOnDutyDay == skipOnDutyDay;
 
   @override
-  int get hashCode => Object.hash(minute, label);
+  int get hashCode =>
+      Object.hash(minute, label, postDutyMinute, skipOnDutyDay);
 
   @override
-  String toString() => 'ShiftAlarm($minute${label == null ? '' : ', $label'})';
+  String toString() =>
+      'ShiftAlarm($minute${label == null ? '' : ', $label'}${postDutyMinute == null ? '' : ', postDuty: $postDutyMinute'}${skipOnDutyDay ? ', skipOnDuty' : ''})';
 }
 
 /// 「值班次日」闹钟规则：前一天含值班标记的班次时，当天班次的第一条联动闹钟

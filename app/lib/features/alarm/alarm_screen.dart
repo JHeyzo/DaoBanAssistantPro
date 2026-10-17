@@ -78,18 +78,6 @@ class _AlarmScreenState extends ConsumerState<AlarmScreen>
     final overrides = ref.watch(shiftAlarmOverridesProvider).valueOrNull ??
         const <int, bool>{};
     ref.watch(appSettingsProvider.select((s) => s.language)); // 语言切换时重建（**只订阅语言** —— 全量 watch 会让拨触觉开关也白重建整页）
-    // 值班次日规则：显示与排定必须同解（见 `effectiveDayAlarms` 的注释）。
-    // v0.11.3 起按语义标记认值班，不再需要班次名。
-    final postDutyState = ref.watch(appSettingsProvider.select((s) => (
-          s.postDutyAlarmEnabled,
-          s.postDutyAlarmMinute,
-        )));
-    final postDutyRule =
-        postDutyState.$1 && postDutyState.$2 != null ? PostDutyAlarmRule(minute: postDutyState.$2!) : null;
-    final dutyClasses = (async.valueOrNull?.currentDomain?.classes ??
-            const <ShiftClass>[])
-        .where((c) => !c.isRest)
-        .toList();
 
     final now = DateTime.now();
     final today = dateOnly(now);
@@ -98,24 +86,12 @@ class _AlarmScreenState extends ConsumerState<AlarmScreen>
       for (var i = 0; i < 30; i++) {
         final date = today.add(Duration(days: i));
         final shifts = chain.shiftsOn(date);
-        // 值班次日命中的那天，显示的必须是规则时刻（与实际排定同解）。
-        // 规则只作用于当天第一个有闹钟的非休息班次（与 `planShiftAlarms` 同序）。
-        final isPostDuty =
-            postDutyRule != null && isPostDutyDay(chain, date, postDutyRule);
-        var postDutyApplied = false;
+        // 按条闹钟的日类型规则（v0.11.4）：与实际排定同解，见 `effectiveDayAlarms`。
         for (final t in shifts) {
           if (t.isRest || !t.alarmEnabled || t.alarms.isEmpty) {
             continue;
           }
-          var effAlarms = t.alarms;
-          if (isPostDuty && !postDutyApplied) {
-            effAlarms = [
-              ShiftAlarm(
-                  minute: postDutyRule.minute, label: t.alarms.first.label),
-              ...t.alarms.sublist(1),
-            ];
-            postDutyApplied = true;
-          }
+          var effAlarms = effectiveDayAlarms(chain, date, t);
           // 这个班次当天**只要还有没响过的闹钟**就保留这一行（响过的自动隐藏）。
           // 判据不能只看第一条 —— 见 `hasPendingShiftAlarm`。
           if (!effAlarms.any((a) => shiftAlarmFireAt(date, t, a).isAfter(now))) {
@@ -168,9 +144,6 @@ class _AlarmScreenState extends ConsumerState<AlarmScreen>
               ),
             ),
             const SizedBox(height: 12),
-            // 值班次日闹钟：前一天是值班时，次日第一条班次闹钟改用此时刻。
-            _postDutyCard(context, dutyClasses),
-            const SizedBox(height: 12),
             _sectionTitleRow(context, L10n.upcoming30),
             Expanded(child: _shiftAlarmSection(context, chain, shiftAlarms)),
             const SizedBox(height: 8),
@@ -199,124 +172,6 @@ class _AlarmScreenState extends ConsumerState<AlarmScreen>
   ///
   /// v0.11.3 起值班按语义标记自动认，不再让用户选班种 —— 卡片只留开关与时间，
   /// 并显示当前认到的是哪个班次（信息行，不可点）。
-  Widget _postDutyCard(BuildContext context, List<ShiftClass> dutyClasses) {
-    final s = ref.watch(appSettingsProvider.select((p) => (
-          p.postDutyAlarmEnabled,
-          p.postDutyAlarmMinute,
-        )));
-    final enabled = s.$1;
-    final minute = s.$2;
-    // 按标记认到的值班班种（没有时为空串）。
-    final dutyName = suggestDutyClassName(dutyClasses);
-    final cs = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        padding: const EdgeInsets.all(AppTokens.spaceMd),
-        decoration: BoxDecoration(
-          color: cs.primaryContainer,
-          borderRadius: BorderRadius.circular(AppTokens.radiusS),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.bedtime_outlined, color: cs.primary),
-                const SizedBox(width: AppTokens.spaceSm),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(L10n.postDutyAlarmTitle,
-                          style: AppTokens.titleStrong),
-                      Text(L10n.postDutyAlarmHint,
-                          style: Theme.of(context).textTheme.bodySmall),
-                    ],
-                  ),
-                ),
-                GlassSwitch(
-                  value: enabled,
-                  onChanged: (v) async {
-                    final notifier = ref.read(appSettingsProvider.notifier);
-                    if (v && minute == null) {
-                      // 首次打开：给一个默认时刻（按标记认到的第一个值班班次算）。
-                      await notifier.setPostDutyAlarmMinute(
-                          defaultPostDutyMinute(dutyClasses));
-                    }
-                    await notifier.setPostDutyAlarmEnabled(v);
-                    _reschedule();
-                  },
-                ),
-              ],
-            ),
-            if (enabled) ...[
-              const SizedBox(height: 4),
-              _postDutyRow(
-                context,
-                icon: Icons.schedule_outlined,
-                label: L10n.postDutyAlarmTime,
-                value: minute == null ? L10n.notSet : _fmt(minute),
-                onTap: () async {
-                  final tod = await showGlassTimePicker(
-                    context,
-                    initialTime: minute == null
-                        ? const TimeOfDay(hour: 7, minute: 45)
-                        : TimeOfDay(
-                            hour: minute ~/ 60, minute: minute % 60),
-                  );
-                  if (tod == null || !context.mounted) return;
-                  await ref
-                      .read(appSettingsProvider.notifier)
-                      .setPostDutyAlarmMinute(tod.hour * 60 + tod.minute);
-                  _reschedule();
-                },
-              ),
-              _postDutyRow(
-                context,
-                icon: Icons.work_outline,
-                label: L10n.postDutyAlarmClass,
-                value: dutyName.isEmpty ? L10n.notSet : dutyName,
-                // 按标记自动认，不可改 —— 去班次编辑页改标记。
-                onTap: null,
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _postDutyRow(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String value,
-    required VoidCallback? onTap,
-  }) {
-    final tile = ListTile(
-      contentPadding: EdgeInsets.zero,
-      dense: true,
-      leading: Icon(icon,
-          size: AppTokens.iconMd, color: Theme.of(context).colorScheme.primary),
-      title: Text(label),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(value, style: AppTokens.titleStrong),
-          const SizedBox(width: 4),
-          Icon(Icons.chevron_right_outlined,
-              color: AppTokens.inkMuted(context)),
-        ],
-      ),
-      onTap: onTap,
-    );
-    if (onTap == null) {
-      return Opacity(opacity: 0.4, child: tile);
-    }
-    return GlassPressable(child: tile);
-  }
-
   Widget _sectionTitleRow(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
