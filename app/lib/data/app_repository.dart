@@ -310,8 +310,12 @@ extension AppDatabaseQueries on AppDatabase {
             .get();
     final alarmsByClass = <int, List<ShiftAlarm>>{};
     for (final r in alarmRows) {
-      (alarmsByClass[r.classId] ??= [])
-          .add(ShiftAlarm(minute: r.minute, label: r.label));
+      (alarmsByClass[r.classId] ??= []).add(ShiftAlarm(
+        minute: r.minute,
+        label: r.label,
+        postDutyMinute: r.postDutyMinute,
+        skipOnDutyDay: r.skipOnDutyDay,
+      ));
     }
     return ActiveSchedule(
       schedule: sched,
@@ -687,6 +691,8 @@ class AppRepository {
                   order: k,
                   minute: c.alarms[k].minute,
                   label: Value(c.alarms[k].label),
+                  postDutyMinute: Value(c.alarms[k].postDutyMinute),
+                  skipOnDutyDay: Value(c.alarms[k].skipOnDutyDay),
                 ),
               );
         }
@@ -752,6 +758,8 @@ class AppRepository {
               order: k,
               minute: alarms[k].minute,
               label: Value(alarms[k].label),
+              postDutyMinute: Value(alarms[k].postDutyMinute),
+              skipOnDutyDay: Value(alarms[k].skipOnDutyDay),
             ),
           );
     }

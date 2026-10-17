@@ -77,19 +77,43 @@ DateTime shiftAlarmFireAt(DateTime date, ShiftClass shift, ShiftAlarm alarm) {
 ///
 /// 抽出来是因为排定（`planShiftAlarms`）与闹钟页显示各算一次，两处必须同解，
 /// 否则页上写的时间和实际响的时间对不上。
+/// 当天生效的闹钟列表（按条闹钟的日类型规则调整）。
+///
+/// 规则（v0.11.4 起按条配，替代全局「值班次日闹钟」）：
+/// - 值班当天：`skipOnDutyDay` 为 true 的闹钟跳过（当天含值班标记的班次）。
+/// - 值班次日：`postDutyMinute` 非空的闹钟改用该时间（前一天含值班标记）。
+/// - 其余：按原时间。
 List<ShiftAlarm> effectiveDayAlarms(
   ShiftSource source,
   DateTime date,
-  ShiftClass shift, [
-  PostDutyAlarmRule? rule,
-]) {
-  if (rule == null || shift.alarms.isEmpty) return shift.alarms;
-  if (!isPostDutyDay(source, date, rule)) return shift.alarms;
-  final first = shift.alarms.first;
-  return [
-    ShiftAlarm(minute: rule.minute, label: first.label),
-    ...shift.alarms.sublist(1),
-  ];
+  ShiftClass shift,
+) {
+  if (shift.alarms.isEmpty) return shift.alarms;
+
+  final dayShifts = source.shiftsOn(DateTime(date.year, date.month, date.day));
+  final isDutyDay = dayShifts.any((c) => c.isDuty && !c.isRest);
+
+  // 值班次日：前一天含值班标记（复用 isPostDutyDay 的判据，不依赖全局规则）。
+  final prev = source.shiftsOn(DateTime(date.year, date.month, date.day - 1));
+  final isPostDutyDay = prev.any((c) => c.isDuty && !c.isRest);
+
+  final result = <ShiftAlarm>[];
+  for (final alarm in shift.alarms) {
+    // 值班当天跳过
+    if (isDutyDay && alarm.skipOnDutyDay) continue;
+    // 值班次日换时间
+    if (isPostDutyDay && alarm.postDutyMinute != null) {
+      result.add(ShiftAlarm(
+        minute: alarm.postDutyMinute!,
+        label: alarm.label,
+        postDutyMinute: alarm.postDutyMinute,
+        skipOnDutyDay: alarm.skipOnDutyDay,
+      ));
+    } else {
+      result.add(alarm);
+    }
+  }
+  return result;
 }
 
 /// 决定「未来 [days] 天里哪些天要排班次联动闹钟、各排在几点」。
@@ -130,7 +154,6 @@ List<ShiftAlarmPlan> planShiftAlarms(
   required DateTime from,
   required int days,
   Map<int, bool> overrides = const {},
-  PostDutyAlarmRule? postDutyRule,
 }) {
   final today = dateOnly(from);
   final plans = <ShiftAlarmPlan>[];
@@ -141,27 +164,28 @@ List<ShiftAlarmPlan> planShiftAlarms(
     if (overrides[dayNumber(date)] == false) continue;
 
     // 一天可叠多个班次（v0.11.3）：每个班次的闹钟都要排。
-    // 值班次日规则只作用于当天第一个有闹钟的非休息班次（起床那条）。
-    var postDutyApplied = false;
-    final isPostDuty =
-        postDutyRule != null && isPostDutyDay(source, date, postDutyRule);
+    // v0.11.4：按条闹钟的日类型规则（替代全局「值班次日闹钟」）。
+    final isDutyDay = shifts.any((c) => c.isDuty && !c.isRest);
+    final prev = source.shiftsOn(date.subtract(const Duration(days: 1)));
+    final isPostDutyDay = prev.any((c) => c.isDuty && !c.isRest);
     for (final t in shifts) {
       if (t.isRest || !t.alarmEnabled || t.alarms.isEmpty) {
         continue;
       }
 
-      // 值班次日规则：前一天含值班时，当天第一条闹钟改用规则时刻
-      // （只换第一条，「序号」不变，原生 id 不换号；一天只换一次）。
-      var alarms = t.alarms;
-      if (isPostDuty && !postDutyApplied) {
-        alarms = [
-          ShiftAlarm(minute: postDutyRule.minute, label: t.alarms.first.label),
-          ...t.alarms.sublist(1),
-        ];
-        postDutyApplied = true;
-      }
-      for (var i = 0; i < alarms.length; i++) {
-        final alarm = alarms[i];
+      for (var i = 0; i < t.alarms.length; i++) {
+        var alarm = t.alarms[i];
+        // 值班当天跳过
+        if (isDutyDay && alarm.skipOnDutyDay) continue;
+        // 值班次日换时间
+        if (isPostDutyDay && alarm.postDutyMinute != null) {
+          alarm = ShiftAlarm(
+            minute: alarm.postDutyMinute!,
+            label: alarm.label,
+            postDutyMinute: alarm.postDutyMinute,
+            skipOnDutyDay: alarm.skipOnDutyDay,
+          );
+        }
         final fireAt = shiftAlarmFireAt(date, t, alarm);
         if (!fireAt.isAfter(from)) continue;
         plans.add(ShiftAlarmPlan(
@@ -546,7 +570,6 @@ class AlarmService {
     required DateTime from,
     int days = 30,
     Map<int, bool> overrides = const {},
-    PostDutyAlarmRule? postDutyRule,
   }) {
     final today = dateOnly(from);
     final byDay = <int, List<Map<String, dynamic>>>{};
@@ -565,7 +588,7 @@ class AlarmService {
     // 注意 days+1：planShiftAlarms 的 days 含今天（offset 0），而这里只收明天起，
     // 多算一天才能凑满 days 天。
     for (final p in planShiftAlarms(source,
-        from: from, days: days + 1, overrides: overrides, postDutyRule: postDutyRule)) {
+        from: from, days: days + 1, overrides: overrides)) {
       add(p.fireAt, L10n.shiftAlarmTitle(p.shift.name, p.alarm.label));
     }
 
@@ -883,7 +906,6 @@ class AlarmService {
       await repo.listCustomAlarms(),
       overrides: await repo.listShiftAlarmOverrides(),
       events: await repo.listEvents(),
-      postDutyRule: await AppSettings.loadPostDutyRule(),
     );
     // 重复待办的提醒走独立号段，与上面那条链路互不影响（`reschedule` 里的
     // 待办那一段会跳过带 `seriesId` 的行）。
@@ -902,7 +924,6 @@ class AlarmService {
     int days = _shiftDaysHorizon,
     Map<int, bool> overrides = const {},
     List<ScheduleEvent> events = const [],
-    PostDutyAlarmRule? postDutyRule,
   }) async {
     // id 算式是 `序号 × _shiftDaysHorizon + 天数偏移`：`days` 一旦超过天数窗口，
     // 「某天的第 2 个闹钟」就会撞上「更晚那天的第 1 个闹钟」。今天两个调用点都走
@@ -936,7 +957,7 @@ class AlarmService {
     // 今天还没过的那几条，直接调系统闹钟（"下一次到这个点"就是今天）。
     final now = DateTime.now();
     final daysPlan = planSystemAlarmDays(source, customAlarms,
-        from: now, days: 30, overrides: overrides, postDutyRule: postDutyRule);
+        from: now, days: 30, overrides: overrides);
     try {
       final json = jsonEncode(daysPlan);
       await scheduleSystemAlarmHousekeeping(json);
@@ -946,7 +967,7 @@ class AlarmService {
     // 今天剩下的：直接建（此刻"下一次"就是今天）。
     final today = dateOnly(now);
     for (final p in planShiftAlarms(
-        source, from: now, days: 1, overrides: overrides, postDutyRule: postDutyRule)) {
+        source, from: now, days: 1, overrides: overrides)) {
       if (dateOnly(p.fireAt) != today) continue;
       try {
         await createSystemAlarm(p.fireAt.hour, p.fireAt.minute,
