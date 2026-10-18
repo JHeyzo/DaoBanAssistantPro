@@ -129,15 +129,13 @@ class HousekeepingReceiver : BroadcastReceiver() {
                 val day = days.getJSONObject(i)
                 if (day.optInt("dayOffset", -1) != dayOffset) continue
                 val alarms = day.optJSONArray("alarms") ?: continue
-                for (j in 0 until alarms.length()) {
-                    val a = alarms.getJSONObject(j)
-                    SystemAlarmBridge.create(
-                        context,
-                        a.optInt("h", 7),
-                        a.optInt("m", 30),
-                        a.optString("msg", "闹钟"),
-                    )
+                // 经由透明 Activity 前台建闹钟（后台直发会被 OPPO 在解锁后弹页）
+                val bridge = Intent(context, AlarmBridgeActivity::class.java).apply {
+                    putExtra("alarms_json", alarms.toString())
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
+                context.startActivity(bridge)
+                AlarmLog.info(context, "HousekeepingReceiver: 已拉起 AlarmBridgeActivity")
                 break
             }
         } catch (e: Exception) {

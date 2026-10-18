@@ -53,6 +53,14 @@
         </receiver>
         <receiver android:name=".AlarmReceiver" android:exported="false" />
         <receiver android:name=".HousekeepingReceiver" android:exported="false" />
+        <!-- 00:30 housekeeping 的前台跳板：透明 Activity，经它再调 ACTION_SET_ALARM，
+             避免后台直发被 OPPO 在解锁后弹出时钟页 -->
+        <activity
+            android:name=".AlarmBridgeActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:noHistory="true" />
         <!-- 开机重排：setAlarmClock 的记录重启即清空，靠 AlarmStore 那份落盘清单
              把闹钟排回去（见 BootReceiver 的说明）。只用到 RECEIVE_BOOT_COMPLETED，
              上面已声明。不 directBootAware：有锁屏密码时 BOOT_COMPLETED 要等首次
