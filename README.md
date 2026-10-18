@@ -1,10 +1,12 @@
-# 倒班助手Pro · ColorOS 适配版
+# 倒班助手Pro · 高自由定制版
 
 > **这是 [Alec-WangLi/DaoBanAssistantPro](https://github.com/Alec-WangLi/DaoBanAssistantPro) 的个人 fork（[@JHeyzo](https://github.com/JHeyzo)），MIT 许可。**
-> 上游更新会定期合并；本版主要做 ColorOS/OPPO 生态适配 + 排班模型重做，不改包名（`com.daoban.shiftassistantpro`）。
+> 原版模板偏通用，本版主打排班模板高自由定制：一次编辑永久使用，休息规则/值班轮换自动算。上游更新会定期合并；ColorOS/OPPO 生态深度适配，不改包名（`com.daoban.shiftassistantpro`）。
 >
 > ⚠️ **签名与原版不同**：必须先卸载原作者版再安装（数据不保留），无法直接覆盖升级。
 > 「检查更新」已指向本 fork 的 Releases，不会再下载到原作者的包。
+>
+> 📌 **版本说明**：v0.11.x 为测试版，v0.12.0 为首个稳定版（开发中）。
 
 ## ⭐ 特色功能
 
