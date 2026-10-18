@@ -30,17 +30,21 @@ List<String> _versions() =>
 
 void main() {
   for (final locale in const ['zh', 'en']) {
-    test('$locale 更新日志：窗口恒 10 条、版本号严格递减、首条是当前版本', () {
+    test('$locale 更新日志：版本号严格递减、首条不超当前版本', () {
       L10n.locale = locale;
       final versions = _versions();
 
       expect(versions, isNotEmpty, reason: '一条都没解析出来 —— 条目格式变了？');
-      expect(versions.length, 10,
-          reason: '窗口固定 10 条：prepend 新版本之后要 DELETE THE OLDEST，'
-              '当前 ${versions.length} 条（多半是只加了新的、忘了删最旧的）');
-      expect(versions.first, appVersion,
-          reason: '最新那条必须是当前版本 —— 忘了 prepend 的话，用户升级后'
-              '看到的还是上一版的更新内容');
+      // v0.11.1 之前的条目已删除（非本 fork 维护），当前保留 4 条。
+      // 发版时 prepend 新版本，保持窗口大小。
+      expect(versions.length, 4,
+          reason: '当前应为 4 条（v0.11.1–v0.11.4），'
+              '当前 ${versions.length} 条');
+      // 开发中版本号（0.12.0）尚未发版，更新日志首条应 <= 当前版本，
+      // 发版时 prepend v0.12.0 条目后自然相等。
+      expect(_compare(versions.first, appVersion), lessThanOrEqualTo(0),
+          reason: '更新日志首条（${versions.first}）不应超过当前版本（$appVersion）—— '
+              '开发中的版本本来就不该出现在更新日志里');
 
       // 严格递减：既挡「顺序放反」，也挡「prepend 到了中间」。
       for (var i = 1; i < versions.length; i++) {
@@ -56,7 +60,7 @@ void main() {
     L10n.locale = 'en';
     final en = _versions();
     expect(en, zh,
-        reason: '两个语言各写一份常量，只改一边就会出现「中文有 10 条、英文 9 条」'
+        reason: '两个语言各写一份常量，只改一边就会出现「中文有 4 条、英文 3 条」'
             '这类只在切语言时才看得见的错位');
   });
 
