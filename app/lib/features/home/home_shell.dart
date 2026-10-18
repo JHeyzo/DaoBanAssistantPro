@@ -64,6 +64,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
       if (AlarmService.openTodoRequested.value) _openTodoPage();
       _maybeShowLaunchDialogs();
       _maybeAutoCheckUpdate();
+      _maybePromptOverlayPermission();
       // 冷启动由桌面小组件拉起：读一次「要跳到哪天」。
       WidgetService.consumeLaunchDay();
       // 首帧推一次快照，桌面上的卡片立刻与 App 对齐（去抖之后 340ms 发出去）。
@@ -123,6 +124,44 @@ class _HomeShellState extends ConsumerState<HomeShell>
         UpdateChecker.compareVersion(stable.version, appVersion) > 0) {
       showUpdateDialog(context, r);
     }
+  }
+
+  /// 悬浮窗权限检查：00:30 后台建系统闹钟需要它，没开就弹一次引导。
+  Future<void> _maybePromptOverlayPermission() async {
+    final granted = await AlarmService.checkOverlayPermission();
+    if (granted || !mounted) return;
+    final sp = await SharedPreferences.getInstance();
+    // 每天最多弹一次，避免骚扰
+    final todayKey = DateTime.now().toIso8601String().substring(0, 10);
+    if (sp.getString('lastOverlayPromptDay') == todayKey) return;
+    await sp.setString('lastOverlayPromptDay', todayKey);
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('需要悬浮窗权限'),
+        content: const Text(
+          '用途：每天 00:30 在后台静默创建明天的系统闹钟（用于 OPPO 手表同步）。\n\n'
+          '为什么需要：Android 10+ 禁止后台直接建系统闹钟，有悬浮窗权限才能经由前台通道静默创建，不打扰你睡觉。\n\n'
+          '不授权的影响：07:15 的早班闹钟将无法自动推送。\n\n'
+          '点"去开启"后，在系统设置里允许即可（只需开一次）。一加/OPPO 手机还需在"后台弹出界面"里允许。',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('稍后'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              AlarmService.openOverlaySettings();
+            },
+            child: const Text('去开启'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
