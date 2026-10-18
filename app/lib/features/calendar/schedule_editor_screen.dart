@@ -338,6 +338,11 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                     if (!_followHoliday) ...[
                       _classesCard(context),
                       const SizedBox(height: AppTokens.spaceMd),
+                      // 值班闹钟规则：仅当有值班标签的班次时显示（三班倒等无值班场景不打扰）
+                      if (_classes.any((c) => c.isDuty)) ...[
+                        _dutyAlarmRulesCard(context),
+                        const SizedBox(height: AppTokens.spaceMd),
+                      ],
                       _cycleCard(context),
                       const SizedBox(height: AppTokens.spaceMd),
                       _restRuleCard(context),
@@ -808,126 +813,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                           ),
                         ],
                       ),
-                      // 方案三：行内小标签 —— 不用展开，直接显示两个规则标签。
-                      // 点「次日」标签改时间，点「值班跳过」切换开关。
-                      // 方案三：行内小标签 —— 不用展开，直接显示两个规则标签。
-                      // 点「次日」标签改时间，点「值班跳过」切换开关。
-                      Padding(
-                        padding: const EdgeInsets.only(
-                          top: AppTokens.spaceXs,
-                          left: AppTokens.spaceMd,
-                        ),
-                        child: Row(
-                          children: [
-                            // 次日时间标签：点一下弹时间选择器。
-                            GestureDetector(
-                              onTap: () async {
-                                final picked = await showGlassTimePicker(
-                                  context,
-                                  initialTime: c.alarms[k].postDutyMinute == null
-                                      ? TimeOfDay.fromDateTime(DateTime.now())
-                                      : TimeOfDay(
-                                          hour: c.alarms[k].postDutyMinute! ~/ 60,
-                                          minute: c.alarms[k].postDutyMinute! % 60),
-                                );
-                                if (picked != null) {
-                                  setState(() => _classes[index] = _editClass(
-                                      _classes[index],
-                                      alarms: [
-                                        for (var j = 0; j < c.alarms.length; j++)
-                                          j == k
-                                              ? ShiftAlarm(
-                                                  minute: c.alarms[j].minute,
-                                                  label: c.alarms[j].label,
-                                                  postDutyMinute: picked.hour * 60 + picked.minute,
-                                                  skipOnDutyDay: c.alarms[j].skipOnDutyDay,
-                                                )
-                                              : c.alarms[j],
-                                      ]));
-                                }
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppTokens.spaceSm,
-                                  // design-tokens-ignore: Scheme A 标签垂直内边距 6px 为视觉微调（4 太挤、8 太松）
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: c.alarms[k].postDutyMinute == null
-                                      ? AppTokens.chipWorkBase
-                                      : AppTokens.chipWorkText.withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(AppTokens.radiusXL),
-                                  border: Border.all(
-                                    color: c.alarms[k].postDutyMinute == null
-                                        ? AppTokens.chipWorkBorder
-                                        : AppTokens.chipWorkText,
-                                    width: c.alarms[k].postDutyMinute == null ? 1 : 1.5,
-                                  ),
-                                ),
-                                child: Text(
-                                  c.alarms[k].postDutyMinute == null
-                                      ? '次日跟平时'
-                                      : '次日 ${formatClock(c.alarms[k].postDutyMinute!)}',
-                                  style: AppTokens.tinyLabel.copyWith(
-                                    color: c.alarms[k].postDutyMinute == null
-                                        ? AppTokens.inkMuted(context)
-                                        : AppTokens.chipWorkText,
-                                    fontWeight: c.alarms[k].postDutyMinute == null
-                                        ? FontWeight.normal
-                                        : FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: AppTokens.spaceXs),
-                            // 值班跳过标签：点一下切换。
-                            GestureDetector(
-                              onTap: () => setState(() => _classes[index] =
-                                  _editClass(_classes[index], alarms: [
-                                for (var j = 0; j < c.alarms.length; j++)
-                                  j == k
-                                      ? ShiftAlarm(
-                                          minute: c.alarms[j].minute,
-                                          label: c.alarms[j].label,
-                                          postDutyMinute: c.alarms[j].postDutyMinute,
-                                          skipOnDutyDay: !c.alarms[j].skipOnDutyDay,
-                                        )
-                                      : c.alarms[j],
-                              ])),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppTokens.spaceSm,
-                                  // design-tokens-ignore: Scheme A 标签垂直内边距 6px 为视觉微调（4 太挤、8 太松）
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: c.alarms[k].skipOnDutyDay
-                                      ? AppTokens.danger.withOpacity(0.1)
-                                      : AppTokens.chipWorkBase,
-                                  borderRadius: BorderRadius.circular(AppTokens.radiusXL),
-                                  border: Border.all(
-                                    color: c.alarms[k].skipOnDutyDay
-                                        ? AppTokens.danger
-                                        : AppTokens.chipWorkBorder,
-                                    width: c.alarms[k].skipOnDutyDay ? 1.5 : 1,
-                                  ),
-                                ),
-                                child: Text(
-                                  c.alarms[k].skipOnDutyDay ? '值班跳过' : '值班不跳过',
-                                  style: AppTokens.tinyLabel.copyWith(
-                                    color: c.alarms[k].skipOnDutyDay
-                                        ? AppTokens.danger
-                                        : AppTokens.inkMuted(context),
-                                    fontWeight: c.alarms[k].skipOnDutyDay
-                                        ? FontWeight.w600
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+
                     ],
                   ),
                 ),
@@ -1785,6 +1671,139 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
         ],
       ),
     );
+  }
+
+  /// 4.5) 值班闹钟规则：仅当有值班标签的班次时显示。
+  /// 把原来每个闹钟下的两个小标签收拢到一处，避免列表臃肿。
+  /// 三班倒等无值班场景下，此卡片不出现。
+  Widget _dutyAlarmRulesCard(BuildContext context) {
+    final muted = AppTokens.inkMuted(context);
+    // 收集所有闹钟（带班次名和索引，用于定位回写）
+    final items = <({String className, int classIndex, int alarmIndex, ShiftAlarm alarm})>[];
+    for (var i = 0; i < _classes.length; i++) {
+      final c = _classes[i];
+      for (var k = 0; k < c.alarms.length; k++) {
+        items.add((className: c.name, classIndex: i, alarmIndex: k, alarm: c.alarms[k]));
+      }
+    }
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    String ruleText(ShiftAlarm a) {
+      final parts = <String>[];
+      if (a.postDutyMinute != null) {
+        parts.add('值班第二天 ${formatClock(a.postDutyMinute!)}');
+      }
+      if (a.skipOnDutyDay) {
+        parts.add('值班当天不响');
+      }
+      if (parts.isEmpty) return '跟平时一样';
+      return parts.join('，');
+    }
+
+    return GlassTile(
+      padding: EdgeInsets.all(
+          AppLayout.of(context).isNarrow ? AppTokens.spaceMd : AppTokens.spaceLg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            L10n.t('值班闹钟规则', 'Duty alarm rules'),
+            style: AppTokens.titleStrong,
+          ),
+          const SizedBox(height: AppTokens.spaceXs),
+          Text(
+            L10n.t('有值班标签的班次才需要设。点一行改规则。', 'Only needed for duty-tagged shifts. Tap a row to edit.'),
+            style: AppTokens.rowSecondary.copyWith(color: muted),
+          ),
+          const SizedBox(height: AppTokens.spaceMd),
+          ...items.map((item) {
+            final a = item.alarm;
+            final hasRule = a.postDutyMinute != null || a.skipOnDutyDay;
+            return InkWell(
+              onTap: () => _editDutyAlarmRule(context, item.classIndex, item.alarmIndex),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppTokens.spaceSm),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${a.label} (${formatClock(a.minute)})',
+                            style: AppTokens.rowPrimary,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${item.className} · ${ruleText(a)}',
+                            style: AppTokens.rowSecondary.copyWith(
+                              color: hasRule ? AppTokens.chipWorkText : muted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.chevron_right_outlined, color: muted, size: 20),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  /// 编辑某条闹钟的值班规则：先选"值班第二天时间"（可清除），再选是否跳过。
+  Future<void> _editDutyAlarmRule(BuildContext context, int classIndex, int alarmIndex) async {
+    final c = _classes[classIndex];
+    final a = c.alarms[alarmIndex];
+
+    // 1) 值班第二天时间：弹时间选择器，另给"跟平时一样"选项
+    final picked = await showGlassTimePicker(
+      context,
+      initialTime: a.postDutyMinute == null
+          ? TimeOfDay.fromDateTime(DateTime.now())
+          : TimeOfDay(hour: a.postDutyMinute! ~/ 60, minute: a.postDutyMinute! % 60),
+    );
+    // 用户取消则不改时间，只改跳过开关
+    int? newPostDutyMinute = a.postDutyMinute;
+    if (picked != null) {
+      newPostDutyMinute = picked.hour * 60 + picked.minute;
+    }
+
+    if (!context.mounted) return;
+    // 2) 是否在值班当天跳过：用确认框二选一
+    final skip = await showGlassDialog<bool>(
+      context: context,
+      builder: (ctx) => GlassDialog(
+        title: L10n.t('值班当天', 'On duty day'),
+        content: Text(L10n.t('这条闹钟在值班当天要不要响？', 'Should this alarm ring on duty days?')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(L10n.t('照常响', 'Ring normally')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(L10n.t('不响', 'Skip')),
+          ),
+        ],
+      ),
+    );
+    if (skip == null) return; // 用户取消
+
+    setState(() => _classes[classIndex] = _editClass(c, alarms: [
+          for (var j = 0; j < c.alarms.length; j++)
+            j == alarmIndex
+                ? ShiftAlarm(
+                    minute: a.minute,
+                    label: a.label,
+                    postDutyMinute: newPostDutyMinute,
+                    skipOnDutyDay: skip,
+                  )
+                : c.alarms[j],
+        ]));
   }
 
   /// 5) 班组设置（可选）—— 默认折叠。
