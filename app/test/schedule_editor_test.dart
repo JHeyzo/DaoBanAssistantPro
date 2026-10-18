@@ -39,6 +39,7 @@ class _Saved {
     required this.teamNames,
     required this.ourTeamIndex,
     required this.teamOffsets,
+    this.dutyRotation,
   });
 
   final String name;
@@ -49,6 +50,7 @@ class _Saved {
   final List<String> teamNames;
   final int ourTeamIndex;
   final List<int> teamOffsets;
+  final DutyRotation? dutyRotation;
 }
 
 class _FakeRepository extends AppRepository {
@@ -84,6 +86,7 @@ class _FakeRepository extends AppRepository {
     required List<ShiftClass> classes,
     required List<List<int>> cycle,
     RestRule restRule = const RestRule(),
+    DutyRotation? dutyRotation,
     bool makeCurrent = true,
     int teamCount = 4,
     List<String> teamNames = const ['一班', '二班', '三班', '四班'],
@@ -99,6 +102,7 @@ class _FakeRepository extends AppRepository {
       teamNames: List.of(teamNames),
       ourTeamIndex: ourTeamIndex,
       teamOffsets: List.of(teamOffsets),
+      dutyRotation: dutyRotation,
     );
     return 7;
   }

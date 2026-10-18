@@ -1,4 +1,4 @@
-import 'package:daoban_shift_assistant_pro/domain/shift_rotation.dart';
+import 'package:shiftassistantpro/domain/shift_rotation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
