@@ -20,11 +20,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:shiftassistantpro/core/glass/glass.dart';
 import 'package:shiftassistantpro/core/haptics.dart';
 import 'package:shiftassistantpro/core/l10n.dart';
 import 'package:shiftassistantpro/data/app_repository.dart';
-import 'package:shiftassistantpro/domain/shift_rotation.dart';
 import 'package:shiftassistantpro/features/profile/profile_screen.dart';
 import 'package:shiftassistantpro/state/app_settings.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite3;
@@ -78,6 +76,7 @@ void main() {
     SharedPreferences.setMockInitialValues({
       'themeMode': 'dark',
       'accentIndex': 3,
+      // 旧版本遗留键：当前设置加载器忽略它，整份重置仍会清掉偏好。
       'liquidGlass': true,
       'hapticsEnabled': false,
       'ringtoneUri': 'file:///ringtone/mine.mp3',
@@ -116,6 +115,9 @@ void main() {
     ));
     await _pumpFrames(tester);
 
+    expect(find.text('液态玻璃'), findsNothing,
+        reason: '升级时旧 liquidGlass 偏好不能重新激活已删除的设置');
+
     final container =
         ProviderScope.containerOf(tester.element(find.byType(ProfileScreen)));
     expect(container.read(appSettingsProvider).themeMode, AppThemeMode.dark,
@@ -134,14 +136,12 @@ void main() {
     expect(await repo.listCustomAlarms(), isEmpty);
     expect(await repo.listSchedules(), isNotEmpty);
 
-    // 外观设置：内存里回默认，**并且几个模块级标志跟着翻回来**
-    // （只改 state 不翻标志的话，「高级材质」「触觉」在界面上看着变了、实际没生效）
+    // 外观设置：内存里回默认，**并且触觉模块级标志跟着翻回来**
+    // （只改 state 不翻标志的话，触觉开关在界面上看着变了、实际没生效）
     final settings = container.read(appSettingsProvider);
     expect(settings.themeMode, AppThemeMode.system);
     expect(settings.accentIndex, 0);
-    expect(settings.liquidGlass, isFalse);
     expect(settings.hapticsEnabled, isTrue);
-    expect(liquidGlassEnabled.value, isFalse);
     expect(hapticsDisabled, isFalse);
 
     // SharedPreferences 整份清掉：外观那几个键、铃声、首启标记、小组件快照都在里面

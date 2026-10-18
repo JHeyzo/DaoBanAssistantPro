@@ -7,26 +7,13 @@ import '../design_tokens.dart';
 /// 低端机自动降级标志（物理内存 < 4GB，main() 设置）。**语义不变**：强制省电档。
 bool lowEndDevice = false;
 
-/// 「我的 → 外观 → 液态玻璃」开关（默认关）。用户意愿。
-final ValueNotifier<bool> liquidGlassEnabled = ValueNotifier<bool>(false);
-
 /// 省电档生效中。**只由 [lowEndDevice] 触发** —— 用户不能手动选它。
 /// 用 ValueNotifier 让开关变更时所有玻璃组件实时重建。
 final ValueNotifier<bool> glassBlurDisabled = ValueNotifier<bool>(false);
 
-/// 液态档生效中。
-///
-/// 判据只有两个条件，**没有 shader 能力检查** —— 因为这个档里没有 shader：
-/// 实测折射在平背景上 ≤1/255（本 App 的底色是刻意的极简黑白），
-/// 看得见的那一层是「加色」的边缘光与透镜，而它用 `CustomPainter` 就够。
-/// 于是计划里那条 shader 构建链、以及 Impeller / GLES / Windows 三个坑，
-/// 一个都不用碰。
-final ValueNotifier<bool> liquidGlassActive = ValueNotifier<bool>(false);
-
-/// 重新计算两个档位（main() 与「外观」开关变更时调用）。
+/// 根据低端设备判据更新省电档（main() 初始化设备信息后调用）。
 void recomputeGlassTiers() {
   glassBlurDisabled.value = lowEndDevice;
-  liquidGlassActive.value = !lowEndDevice && liquidGlassEnabled.value;
 }
 
 /// 玻璃的完整 filter：**模糊 + 真实饱和度**，合成一个 filter 而不是叠两层
@@ -36,8 +23,7 @@ void recomputeGlassTiers() {
 /// 「先把背景提饱和、再糊」（`sky_engine/lib/ui/painting.dart` 的 compose 文档）。
 ///
 /// 为什么要有这个函数、而不是各处直接写 `ImageFilter.blur`：它是**唯一**一处
-/// 「背景怎么处理」的装配点 —— 阶段 2 的液态档要在这里按档位分叉。散着写的话，
-/// 那一步就得满仓库找 `BackdropFilter`。
+/// 「背景怎么处理」的装配点，避免在调用处散落不同的滤镜配方。
 ///
 /// **别指望靠简化这个 filter 省钱**：真机上量过 —— 同一段滑动，只留模糊（σ 仍 18）
 /// raster p90 是 7.92ms、只留饱和度是 8.21ms，而**整条 `BackdropFilter` 摘掉是 2.37ms**。
@@ -47,7 +33,7 @@ ImageFilter glassFilter(double sigma) => ImageFilter.compose(
       inner: AppTokens.glassSaturation,
     );
 
-/// 液态玻璃面板。
+/// 玻璃面板。
 ///
 /// 效果构成（与调研结论一致）：
 ///   1) 背景模糊（[BackdropFilter] + `ImageFilter.blur`）—— **只在背后真有东西会动
@@ -68,7 +54,8 @@ class GlassPanel extends StatelessWidget {
   const GlassPanel({
     super.key,
     required this.child,
-    this.borderRadius = const BorderRadius.all(Radius.circular(AppTokens.radiusXL)),
+    this.borderRadius =
+        const BorderRadius.all(Radius.circular(AppTokens.radiusXL)),
     this.blurSigma = AppTokens.blurPanel,
     this.translucentFill = true,
     this.blurBackdrop = true,
@@ -169,7 +156,7 @@ class GlassPanel extends StatelessWidget {
   }
 }
 
-/// 液态玻璃圆角容器（无内边距快捷版）—— **页面里的卡片**。
+/// 玻璃圆角容器（无内边距快捷版）—— **页面里的卡片**。
 ///
 /// ⚠️ **它永远不挂 `BackdropFilter`**（`blurBackdrop: false`）：卡片坐在页面上，
 /// 背后是一块**平色**，糊了等于没糊，却要付一次 backdrop 渲染通道的钱 ——
@@ -181,7 +168,8 @@ class GlassTile extends StatelessWidget {
   const GlassTile({
     super.key,
     required this.child,
-    this.borderRadius = const BorderRadius.all(Radius.circular(AppTokens.radiusL)),
+    this.borderRadius =
+        const BorderRadius.all(Radius.circular(AppTokens.radiusL)),
     this.padding,
     this.margin,
     this.translucentFill = true,

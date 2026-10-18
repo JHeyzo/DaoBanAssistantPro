@@ -1,13 +1,10 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/design_tokens.dart';
-import '../../core/frame_notifier.dart';
 import '../../core/haptics.dart';
 import '../../core/glass/glass.dart';
-import '../../core/glass/liquid_lens.dart';
 import '../../core/layout.dart';
 import '../../core/l10n.dart';
 import '../../core/theme/animated_background.dart';
@@ -25,11 +22,7 @@ import '../../state/app_settings.dart';
 import '../alarm/alarm_service.dart';
 import '../widget/widget_service.dart';
 import 'info_card_metrics.dart';
-import 'calendar_lens.dart';
-import 'lens_warp_scope.dart';
-import 'calendar_range_band.dart';
 import 'day_chip_painter.dart';
-import 'range_band.dart';
 import 'schedule_management_screen.dart';
 import 'schedule_span_label.dart';
 import 'shift_override_picker.dart';
@@ -50,43 +43,6 @@ class _MonthFacts {
   final bool hasNoSchedule;
 }
 
-/// 那枚块**这一帧**的状态：在哪、多快、速度是不是「活的」。
-///
-/// 存在的理由：这三个值原来住在整页的 `State` 里，每帧 `setState` ⇒ **整页重建**
-/// （实测 436 个 widget/帧，而标准档同场景 6 个）。搬进 `FrameNotifier` 之后，
-/// 重建范围只剩「那枚块那一层」与「被挤的那几格」。
-@immutable
-class BlockFrame {
-  const BlockFrame({
-    required this.pos,
-    required this.velocity,
-    required this.live,
-  });
-
-  /// 块左上角（格层坐标）。
-  final Offset pos;
-
-  /// 速度（px/s，逻辑像素）。二维都认。
-  final Offset velocity;
-
-  /// 这一帧的速度有没有来源：手指在拖，或者块自己在滑行。
-  ///
-  /// 与从前 `velocityLive: _dragActive || _flying` 同一个判据 —— 松手之后父层
-  /// **不归零**（留给透镜自己衰减），所以这个标志还得管住「别把陈旧的反复灌回来」。
-  final bool live;
-
-  /// `publish` 靠 `==` 挡掉重复写：拖动中同一帧被重建两次是常态。
-  @override
-  bool operator ==(Object other) =>
-      other is BlockFrame &&
-      other.pos == pos &&
-      other.velocity == velocity &&
-      other.live == live;
-
-  @override
-  int get hashCode => Object.hash(pos, velocity, live);
-}
-
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
 
@@ -94,8 +50,7 @@ class CalendarScreen extends ConsumerStatefulWidget {
   ConsumerState<CalendarScreen> createState() => _CalendarScreenState();
 }
 
-class _CalendarScreenState extends ConsumerState<CalendarScreen>
-    with SingleTickerProviderStateMixin {
+class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   static const _hPad = 12.0; // 网格左右留白
   static const _weekdayH = 26.0; // 周标题行高
   static const _cellInset = AppTokens.gapHair; // 格子/玻璃块统一内缩
@@ -130,58 +85,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
   double _grabCol = 0; // 手指相对选中块左缘的抓取偏移（列）
   double _grabRow = 0; // 手指相对选中块上缘的抓取偏移（行）
 
-  /// 选中块的拖动速度（px/s，逻辑像素）—— 帧间差分 ÷ 真实帧间隔（`lensVelocityStep`，
-  /// 一处实现、带低通）。**只有液态档那枚块读它**：标准档那枚是等比放大，不吃速度。
-  double _vx = 0;
-  double _vy = 0;
-
-  /// 上一帧的帧戳与「那一帧块在哪一格」。`null` = 这一段拖动还没量过速度。
-  Duration? _lastFrameStamp;
-  double _lastVelCol = 0;
-  double _lastVelRow = 0;
-
-  // ── 滑行：点日期 / 点「今天」那一下，那枚块**自己飞过去**（只有液态档）──────
-  //
-  // 为什么位置要由我们自己算：`AnimatedPositioned` 走的时候我们**看不到中间位置**，
-  // 于是 ① 速度恒为 0（形变与彩边都不发生）② 挤压场一直盯着**终点那一格**（块飞过的
-  // 格子一点反应都没有）。位置一旦由我们算，速度、挤压场、以及画出来的那一帧就是
-  // 同一个数推出来的 —— 用户 2026-10-01 说的「返回的动画还是以前那种效果」就是它。
-  //
-  // 标准档**一个字节都不走这条路**：那里 `lensCenter` 是 null、速度也没人消费，跑起来
-  // 只是白付每帧重建 —— 那棵树仍旧由 `AnimatedPositioned` 自己走（逐像素不变）。
-  Ticker? _ticker;
-  bool _flying = false;
-
-  /// 这一帧那枚块在哪儿（格子层坐标，与 `blockLeft/blockTop` 同一套）。
-  /// 拖动中它就是手指的位置，滑行中它是算出来的中间位置。
-  Offset _flightPos = Offset.zero;
-  Offset? _flightFrom; // 这一趟的起点（null = 没有在跑的滑行）
-  Offset? _flightTarget; // 上一次摆过的目标（null = 块不在树上）
-
-  /// 滑行速度的换算要用格子尺寸，而那两个数只在 build 里算得出来 —— 起跑那一帧
-  /// 存下来（中途换窗口大小会差一档，那也是下一帧就自愈的事）。
-  double _flightCellW = 1;
-  double _flightCellH = 1;
-
-  /// 这一趟滑行已经走了多久。**自己累加，不拿 ticker 的 `elapsed`** —— 那个基准是
-  /// ticker 自己的（停掉再开会不会归零不在我们手上），而这里只要帧间隔。
-  Duration _flightElapsed = Duration.zero;
-  Duration? _lastFlightStamp;
-
-  /// 滑行的曲线与时长 —— **与标准档那棵树完全同一套**（`AnimatedPositioned` 用的
-  /// 就是这两个数），这样两档飞得一样快、一样刹车。
-  static const Curve _blockSlideCurve = Curves.easeOutCubic;
-  static const Duration _blockSlideDuration = AppTokens.durMed;
-
   /// 长按拖选：起点与当前终点（null = 不在范围选择态）。
   DateTime? _rangeAnchor;
   DateTime? _rangeFocus;
 
-  /// 多选态那枚带子**这一帧淌到了哪儿**（格坐标，含鼓出）。
-  ///
-  /// 挤字的场要用它，而场必须跟着**淌着的那一点**走：停在「末端吸附到的那一格」的
-  /// 中心等于不挤（那一格的 `t` 恒为 0）。带子每帧把位置回调上来（`onTipPos`）。
-  double? _rangeTipPos;
+  /// 选中日期块移动时使用的普通动画。
+  static const Curve _blockSlideCurve = Curves.easeOutCubic;
+  static const Duration _blockSlideDuration = AppTokens.durMed;
 
   /// 底栏信息卡高度的**上一次**计算结果。
   ///
@@ -266,83 +176,18 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
   ///
   /// 判定挪进 `ScheduleChain.monthHasOverrideHint`：跨时段的一个月里被改过的那天
   /// 可能归**另一套**方案，得逐天问「那天归哪套」—— 那正是链才知道的事。
-  /// 这一帧「挤压场的中心」—— 42 格那层读它（`LensWarpScope`）。
-  ///
-  /// ⚠️ **只许从 [_publishFrame] 写**：帧间（`Ticker` / 指针 / 带子回调）用
-  /// `publish`，帧内（`_gridBody` 里那个 `LayoutBuilder` 跑在**布局阶段**）必须
-  /// `silent: true` —— 在那里通知会当场抛「setState() called during build」，
-  /// 而静默写照样能在同一帧被读到（读的人每帧现读，见 `FrameBuilder`）。
-  final FrameNotifier<Offset?> _lensCenter = FrameNotifier<Offset?>(null);
-
-  /// 「此刻有东西在动」：拖动 / 滑行 / 多选拖选。
-  ///
-  /// 光晕拿它暂停（见 `FlowingBackground.pauseWhen`）—— 那些交互本来每帧都在画，
-  /// 而光晕每 340ms 插进来一帧就是一次固定掉帧。
-  ///
-  /// ⚠️ **判据是「这一帧有没有东西在产出」，不是「手指按着」。** [_publishFrame]
-  /// 只在真有运动源推帧时才被调用：滑行的 tick、拖动中**有位移**的指针事件、
-  /// 带子末端在淌、以及换月时那个每帧重建整页的 `AnimatedSwitcher`。
-  /// **手指按住不动时谁都不调它**，而那时屏幕上没有任何东西在变 —— 把光晕也冻住
-  /// 是没有理由的（v0.10.21 之前判的是 `_dragActive`，按住就停，那是错的）。
+  /// 手势期间暂缓背景光晕的低频动画，避免与交互帧争用。
   final ValueNotifier<bool> _interacting = ValueNotifier<bool>(false);
-
-  /// 「动」的判定天然是**一帧一帧续**的：每一帧末无条件放掉，下一帧谁在动谁再置位。
-  ///
-  /// 于是运动源一停，光晕 340ms 后就接着走（`_t` 从没被推进过 ⇒ 恢复时不跳回）。
-  /// 用 `addPostFrameCallback` 而不是 `Timer`：帧末必然跑到，而定时器会在
-  /// 「已经没人动了」之后还挂着一条待处理项（widget 测试会因此报
-  /// 「A Timer is still pending」）。
   bool _interactingClearScheduled = false;
 
-  /// 这一帧有没有运动源推帧。
-  bool _motionThisFrame = false;
-
   void _markInteracting() {
-    _motionThisFrame = true;
-    _syncInteracting();
+    if (mounted) _interacting.value = true;
     if (_interactingClearScheduled) return;
     _interactingClearScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _interactingClearScheduled = false;
-      _motionThisFrame = false;
-      _syncInteracting();
+      if (mounted) _interacting.value = false;
     });
-  }
-
-  /// 「此刻有没有东西在动」。写的是 `ValueNotifier`（监听者只起停 `Timer`、
-  /// 不 `setState`），所以帧内（布局阶段）那一处也写得。
-  void _syncInteracting() {
-    if (!mounted) return;
-    _interacting.value = _motionThisFrame;
-  }
-
-  /// 那枚块这一帧的状态（位置 / 速度 / 速度是不是活的）—— 只由 [_publishFrame] 写。
-  final FrameNotifier<BlockFrame> _blockFrame =
-      FrameNotifier<BlockFrame>(const BlockFrame(
-          pos: Offset.zero, velocity: Offset.zero, live: false));
-
-  /// 把这一帧的两个每帧值一起发出去。
-  ///
-  /// ⚠️ **两个通知源只从这一个方法出去**（各自写迟早会各说各话）。
-  /// ⚠️ 调用点分两类：**帧间**（`Ticker` / 指针回调）默认通知；**帧内**
-  /// （`_gridBody` 里那个 `LayoutBuilder` 跑在**布局阶段**）必须 `silent: true`
-  /// —— 在那里通知会当场抛「setState() called during build」，而静默写照样能在
-  /// 同一帧被读到（读的人每帧现读，见 `FrameBuilder`）。
-  void _publishFrame({required Offset? center, bool silent = false}) {
-    // 这一帧有东西在产出 ⇒ 把光晕停住（见 [_markInteracting] 那段说明）。
-    _markInteracting();
-    final BlockFrame f = BlockFrame(
-      pos: _flightPos,
-      velocity: Offset(_vx, _vy),
-      live: _dragActive || _flying,
-    );
-    if (silent) {
-      _lensCenter.publishSilently(center);
-      _blockFrame.publishSilently(f);
-    } else {
-      _lensCenter.publish(center);
-      _blockFrame.publish(f);
-    }
   }
 
   /// 底栏信息卡该多高、以及本月每一天各自的内容高度（见 `info_card_metrics.dart`）。
@@ -436,11 +281,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
 
   @override
   void dispose() {
-    WidgetService.widgetLaunchRequested.removeListener(_onWidgetLaunchRequested);
-    _lensCenter.dispose();
-    _blockFrame.dispose();
+    WidgetService.widgetLaunchRequested
+        .removeListener(_onWidgetLaunchRequested);
     _interacting.dispose();
-    _ticker?.dispose();
     super.dispose();
   }
 
@@ -527,7 +370,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
           final dir = pane.month == month ? _monthRoll : -_monthRoll;
           // ⚠️ **换月也算「在动」**，而它得靠这一层带进来：整个转场里用的是**同一个
           // `_MonthPane` 实例**，子树不会每帧重建，所以 `_buildGrid` 里那一处
-          // `_publishFrame` 只在 `setState` 那一帧跑一次、不是每帧。
           // （第一版就是这么以为的 —— 注释还写成了「换月那个每帧重建整页的
           // AnimatedSwitcher」，于是那条用例其实什么都没验：换月动画 220ms
           // 比光晕一步的 340ms 还短，即使完全不暂停也看不出差别。最终审查抓出来的。）
@@ -535,16 +377,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
             animation: animation,
             onFrame: _markInteracting,
             child: FadeTransition(
-            opacity: animation,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                // 位移只要一小段（卡片宽度的 6%），其余观感交给淡入淡出 —— 整屏
-                // 宽度那种滑法在月历上太闹。
-                begin: Offset(0.06 * dir, 0),
-                end: Offset.zero,
-              ).animate(animation),
-              child: child,
-            ),
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  // 位移只要一小段（卡片宽度的 6%），其余观感交给淡入淡出 —— 整屏
+                  // 宽度那种滑法在月历上太闹。
+                  begin: Offset(0.06 * dir, 0),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: child,
+              ),
             ),
           );
         },
@@ -644,108 +486,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     return DateTime(_month.year, _month.month, day);
   }
 
-  /// 目标变了就起一次滑行。**在 `build` 里调** —— 目标本来就只在 build 里算得出来，
-  /// 而目标没变时它一行都不做（同一帧里 build 跑几次是常态）。
-  ///
-  /// 用 `Ticker` 而不是 `AnimationController`：后者的 `forward()` 一调就会通知监听者，
-  /// 在 build 里会撞「setState() called during build」。而这里只需要「每帧来一下」。
-  void _syncBlockFlight(
-      bool showBlock, Offset target, double cellW, double cellH) {
-    if (!showBlock || !liquidGlassActive.value) {
-      // 块不在树上 / 不是液态档：**清掉「上一次摆过哪儿」** —— 下次它再出现时
-      // 直接落到位，不从上一处（很可能是另一个月的坐标）窜过来。
-      _flightTarget = null;
-      _stopFlight();
-      return;
-    }
-    _flightCellW = cellW;
-    _flightCellH = cellH;
-    if (_dragActive) {
-      // 拖动中位置由手指给（1:1 跟手），滑行让位。**这一条要在「目标没变」之前**：
-      // 用户可能在那枚块还在飞的时候一把按住它（`onPanStart` 的目标恰好就是
-      // `_selected` 那一格、与飞行的终点相同），那种帧不能当成「没变化」放过去。
-      _stopFlight();
-      _flightTarget = target;
-      _flightPos = target;
-      return;
-    }
-    if (_flightTarget == target) return; // 没变化（滑行途中每一帧都走到这里）
-    final Offset? prev = _flightTarget;
-    _flightTarget = target;
-    if (prev == null) {
-      // 头一次出现：直接落到位。**不飞** —— 「上一次的位置」是另一个月的坐标时
-      // （换月之后块被藏起来又露出来）飞过去会从莫名其妙的地方窜出来。
-      _stopFlight();
-      _flightPos = target;
-      return;
-    }
-    _flightFrom = _flightPos; // 中途被打断就从中途接着飞
-    _flightElapsed = Duration.zero;
-    _lastFlightStamp = null;
-    _flying = true;
-    // ⚠️ **ticker 只建一次，之后只 start / stop**（`SingleTickerProviderStateMixin`
-    // 一个 State 只许 `createTicker` 一次）—— `CalendarLens` 那边踩过同一个坑。
-    _ticker ??= createTicker(_onFlightTick);
-    if (!_ticker!.isActive) _ticker!.start();
-  }
-
-  void _onFlightTick(Duration elapsed) {
-    final Offset? from = _flightFrom;
-    if (from == null) return; // 已经被停掉的余帧
-    final Duration? prevStamp = _lastFlightStamp;
-    final Duration raw = prevStamp == null ? Duration.zero : elapsed - prevStamp;
-    // 掉帧时按**积分步长的上限**算（与弹簧同一条规矩）：不封顶的话卡顿那一帧会
-    // 让位置瞬移，速度也跟着跳一下。
-    final Duration dt = raw > Duration.zero && raw < LiquidLensSpring.maxStep
-        ? raw
-        : LiquidLensSpring.maxStep;
-    _lastFlightStamp = elapsed;
-    _flightElapsed += dt;
-
-    final double t = (_flightElapsed.inMicroseconds /
-            _blockSlideDuration.inMicroseconds)
-        .clamp(0.0, 1.0);
-    final Offset pos =
-        Offset.lerp(from, _flightTarget!, _blockSlideCurve.transform(t))!;
-
-    // 速度：**位置的帧间差分 ÷ 真实帧间隔** —— 与拖动那条同一个纯函数、同一道低通
-    // （那里差分的是「格」，这里把像素差换算成格）。
-    _vx = lensVelocityStep(
-        deltaPage: (pos.dx - _flightPos.dx) / _flightCellW,
-        itemW: _flightCellW,
-        dt: dt,
-        previous: _vx);
-    _vy = lensVelocityStep(
-        deltaPage: (pos.dy - _flightPos.dy) / _flightCellH,
-        itemW: _flightCellH,
-        dt: dt,
-        previous: _vy);
-
-    _flightPos = pos;
-    if (t >= 1) _stopFlight();
-    // ⚠️ **顺序要紧**：先落位、再 `_stopFlight()`（`live` 因此变 false）、**最后**才发
-    // —— 这样最后一帧交出去的是「松手那一帧」，透镜那边「把最后的速度接过来、自己
-    // 衰减」照样成立（v0.10.15 的裁定，别改）。
-    _publishFrame(
-        center: Offset(_flightPos.dx + _flightCellW / 2,
-            _flightPos.dy + _flightCellH / 2));
-  }
-
-  /// 停下滑行。**速度不归零** —— 松手 / 落定之后那枚块还要靠最后一次速度把形变与
-  /// 彩边**收回去**（它自己按帧衰减），归零就是「啪」地一下没了。
-  void _stopFlight() {
-    _flying = false;
-    _flightFrom = null;
-    _ticker?.stop();
-  }
-
   @override
   Widget build(BuildContext context) {
     final scheduleAsync = ref.watch(activeScheduleProvider);
     // 整页按**天**解析：某天归哪套方案由链回答（spec §2 ②），所以下面
     // 「网格 / 信息卡 / 本月统计 / 已调班」全都只认它，不再认「当前方案」。
     final chain = scheduleAsync.valueOrNull?.chain;
-    ref.watch(appSettingsProvider.select((s) => s.language)); // 语言切换时重建（**只订阅语言** —— 全量 watch 会让拨触觉开关也白重建整页）
+    ref.watch(appSettingsProvider.select(
+        (s) => s.language)); // 语言切换时重建（**只订阅语言** —— 全量 watch 会让拨触觉开关也白重建整页）
 
     return Scaffold(
       // 玻璃要有东西可透（见 `FlowingBackground`）：底色仍是主题给的那块平坦中性色，
@@ -836,8 +584,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
           children: [
             Row(
               children: [
-                _circleIcon(context, Icons.chevron_left_outlined, L10n.prevMonth,
-                    _prev, size: narrowSide),
+                _circleIcon(
+                    context, Icons.chevron_left_outlined, L10n.prevMonth, _prev,
+                    size: narrowSide),
                 const SizedBox(width: narrowGap),
                 Expanded(
                   child: GlassPill(
@@ -857,15 +606,17 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                   ),
                 ),
                 const SizedBox(width: narrowGap),
-                _circleIcon(context, Icons.chevron_right_outlined, L10n.nextMonth,
-                    _next, size: narrowSide),
+                _circleIcon(context, Icons.chevron_right_outlined,
+                    L10n.nextMonth, _next,
+                    size: narrowSide),
               ],
             ),
             const SizedBox(height: narrowGap),
             Row(
               children: [
                 _circleIcon(context, Icons.timeline, L10n.scheduleTimeline,
-                    _showTimeline, size: narrowSide),
+                    _showTimeline,
+                    size: narrowSide),
                 const Spacer(),
                 GlassPill(
                   onTap: _today,
@@ -913,8 +664,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
               context, Icons.chevron_right_outlined, L10n.nextMonth, _next),
           const SizedBox(width: AppTokens.gapIconText),
           // 切换排班：纯图标圆形钮（省宽，保证年月完整显示）
-          _circleIcon(context, Icons.timeline, L10n.scheduleTimeline,
-              _showTimeline),
+          _circleIcon(
+              context, Icons.timeline, L10n.scheduleTimeline, _showTimeline),
           const SizedBox(width: AppTokens.gapIconText),
           GlassPill(
             onTap: _today,
@@ -948,8 +699,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     );
   }
 
-  Widget _circleIcon(BuildContext context, IconData icon, String tooltip,
-      VoidCallback onTap,
+  Widget _circleIcon(
+      BuildContext context, IconData icon, String tooltip, VoidCallback onTap,
       {double size = 40}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Tooltip(
@@ -1048,8 +799,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     final hasOverride =
         days.any((d) => schedule.dayOverrides.containsKey(dayNumber(d)));
     // 有覆盖时那天恒为单个班次（覆盖整天替换）；无覆盖时传 null（picker 不需要）。
-    final currentShifts =
-        days.length == 1 && hasOverride ? schedule.shiftsOn(days.single) : const <ShiftClass>[];
+    final currentShifts = days.length == 1 && hasOverride
+        ? schedule.shiftsOn(days.single)
+        : const <ShiftClass>[];
     final current = currentShifts.isEmpty ? null : currentShifts.first;
 
     final choice = await showShiftOverridePicker(
@@ -1128,11 +880,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                 // 说法与排班管理页那条时间线**同源**：一个段都没有时不说「其余
                 // 时间」（没有「这一段」，「其余」就没有着落），整行写「全部
                 // 日子」。两处各写一份的话，同一个状态会有两种解释。
-                Text(hasPeriods
-                    ? L10n.remainingHint
-                    : (remaining == null
-                        ? L10n.allDatesNoneHint
-                        : L10n.allDatesHint),
+                Text(
+                    hasPeriods
+                        ? L10n.remainingHint
+                        : (remaining == null
+                            ? L10n.allDatesNoneHint
+                            : L10n.allDatesHint),
                     style: AppTokens.rowSecondary
                         .copyWith(color: AppTokens.inkMuted(sheetContext))),
                 const SizedBox(height: 8),
@@ -1245,8 +998,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
           child: IgnorePointer(
             child: Center(
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppTokens.spaceXl),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: AppTokens.spaceXl),
                 // **必须是一张（近）不透明的面板**：直接铺两行字会压在格子的
                 // 日期与农历上，两边都看不清（出图当场看出来的）。
                 child: GlassPanel(
@@ -1263,8 +1016,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                       const SizedBox(height: AppTokens.spaceXs),
                       Text(L10n.noScheduleHereHint,
                           textAlign: TextAlign.center,
-                          style:
-                              AppTokens.rowSecondary.copyWith(color: muted)),
+                          style: AppTokens.rowSecondary.copyWith(color: muted)),
                     ],
                   ),
                 ),
@@ -1292,7 +1044,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     if (chain == null) return true;
     final days = DateTime(month.year, month.month + 1, 0).day;
     for (var d = 1; d <= days; d++) {
-      if (chain.hasScheduleOn(DateTime(month.year, month.month, d))) return false;
+      if (chain.hasScheduleOn(DateTime(month.year, month.month, d))) {
+        return false;
+      }
     }
     return true;
   }
@@ -1313,10 +1067,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
           weekdayH: _weekdayH,
           // 窄屏 / 短屏上格子可以更「瘦高」一些：格子本来就窄，再按 0.62
           // 卡住高度就装不下三行字了。竖屏不传这个参数，用的还是 0.62。
-          aspectMin: (AppLayout.of(context).isNarrow ||
-                  AppLayout.of(context).isShort)
-              ? 0.46
-              : _cellAspectMin,
+          aspectMin:
+              (AppLayout.of(context).isNarrow || AppLayout.of(context).isShort)
+                  ? 0.46
+                  : _cellAspectMin,
         );
         final selectedRect = _selectedRect(cellW, cellH);
         final showBlock = _dragActive || selectedRect != null;
@@ -1326,47 +1080,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
         final blockTop = _dragActive
             ? _weekdayH + _visualRow * cellH
             : (selectedRect?.top ?? 0);
-        // 目标变了就起一次滑行。**必须在算 `lensCenter` 之前**：挤压场用的是
-        // 「这一帧块在哪儿」，而那正是它更新出来的。
-        _syncBlockFlight(showBlock, Offset(blockLeft, blockTop), cellW, cellH);
-
-        // ── 多选态那条水带（只有液态档画）────────────────────────────────
-        // 长按的落点（anchor）固定不动，动的是 focus —— 往回拖时它就是**起端**。
-        final DateTime? bandAnchor = _rangeAnchor;
-        final DateTime? bandFocus = _rangeFocus;
-        final bool bandVisible = bandAnchor != null && bandFocus != null;
-        final Rect? bandTip = bandVisible ? _cellRect(bandFocus, cellW, cellH) : null;
-        // ⚠️ **落点算不出来就不画**：拖选当中另一根手指点了 ‹ / ›（或点「今天」、
-        // 或桌面小组件跳过来）会让 `_month` 一换 —— 那时的 `bandFocus` 就不在新月
-        // 的格子里了，`_cellRect` 返回 null。少了这一条，下面那句 `bandTip!`
-        // 会当场抛（独立审查抓的，用例跟着它一起写）。
-        final bool showBand = bandTip != null && liquidGlassActive.value;
-        // 挤字的场中心 = **淌着的末端**（还没收到第一帧回调时退回它吸附到的那一格）。
-        //
-        // ⚠️ `tipPos` 量的是那一端的**格边**（`k` = 第 k 格的右/左缘），所以场心要
-        // **再加半格**才是那一格的中心 —— 少这半格，场会偏在格的边上，连末端自己
-        // 那一格都被挤（出图上当场看得见）。
-        final double bandTipCol =
-            bandTip == null ? 0 : (bandTip.left - _hPad) / cellW;
-        final Offset? bandWarpCenter = !showBand
-            ? null
-            : Offset(
-                _hPad + ((_rangeTipPos ?? bandTipCol) + 0.5) * cellW,
-                bandTip.center.dy);
-
-        // 挤压场的中心：多选态跟着**会动的那一头**（水带末端），否则跟着那枚块。
-        // ⚠️ 这一段跑在 `LayoutBuilder` 的**布局阶段** —— 只能静默写。
-        _publishFrame(
-            center: !liquidGlassActive.value
-                ? null
-                : showBand
-                    ? bandWarpCenter
-                    : (showBlock
-                        ? Offset(_flightPos.dx + cellW / 2,
-                            _flightPos.dy + cellH / 2)
-                        : null),
-            silent: true);
-
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTapDown: (d) {
@@ -1387,9 +1100,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
             } else {
               startCol =
                   ((d.localPosition.dx - _hPad) / cellW).floor().toDouble();
-              startRow = ((d.localPosition.dy - _weekdayH) / cellH)
-                  .floor()
-                  .toDouble();
+              startRow =
+                  ((d.localPosition.dy - _weekdayH) / cellH).floor().toDouble();
             }
             setState(() {
               _pressed = true;
@@ -1398,61 +1110,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
               _visualRow = startRow;
               _grabCol = (d.localPosition.dx - _hPad) / cellW - startCol;
               _grabRow = (d.localPosition.dy - _weekdayH) / cellH - startRow;
-              // 速度从这一格起算：上一段拖动的尾巴不许再算进来。
-              _vx = 0;
-              _vy = 0;
-              _lastFrameStamp = null;
-              _lastVelCol = startCol;
-              _lastVelRow = startRow;
             });
           },
           onPanUpdate: (d) {
-            final double col = (d.localPosition.dx - _hPad) / cellW - _grabCol;
-            final double row = (d.localPosition.dy - _weekdayH) / cellH - _grabRow;
-            // 速度：**位置的帧间差分 ÷ 真实的帧间隔**（`lensVelocityStep`，带低通）。
-            // 与底栏 / 分段器 / 开关 / 响铃那枚药丸同一套 —— **别退回 `delta × 60`**：
-            // 120Hz 上每帧位移只有一半、形变也就只有一半（v0.10.6 与 v0.10.14 各踩过一次）。
-            //
-            // ⚠️ **只在帧戳真的变了时才算**：同一帧 rebuild 多次是常态（指针事件不按帧到达），
-            // 第二遍进来位移已经被吃掉、算出来是 0，而低通会把那个 0 当真。
-            final Duration stamp =
-                SchedulerBinding.instance.currentSystemFrameTimeStamp;
-            if (stamp != _lastFrameStamp) {
-              final Duration? prev = _lastFrameStamp;
-              _lastFrameStamp = stamp;
-              if (prev != null) {
-                _vx = lensVelocityStep(
-                    deltaPage: col - _lastVelCol,
-                    itemW: cellW,
-                    dt: stamp - prev,
-                    previous: _vx);
-                _vy = lensVelocityStep(
-                    deltaPage: row - _lastVelRow,
-                    itemW: cellH,
-                    dt: stamp - prev,
-                    previous: _vy);
-              }
-              _lastVelCol = col;
-              _lastVelRow = row;
-            }
-            final DateTime? before = _nearestDateFromVisual();
-            _visualCol = col;
-            _visualRow = row;
-            if (liquidGlassActive.value) {
-              // 位置与速度每帧都在变 —— 走通知源，**整页不跟着重建**。
-              _flightPos = Offset(_hPad + col * cellW, _weekdayH + row * cellH);
-              _publishFrame(
-                  center: Offset(_flightPos.dx + cellW / 2,
-                      _flightPos.dy + cellH / 2));
-              // **吸附到的那一格真的变了才重建整页**：那一格的班次胶囊要画成实心，
-              // 而那是「标题级」的状态。与 `onLongPressMoveUpdate` 同一条纪律
-              // —— 每帧重建整页正是这一轮要消掉的东西。
-              if (_nearestDateFromVisual() != before) setState(() {});
-            } else {
-              // 标准档那棵树一个字不改：它的位置由 `AnimatedPositioned` 自己走，
-              // 而那个位置是从布局里的 `_visualCol/_visualRow` 算出来的。
-              setState(() {});
-            }
+            _visualCol = (d.localPosition.dx - _hPad) / cellW - _grabCol;
+            _visualRow = (d.localPosition.dy - _weekdayH) / cellH - _grabRow;
+            _markInteracting();
+            setState(() {});
           },
           onPanEnd: (_) {
             final date = _nearestDateFromVisual();
@@ -1466,9 +1130,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
               _pressed = false;
               _dragActive = false;
               if (date != null) _selected = date;
-              // ⚠️ **不要把 `_vx` / `_vy` 归零**：松手之后那枚块还要靠最后一次速度
-              // 把形变**收回去**（`CalendarLens` 自己按帧衰减）。归零的话形变会
-              // 「啪」地消失，而不是收回去。下一次 `onPanStart` 才清它。
             });
             if (changed) Haptics.select();
           },
@@ -1483,8 +1144,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
             // 整条链上有一套「有周期」的就能进 —— 具体那天归哪套、能不能挑，
             // 由 `adjustDays` 按起点那天再判一次。
             final canPick = chain?.hasCycle ?? false;
-            final date =
-                canPick ? _dateFromPosition(d.localPosition, cellW, cellH) : null;
+            final date = canPick
+                ? _dateFromPosition(d.localPosition, cellW, cellH)
+                : null;
             setState(() {
               // 长按赢下竞技场之后 `onTapUp` / `onPanEnd` 都不会再来，滑块那套
               // 状态必须在这儿熄掉 —— 不然玻璃块停在按下的放大态，或者跟范围
@@ -1495,8 +1157,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
               _dragActive = false;
               _rangeAnchor = date;
               _rangeFocus = date;
-              // 上一段拖选留下的末端位置不许漏到这一段来（场会先歪一帧）。
-              _rangeTipPos = null;
             });
             // 进入多选态那一下**更明显**，好跟后面每进一格的轻震分开（spec §4.3）。
             // 放在 `setState` 之外：它的回调必须同步且无副作用，触觉是副作用。
@@ -1514,6 +1174,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
             // 吸附到的格子真的变了才震 —— 原地抖一下不响；范围往回缩时同样会响，
             // 两个方向一致（spec §4.3）。
             Haptics.select();
+            _markInteracting();
             setState(() => _rangeFocus = date);
           },
           onLongPressEnd: (_) {
@@ -1548,39 +1209,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                     ],
                   ),
                 ),
-                // 水带画在**网格之上、那枚块之下**：它是一层（逐格淡染盖不住格与格之间
-                // 那 4px 的缝），而那枚「今天/选中的一天」始终压在最上面。
-                if (showBand)
-                  Positioned.fill(
-                    child: CalendarRangeBand(
-                      size: Size(2 * _hPad + 7 * cellW,
-                          _weekdayH + _weekRows * cellH),
-                      cellW: cellW,
-                      cellH: cellH,
-                      hPad: _hPad,
-                      weekdayH: _weekdayH,
-                      runs: rangeRowRuns(
-                          from: bandAnchor!, to: bandFocus!, month: _month),
-                      movingEnd: daysBetween(bandAnchor, bandFocus) >= 0,
-                      tipCell: ((bandTip.left - _hPad) / cellW).round(),
-                      accent: Theme.of(context).colorScheme.primary,
-                      isDark: Theme.of(context).brightness == Brightness.dark,
-                      // 末端淌到哪儿了。**走通知源，不是 `setState`** —— 带子在动的
-                      // 时候这个回调是**每帧**发的，`setState` 就等于每帧把整页重建
-                      // 一遍（独立审查实测 509 个 widget/帧，比滑行那条路还狠）。
-                      //
-                      // 场心仍然跟着「淌着的那一点」（规格 §4.5 那条订正：不能跟
-                      // 「末端吸附到的那一格」，格心的权重恒为 0，那样一格都不挤）。
-                      onTipPos: (double v) {
-                        if (!mounted) return;
-                        _rangeTipPos = v; // 真值照记（布局那一份也读它当兜底）
-                        _publishFrame(
-                            center: Offset(_hPad + (v + 0.5) * cellW,
-                                bandTip.center.dy));
-                      },
-                    ),
-                  ),
-                if (showBlock) _blockPlacement(context, cellW, cellH, blockLeft, blockTop),
+                if (showBlock)
+                  _blockPlacement(context, cellW, cellH, blockLeft, blockTop),
               ],
             ),
           ),
@@ -1609,19 +1239,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     return SizedBox(
       height: _weekdayH,
       child: Row(
-        children: List.generate(7, (i) => SizedBox(
-              width: cellW,
-              child: Center(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    labels[i],
-                    style: AppTokens.labelSecondary
-                        .copyWith(color: AppTokens.inkMuted(context)),
+        children: List.generate(
+            7,
+            (i) => SizedBox(
+                  width: cellW,
+                  child: Center(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        labels[i],
+                        style: AppTokens.labelSecondary
+                            .copyWith(color: AppTokens.inkMuted(context)),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            )),
+                )),
       ),
     );
   }
@@ -1643,10 +1275,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     }
     for (var d = 1; d <= _daysInMonth; d++) {
       final date = DateTime(_month.year, _month.month, d);
-      // 这一格的中心（格层坐标）—— 液态档拿它去算「内容被透镜挤成什么样」。
-      final int slot = _leading + d - 1;
-      final Offset cellCenter = Offset(_hPad + (slot % 7 + 0.5) * cellW,
-          _weekdayH + (slot ~/ 7 + 0.5) * cellH);
       cells.add(_dayCell(
           context,
           date,
@@ -1661,14 +1289,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
           blockDate != null && isSameDay(date, blockDate),
           chain?.scheduleOn(date)?.dayOverrides.containsKey(dayNumber(date)) ??
               false,
-          // 逐格那层 14% 淡染：**液态档由那条带子取代**（标准档一个字没改）。
-          !liquidGlassActive.value &&
-              _rangeAnchor != null &&
+          // 多选期间对范围内日期做基础淡染。
+          _rangeAnchor != null &&
               _rangeFocus != null &&
-              _inSelectedRange(date),
-          // 液态档才有：这一格的内容听那个「挤压场中心」自己变。
-          // 标准档传 null ⇒ **一个 LensWarpScope 都不挂**，那棵树与今天逐字节相同。
-          warpCenter: liquidGlassActive.value ? cellCenter : null));
+              _inSelectedRange(date)));
     }
     final rows = <Widget>[];
     for (var i = 0; i < cells.length; i += 7) {
@@ -1701,16 +1325,20 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
   /// [adjusted] 表示这天被「按天改班」覆盖过，胶囊右上角点一个小圆点。
   /// [inRange] 表示这天落在长按拖选的范围里，整格铺一层主色淡染。
   ///
-  /// [warp] 是液态档那枚透镜把它**内容**挤了一下的仿射变换（`null` = 不套）。
-  /// 只套内容、**不套卡片**：卡片动了就成了「格子自己在扭」，而用户要的是
-  /// 「一枚玻璃压过去」。`Transform` 只改绘制、不改布局，所以字的排版不会跟着变。
-  Widget _dayCell(BuildContext context, DateTime date, List<ShiftClass> shifts,
-      LunarInfo lunar, double cellW, double cellH, bool isToday, bool solid,
-      bool adjusted, bool inRange, {Offset? warpCenter}) {
+  Widget _dayCell(
+      BuildContext context,
+      DateTime date,
+      List<ShiftClass> shifts,
+      LunarInfo lunar,
+      double cellW,
+      double cellH,
+      bool isToday,
+      bool solid,
+      bool adjusted,
+      bool inRange) {
     // v0.11.3 视觉重做前过渡：多班次时暂取第一个（TODO: 扁平+圆角方章+红折角）。
     final shift = shifts.isEmpty ? null : shifts.first;
     final lunarColor = AppTokens.inkMuted(context);
-    final surface = Theme.of(context).colorScheme.surface;
     final primary = Theme.of(context).colorScheme.primary;
 
     // 缩放系数按**去掉格子内缩后的可用高**算：内容排在被 `_cellInset` 收窄的
@@ -1719,8 +1347,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     final s =
         ((cellH - _cellInset * 2) / _cellDesignH).clamp(1.0, _cellMaxScale);
     final contentW = cellW - _cellInset * 2;
-    // 太窄就画不出胶囊（小窗里格宽只有 25），退回彩色文字。
-    final chip = shift != null && contentW >= _chipMinContentW;
 
     final dateLine = FittedBox(
       fit: BoxFit.scaleDown,
@@ -1767,7 +1393,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                   // 法定节假日的「休」标记：与「班」统一格式，绿色区分。
                   // 单行写法是守门测试的要求：`fontWeight` 字面量只有与
                   // `copyWith` 同行才豁免。
-                  style: lunarStyle.copyWith(color: AppTokens.success, fontWeight: FontWeight.w700),
+                  style: lunarStyle.copyWith(
+                      color: AppTokens.success, fontWeight: FontWeight.w700),
                 ),
               if (lunar.isMakeupWorkday)
                 TextSpan(
@@ -1775,8 +1402,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                   // 调休日的「班」标记：与农历同一角色，转主色 + 加粗区分。
                   // 单行写法是守门测试的要求：`fontWeight` 字面量只有与
                   // `copyWith` 同行才豁免。
-                  style: lunarStyle
-                      .copyWith(color: primary, fontWeight: FontWeight.w700),
+                  style: lunarStyle.copyWith(
+                      color: primary, fontWeight: FontWeight.w700),
                 ),
               // `cellLabel` 而不是 `shortLabel`：格子装不下 4 个字以上的节日名，
               // 而把长名字丢给上面那层 `FittedBox` 缩会变成 6px 的糊字（完整但
@@ -1829,7 +1456,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
       ..add(const SizedBox(height: AppTokens.gapHair))
       ..add(lunarLine);
 
-    // 内容那一层（日期 + 班次胶囊 + 农历）。抽出来是为了让「挤那一下」能套在它外面。
+    // 内容那一层（日期 + 班次胶囊 + 农历）。单独构建内容层，保证复杂字号下整格内容能按需缩放。
     final Widget fittedContent = FittedBox(
       fit: BoxFit.scaleDown,
       child: SizedBox(
@@ -1878,20 +1505,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
               //
               // 宽度给死值，所以 scaleDown 只在**高度**不够时才动手。
               //
-              // 外面那层是液态档「内容被透镜边缘挤」——
-              // **`warpCenter == null` 时一层 `LensWarpScope` 都不挂**
-              // （恒等的 `Transform` 也是要付代价的），而挂上时它只改绘制：
-              // `Transform` 不动布局，字的排版与换行都不变。
-              child: warpCenter == null
-                  ? fittedContent
-                  : LensWarpScope(
-                      center: _lensCenter,
-                      cellCenter: warpCenter,
-                      cellW: cellW,
-                      cellH: cellH,
-                      inset: _cellInset,
-                      child: fittedContent,
-                    ),
+              child: fittedContent,
             ),
           ],
         ),
@@ -1963,49 +1577,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
         dutyCorner: hasDuty,
       );
     }
-  }
-
-  /// —— 两个候选（`inkFor` 与 `onSolid`）各自在对应底色上可读，中间态可接受，
-  /// 而 Color.lerp 两个可读色反而会穿过不可读区。
-  Widget _shiftChip(BuildContext context, ShiftClass shift, double s,
-      bool solid, Key key) {
-    final color = Color(shift.color);
-    final fill = solid ? 1.0 : 0.14;
-    final ink = solid
-        ? AppTokens.onSolid(color)
-        : AppTokens.inkFor(
-            color,
-            Color.alphaBlend(
-                color.withValues(alpha: fill),
-                Theme.of(context).colorScheme.surface));
-    final label = shift.shortLabel;
-
-    return AnimatedContainer(
-      key: key,
-      duration: AppTokens.durMed,
-      curve: Curves.easeOut,
-      padding: EdgeInsets.symmetric(
-          horizontal: _chipPadH * s, vertical: AppTokens.padChipV * s),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: fill),
-        borderRadius: BorderRadius.circular(AppTokens.radiusS),
-        border: Border.all(
-            color: solid ? color : color.withValues(alpha: 0.45)),
-      ),
-      // 文字套一层 `scaleDown`：简称是用户可改的（可能两个字、三个字），系统
-      // 字号也可能被放大 —— 光按「字数 × 基准字号」算可用宽度是**零余量**的，
-      // 差一点点就退化成省略号，再多一点整串字都放不下、只剩一个空胶囊
-      // （v0.7.1 真机实测：两字简称显示成「上…」，系统字号放大后直接空白）。
-      // 交给 FittedBox 按实际排版缩，放得下就一个像素都不缩。
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Text(
-          label,
-          maxLines: 1,
-          style: AppTokens.scaled(AppTokens.cellShift, s).copyWith(color: ink),
-        ),
-      ),
-    );
   }
 
   /// 「今天」徽章：实心主色 + 白字。
@@ -2173,10 +1744,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
   /// 14/w700）留给主次关系。
   Widget _holidayBadge(BuildContext context, String name) {
     final surface = Theme.of(context).colorScheme.surface;
-    final ink = AppTokens.inkFor(
-        AppTokens.holiday,
-        Color.alphaBlend(
-            AppTokens.holiday.withValues(alpha: 0.14), surface));
+    final ink = AppTokens.inkFor(AppTokens.holiday,
+        Color.alphaBlend(AppTokens.holiday.withValues(alpha: 0.14), surface));
     return Container(
       key: const Key('info-card-holiday-badge'),
       padding: const EdgeInsets.symmetric(
@@ -2189,7 +1758,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          AppIcon(Icons.celebration_outlined, size: AppTokens.iconSm, color: ink),
+          AppIcon(Icons.celebration_outlined,
+              size: AppTokens.iconSm, color: ink),
           const SizedBox(width: AppTokens.gapIconText),
           Flexible(
             child: Text.rich(
@@ -2237,54 +1807,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     );
   }
 
-  /// 那枚块**摆在哪儿**。两档各一棵树：
-  ///
-  /// · **标准档**：`AnimatedPositioned` 自己走 —— 那棵树**一个字节都没动**。
-  /// · **液态档**：位置由我们算（`_flightPos`），因为滑行时的速度与挤压场都要那个
-  ///   中间位置，而 `AnimatedPositioned` 不把它交出来（见 `_syncBlockFlight`）。
-  ///
-  /// 两棵树用**同一套曲线与时长**（`_blockSlideCurve` / `_blockSlideDuration`），
-  /// 所以两档飞起来一样快、一样刹车。
+  /// 标准档选中块：日期间移动动画，拖动时立即跟手。
   Widget _blockPlacement(BuildContext context, double cellW, double cellH,
       double left, double top) {
-    if (liquidGlassActive.value) {
-      // 位置每帧都在变 —— 走通知源，**整页不跟着重建**。
-      //
-      // ⚠️ **`Stack` 的孩子必须是 `Positioned`**：`FrameBuilder` 直接塞进去会让那
-      // 一块变成「非定位孩子」，布局当场错。所以外面套 `Positioned.fill`，由 builder
-      // 返回的**内层 `Stack`**（`clipBehavior: Clip.none`，让透镜照旧能鼓到格子外）
-      // 去摆那个真的 `Positioned`。外层那个 Stack 的裁剪行为因此与今天一字不差。
-      return Positioned.fill(
-        child: FrameBuilder<BlockFrame>(
-          listenable: _blockFrame,
-          builder: (BuildContext context, BlockFrame f, Widget? _) => Stack(
-            clipBehavior: Clip.none,
-            children: <Widget>[
-              Positioned(
-                left: f.pos.dx,
-                top: f.pos.dy,
-                width: cellW,
-                height: cellH,
-                // ⚠️ **透镜本体必须在这里现建**（不能在 builder 外面建好再传进来）：
-                // 它每帧要一个新速度（`_blockFrame.value` 刚写进去的那一份），而同一个
-                // widget **实例**是不会被重建的 —— 建在外面等于把它冻在第一帧的速度上
-                // （v0.10.17 那条「滑行中彩边亮起来」的用例当场抓到过）。
-                child: AnimatedScale(
-                  // ⚠️ 液态档**钉在 1.0**：按住那个动作改由「四面鼓出 + 浮起阴影」
-                  // 承担（`CalendarLens` 的升程），两个叠在一起就重了。
-                  scale: 1.0,
-                  duration: AppTokens.durMed,
-                  curve: Curves.easeOutBack,
-                  child: _glassBlock(context, cellW, cellH),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    // 标准档：位置由 `AnimatedPositioned` 自己走，**那棵树一个字不改**
-    // （`scale` 仍是 `_pressed` 那 1.22）。
     return AnimatedPositioned(
       duration: _dragActive ? Duration.zero : _blockSlideDuration,
       curve: _blockSlideCurve,
@@ -2301,53 +1826,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     );
   }
 
-  /// 可拖拽的玻璃选择块（与格子同 inset、同圆角，精确覆盖）。
+  /// 普通半透明选中块，保留基础玻璃拟态配色、描边和圆角。
   Widget _glassBlock(BuildContext context, double cellW, double cellH) {
     final accent = Theme.of(context).colorScheme.primary;
-    // 液态档：一枚真的玻璃透镜（按住四面鼓出、拖动跟速度形变、边缘挤过格子里的字）。
-    // 它替下的是那个 1.22 的等比放大 —— 标准档那棵树上那条路径一个字没动。
-    if (liquidGlassActive.value) {
-      return CalendarLens(
-        // 与标准档那一枚**同一个 key**：它就是「选中块」这一个东西，
-        // 两个档位各是一棵树，但对外（单测、工装）是同一个身份。
-        key: const Key('calendar-selection-block'),
-        size: Size(cellW, cellH),
-        liftTarget: (_pressed || _dragActive) ? 1 : 0,
-        // 速度的**两条来路**都从这一个入口进去：手指在拖（`onPanUpdate` 的帧间
-        // 差分），以及那枚块自己在滑行（`_onFlightTick` 算的）。两处都是每帧一个新
-        // 采样，所以 `CalendarLens` 那边那条「别把陈旧的值反复灌回来」照样成立。
-        // 这两个值每帧都在变，从通知源现读（`_publishFrame` 刚写进去的那一份）。
-        velocityLive: _blockFrame.value.live,
-        velocity: _blockFrame.value.velocity,
-        isDark: Theme.of(context).brightness == Brightness.dark,
-        accent: accent,
-      );
-    }
     return Container(
       key: const Key('calendar-selection-block'),
       margin: const EdgeInsets.all(_cellInset),
       decoration: BoxDecoration(
         borderRadius: _cellRadius,
-        // 14% 是全 app 的淡染约定值。这里从前是 13% —— 拖动选范围时
-        // 范围底色（14%）会紧贴这一块，两个值同屏只显得脏。
         color: accent.withValues(alpha: 0.14),
         border: Border.all(color: accent, width: 2),
-        // **没有 boxShadow**，这是有意的，别加回来。
-        //
-        // 这一层画在网格**之上**（Stack 的后一个 child），所以它必须是半透明的
-        // —— 不透明就把选中那格的日期、班次胶囊、农历全糊掉了（试过，格子直接
-        // 变空）。而正因为它是半透明的，一旦有 `boxShadow`（主色 25%），阴影就会
-        // 从块**内部**透出来再叠一层：格子内部实际吃到约 33% 的主色，而不是
-        // 设计要的 13%。
-        //
-        // 后果是选中那格的**实心班次胶囊被洗掉色相**：橙 `#FF9F0A` 洗成棕
-        // `#C28758`，蓝 `#4C8DFF` 会和主色块糊成一片。而「选中那格的班次最抢眼」
-        // 正是实心胶囊的全部意义。
-        //
-        // 想在块外留光晕也不行：阴影只能画在内容之上，才会被看得见；画在内容
-        // 之下就会被格子自身近乎不透明的卡片底（白 92%）盖住。所以这里二选一，
-        // 选保住胶囊的色相 —— 「选中」这个信号由 2px 主色描边 + 13% 淡染承担，
-        // 它们本来就扛得住。
       ),
     );
   }
@@ -2536,182 +2024,182 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     // `LayoutBuilder` 量出卡片宽度、拿到当天的富余才知道（见 `_tallyFits`），而闭包
     // 顺手把上面这些派生值都捕获了，不必为此抽一层参数长长的私有方法。
     Widget buildContent(String? tally) => Column(
-      key: const Key('info-card-content'),
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+          key: const Key('info-card-content'),
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // **必须能收窄。** 这一行是「日期 + 今天徽章 + 待办徽章」三个并排，
-            // 而日期这一串（「9月29日 星期二」）没有弹性 —— 系统字号一放大
-            // （1.8× 实测）它就顶穿卡片右边缘 76px，把「N 项待办」徽章整个挤出去。
-            //
-            // 用 `FittedBox(scaleDown)` 而不是 `Flexible + ellipsis`：这一行里
-            // 日期与两个徽章都要紧（徽章分别说「今天」和「有几件待办」），
-            // 谁也丢不得。放不下时**缩日期**、三个元素全留着；放得下时它一像素
-            // 都不动（`scaleDown` 只缩不放）。
-            //
-            // 高度方向也因此是安全的：`info_card_metrics.dart` 是**按缩放大小的
-            // 字号**量这一行的，这里缩完只会更矮，不会把定高撑破。
-            //
-            // 与紧凑卡那一支（`Flexible` + 省略号）有意不同：那一支窄到 200dp，
-            // 缩到那个宽度日期就没法看了，宁可直接省略（那边另有说明）。
-            Flexible(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  L10n.monthDayWeekday(_selected),
-                  // 设计规格把字重收成「标题 w700 / 强调 w600 / 正文 w500」，
-                  // w800 只留给响铃大时钟与角标「今天」，所以日期行走 w700 的
-                  // sectionTitle。
-                  style: AppTokens.sectionTitle,
+            Row(
+              children: [
+                // **必须能收窄。** 这一行是「日期 + 今天徽章 + 待办徽章」三个并排，
+                // 而日期这一串（「9月29日 星期二」）没有弹性 —— 系统字号一放大
+                // （1.8× 实测）它就顶穿卡片右边缘 76px，把「N 项待办」徽章整个挤出去。
+                //
+                // 用 `FittedBox(scaleDown)` 而不是 `Flexible + ellipsis`：这一行里
+                // 日期与两个徽章都要紧（徽章分别说「今天」和「有几件待办」），
+                // 谁也丢不得。放不下时**缩日期**、三个元素全留着；放得下时它一像素
+                // 都不动（`scaleDown` 只缩不放）。
+                //
+                // 高度方向也因此是安全的：`info_card_metrics.dart` 是**按缩放大小的
+                // 字号**量这一行的，这里缩完只会更矮，不会把定高撑破。
+                //
+                // 与紧凑卡那一支（`Flexible` + 省略号）有意不同：那一支窄到 200dp，
+                // 缩到那个宽度日期就没法看了，宁可直接省略（那边另有说明）。
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      L10n.monthDayWeekday(_selected),
+                      // 设计规格把字重收成「标题 w700 / 强调 w600 / 正文 w500」，
+                      // w800 只留给响铃大时钟与角标「今天」，所以日期行走 w700 的
+                      // sectionTitle。
+                      style: AppTokens.sectionTitle,
+                    ),
+                  ),
                 ),
+                if (isToday) ...[
+                  const SizedBox(width: 8),
+                  _todayBadge(context),
+                ],
+                // 待办提示塞在**这一行**里，不新占一行：这一行本来就有个和它一样高的
+                // 「今天」徽章，所以卡片高度（进而格子高度）一像素都不动 —— 信息卡是
+                // 定高的，多一行会让六个格子集体矮一截（见 `info_card_metrics.dart`）。
+                //
+                // 窄屏不显示：三个元素并排在这点宽度里放不下，而挤掉日期的字比少一条
+                // 提示更糟（紧凑卡片分支同样把农历、今天徽章都收起来了）。
+                //
+                // 侧栏（横屏的左右分栏）同样不显示 —— 那一栏比竖屏底栏还窄，
+                // 实测这一行会横向溢出 24px。
+                if (pendingTodos > 0 &&
+                    !inSidePane &&
+                    !AppLayout.of(context).isNarrow) ...[
+                  const SizedBox(width: AppTokens.spaceSm),
+                  _todoHintBadge(context, pendingTodos),
+                ],
+              ],
+            ),
+            const SizedBox(height: AppTokens.spaceSm),
+            // 节假日徽章自占一行、农历独占下一行。
+            //
+            // 这两条曾经并排过，理由是「徽章自占一行的话，放假那天卡片凭空高 24，
+            // 上面六个格子就集体矮一截」。但卡片 v0.6.6 起是**定高**的，多出来的
+            // 内容由定高吸收、网格不再跟着抖 —— 那条理由已经不成立。代价却是实打
+            // 实的：徽章连图标带「法定节假日 · 」有一百多 dp 宽，把农历挤到右边只
+            // 剩一半宽度，两行都显示不全（v0.6.7 用户实测）。
+            if (lunar.isLegalHoliday) ...[
+              _holidayBadge(context, lunar.legalHolidayName),
+              // 徽章是给下面这行农历作注解的，贴紧一点成一组。
+              const SizedBox(height: AppTokens.spaceXs),
+            ],
+            Text(
+              lunar.fullDescription,
+              // 两行封顶：整行宽度下通常一行就够，窄屏最多两行，再长就省略号。
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTokens.rowSecondary.copyWith(
+                color: muted,
               ),
             ),
-            if (isToday) ...[
-              const SizedBox(width: 8),
-              _todayBadge(context),
+            // 段与段之间一律用栅格上的 12（原来这里是 10，不在 4px 栅格上）。
+            const SizedBox(height: AppTokens.spaceMd),
+            // 班次名、时间、闹钟**同一行**。分开写要两行（一行文字 + 它的间距，
+            // 约 26dp），而卡片内部可用高度只有 210dp —— 六班组那种排满的日子
+            // 本来就已经被底边裁掉一截（v0.6.7 实测 224dp）。
+            //
+            // 三段并成一段富文本，是为了让省略号落对地方：各自 Flexible 的话，
+            // 剩余宽度会被三等分，最长的时间串（「20:30 – 次日08:30」）反而先
+            // 被截掉。并成一段后按「班次名 → 时间 → 闹钟」的顺序从尾部省略，
+            // 优先级正好反过来。
+            // `shift` 是真值：空白表（跟随法定节假日）这天是 null，走下面「有班表、
+            // 但没班次」那一支（什么都不写）。
+            // v0.11.3：一行一个班次（白班 08:30–17:00 闹钟07:30 /
+            // 值班 17:00–次日08:30 各占一行）。单班次时 key 不带下标（测试兼容）。
+            if (shifts.isNotEmpty && daySchedule != null)
+              // `GlassPressable` **没有 `onTap`** —— 它只是个按压缩放的视觉包装
+              // （`Listener` + `QScale`），点击一律由子 widget 承载。这里用
+              // `GestureDetector` 只拿点击：全 app 的按压反馈就是玻璃的 Q 弹缩放，
+              // 水波纹只该出现在弹层的 `ListTile` 里（那里 `GlassPressable` 垫的
+              // `Material` 让波纹浮在玻璃之上，是有意的）；这张玻璃卡套 `InkWell`
+              // 会凭空多出一圈水波纹，最扎眼（spec §7.2）。
+              //
+              // `opaque`：行内元素之间有空隙（圆点、间距、`Expanded` 文字），不加这个
+              // 点在空隙上不响应。
+              //
+              // 空白表方案没有班次定义可挑，入口不给（spec §7.3）—— 传 null 禁用它。
+              // 已知小瑕疵：`GlassPressable` 的按压缩放挡不住，空白表下按这行仍会
+              // 缩一下。不值得为它再加一层条件包装。
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (var i = 0; i < shifts.length; i++) ...[
+                    if (i > 0) const SizedBox(height: AppTokens.spaceXs),
+                    _infoCardShiftRow(
+                      context,
+                      shifts[i],
+                      // 单班次时 key 与从前一字不差（测试按 key 找）。
+                      shifts.length == 1 ? '' : '-$i',
+                      daySchedule,
+                      muted,
+                      primary,
+                    ),
+                  ],
+                ],
+              )
+            // 判据是「**这天有没有班表在管**」，不是「这天有没有班次」：
+            //   · 「其余时间」是「无」、又没有段覆盖 → 真的没有排班，写那句说明；
+            //   · 有班表在管、只是那天没有班次定义（空白表 = 跟随法定节假日）
+            //     → **什么都不写**。那套班表的语义就是「当日历看」：日期、农历、
+            //       法定节假日标红都在，不替它断言今天上不上班（v0.9.16 用户反馈）。
+            // 写成 `shift == null` 会把第二种误判成第一种 —— 那正是 v0.9.14 用户报的
+            // 「一直弹窗提示这段时间没有排班，可我们是按法定节假日上班的」。
+            else if (daySchedule == null)
+              Text(L10n.noSchedule,
+                  style: AppTokens.rowSecondary.copyWith(color: muted)),
+            if (daySchedule != null && daySchedule.teamCount > 1) ...[
+              const SizedBox(height: AppTokens.spaceMd),
+              // 标签与色块同一行：标签独占一行要白占 12 + 16 + 6 = 34dp，而
+              // 6 个班组要**两行**色块 —— 那两行必须留得住，否则最后一行会被
+              // 卡片底边裁掉（正是 v0.6.7 实测到的问题）。标签还在、还在左边，
+              // 只是不再独占一行。
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    // 4 与色块文字的实际起点（padChipV 3 + 描边 1）对齐。
+                    padding: const EdgeInsets.only(top: AppTokens.spaceXs),
+                    child: Text(L10n.otherCrews,
+                        style: AppTokens.microText.copyWith(color: muted)),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Wrap(
+                      spacing: AppTokens.spaceSm,
+                      runSpacing: AppTokens.gapIconText,
+                      children: _otherCrewChips(daySchedule, _selected),
+                    ),
+                  ),
+                ],
+              ),
             ],
-            // 待办提示塞在**这一行**里，不新占一行：这一行本来就有个和它一样高的
-            // 「今天」徽章，所以卡片高度（进而格子高度）一像素都不动 —— 信息卡是
-            // 定高的，多一行会让六个格子集体矮一截（见 `info_card_metrics.dart`）。
+            // 「本月 早12 · 午8 · 夜8 · 休6」—— 只在**这天还有富余**时才画。
             //
-            // 窄屏不显示：三个元素并排在这点宽度里放不下，而挤掉日期的字比少一条
-            // 提示更糟（紧凑卡片分支同样把农历、今天徽章都收起来了）。
-            //
-            // 侧栏（横屏的左右分栏）同样不显示 —— 那一栏比竖屏底栏还窄，
-            // 实测这一行会横向溢出 24px。
-            if (pendingTodos > 0 &&
-                !inSidePane &&
-                !AppLayout.of(context).isNarrow) ...[
-              const SizedBox(width: AppTokens.spaceSm),
-              _todoHintBadge(context, pendingTodos),
+            // 卡片高度是按月定死的（`info_card_metrics.dart`）：最满的那天（通常是有
+            // 法定节假日、农历又占两行的日子）正好占满，普通日子则空出 32~51dp。与其
+            // 把高度改小 —— 那会把上面的网格带得一起抖，用户明确不要 —— 不如把这截富余
+            // 用起来：够就画这一行，不够（比如节假日那天）就不画，**绝不为它动卡片高度**。
+            // 判定见 `_tallyFits`，差一两个 dp 也算得出来。
+            if (tally != null) ...[
+              const SizedBox(height: AppTokens.spaceSm),
+              Text(
+                tally,
+                key: const Key('info-card-month-tally'),
+                // 班次多、简称长的排班会折到第二行；折行的高度已由 `_tallyFits` 计入。
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppTokens.microText.copyWith(color: muted),
+              ),
             ],
           ],
-        ),
-        const SizedBox(height: AppTokens.spaceSm),
-        // 节假日徽章自占一行、农历独占下一行。
-        //
-        // 这两条曾经并排过，理由是「徽章自占一行的话，放假那天卡片凭空高 24，
-        // 上面六个格子就集体矮一截」。但卡片 v0.6.6 起是**定高**的，多出来的
-        // 内容由定高吸收、网格不再跟着抖 —— 那条理由已经不成立。代价却是实打
-        // 实的：徽章连图标带「法定节假日 · 」有一百多 dp 宽，把农历挤到右边只
-        // 剩一半宽度，两行都显示不全（v0.6.7 用户实测）。
-        if (lunar.isLegalHoliday) ...[
-          _holidayBadge(context, lunar.legalHolidayName),
-          // 徽章是给下面这行农历作注解的，贴紧一点成一组。
-          const SizedBox(height: AppTokens.spaceXs),
-        ],
-        Text(
-          lunar.fullDescription,
-          // 两行封顶：整行宽度下通常一行就够，窄屏最多两行，再长就省略号。
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: AppTokens.rowSecondary.copyWith(
-            color: muted,
-          ),
-        ),
-        // 段与段之间一律用栅格上的 12（原来这里是 10，不在 4px 栅格上）。
-        const SizedBox(height: AppTokens.spaceMd),
-        // 班次名、时间、闹钟**同一行**。分开写要两行（一行文字 + 它的间距，
-        // 约 26dp），而卡片内部可用高度只有 210dp —— 六班组那种排满的日子
-        // 本来就已经被底边裁掉一截（v0.6.7 实测 224dp）。
-        //
-        // 三段并成一段富文本，是为了让省略号落对地方：各自 Flexible 的话，
-        // 剩余宽度会被三等分，最长的时间串（「20:30 – 次日08:30」）反而先
-        // 被截掉。并成一段后按「班次名 → 时间 → 闹钟」的顺序从尾部省略，
-        // 优先级正好反过来。
-        // `shift` 是真值：空白表（跟随法定节假日）这天是 null，走下面「有班表、
-        // 但没班次」那一支（什么都不写）。
-        // v0.11.3：一行一个班次（白班 08:30–17:00 闹钟07:30 /
-        // 值班 17:00–次日08:30 各占一行）。单班次时 key 不带下标（测试兼容）。
-        if (shifts.isNotEmpty && daySchedule != null)
-          // `GlassPressable` **没有 `onTap`** —— 它只是个按压缩放的视觉包装
-          // （`Listener` + `QScale`），点击一律由子 widget 承载。这里用
-          // `GestureDetector` 只拿点击：全 app 的按压反馈就是玻璃的 Q 弹缩放，
-          // 水波纹只该出现在弹层的 `ListTile` 里（那里 `GlassPressable` 垫的
-          // `Material` 让波纹浮在玻璃之上，是有意的）；这张玻璃卡套 `InkWell`
-          // 会凭空多出一圈水波纹，最扎眼（spec §7.2）。
-          //
-          // `opaque`：行内元素之间有空隙（圆点、间距、`Expanded` 文字），不加这个
-          // 点在空隙上不响应。
-          //
-          // 空白表方案没有班次定义可挑，入口不给（spec §7.3）—— 传 null 禁用它。
-          // 已知小瑕疵：`GlassPressable` 的按压缩放挡不住，空白表下按这行仍会
-          // 缩一下。不值得为它再加一层条件包装。
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (var i = 0; i < shifts.length; i++) ...[
-                if (i > 0) const SizedBox(height: AppTokens.spaceXs),
-                _infoCardShiftRow(
-                  context,
-                  shifts[i],
-                  // 单班次时 key 与从前一字不差（测试按 key 找）。
-                  shifts.length == 1 ? '' : '-$i',
-                  daySchedule,
-                  muted,
-                  primary,
-                ),
-              ],
-            ],
-          )
-        // 判据是「**这天有没有班表在管**」，不是「这天有没有班次」：
-        //   · 「其余时间」是「无」、又没有段覆盖 → 真的没有排班，写那句说明；
-        //   · 有班表在管、只是那天没有班次定义（空白表 = 跟随法定节假日）
-        //     → **什么都不写**。那套班表的语义就是「当日历看」：日期、农历、
-        //       法定节假日标红都在，不替它断言今天上不上班（v0.9.16 用户反馈）。
-        // 写成 `shift == null` 会把第二种误判成第一种 —— 那正是 v0.9.14 用户报的
-        // 「一直弹窗提示这段时间没有排班，可我们是按法定节假日上班的」。
-        else if (daySchedule == null)
-          Text(L10n.noSchedule,
-              style: AppTokens.rowSecondary.copyWith(color: muted)),
-        if (daySchedule != null && daySchedule.teamCount > 1) ...[
-          const SizedBox(height: AppTokens.spaceMd),
-          // 标签与色块同一行：标签独占一行要白占 12 + 16 + 6 = 34dp，而
-          // 6 个班组要**两行**色块 —— 那两行必须留得住，否则最后一行会被
-          // 卡片底边裁掉（正是 v0.6.7 实测到的问题）。标签还在、还在左边，
-          // 只是不再独占一行。
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                // 4 与色块文字的实际起点（padChipV 3 + 描边 1）对齐。
-                padding: const EdgeInsets.only(top: AppTokens.spaceXs),
-                child: Text(L10n.otherCrews,
-                    style: AppTokens.microText.copyWith(color: muted)),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Wrap(
-                  spacing: AppTokens.spaceSm,
-                  runSpacing: AppTokens.gapIconText,
-                  children: _otherCrewChips(daySchedule, _selected),
-                ),
-              ),
-            ],
-          ),
-        ],
-        // 「本月 早12 · 午8 · 夜8 · 休6」—— 只在**这天还有富余**时才画。
-        //
-        // 卡片高度是按月定死的（`info_card_metrics.dart`）：最满的那天（通常是有
-        // 法定节假日、农历又占两行的日子）正好占满，普通日子则空出 32~51dp。与其
-        // 把高度改小 —— 那会把上面的网格带得一起抖，用户明确不要 —— 不如把这截富余
-        // 用起来：够就画这一行，不够（比如节假日那天）就不画，**绝不为它动卡片高度**。
-        // 判定见 `_tallyFits`，差一两个 dp 也算得出来。
-        if (tally != null) ...[
-          const SizedBox(height: AppTokens.spaceSm),
-          Text(
-            tally,
-            key: const Key('info-card-month-tally'),
-            // 班次多、简称长的排班会折到第二行；折行的高度已由 `_tallyFits` 计入。
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: AppTokens.microText.copyWith(color: muted),
-          ),
-        ],
-      ],
-    );
+        );
 
     final padding = inSidePane
         ? const EdgeInsets.fromLTRB(0, 8, 16, 16)
@@ -2794,7 +2282,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     );
   }
 
-
   /// 其他班组当天班次：色点 + 组名 + 简称，横向换行，6 个班组也放得下。
   List<Widget> _otherCrewChips(ShiftSchedule schedule, DateTime date) {
     final chips = <Widget>[];
@@ -2829,8 +2316,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                     // 色块底是班次色 14% 的淡染，字要按它算可读版本。
                     color: AppTokens.inkFor(
                         Color(t.color),
-                        Color.alphaBlend(
-                            Color(t.color).withValues(alpha: 0.14),
+                        Color.alphaBlend(Color(t.color).withValues(alpha: 0.14),
                             Theme.of(context).colorScheme.surface)))),
           ],
         ),
@@ -2896,23 +2382,6 @@ const double _cellDesignH = 55;
 /// 1.25 是 v0.7.2 从 1.35 调下来的（配合 `cellShift` 15→13），单字胶囊的字号
 /// 上限从 20.25 降到 16.25。
 const double _cellMaxScale = 1.25;
-
-/// 班次胶囊的左右内边距。用最小的一档栅格（4）：这里装的是 1–2 个字的简称，
-/// 信息卡色块那 8 会让单字胶囊的宽度接近文字的两倍，手机上（格内容宽约 52）
-/// 就装不下。v0.7.3 从 6 收到 4 —— 配合字号 13→12，让两个字也留得出余量。
-const double _chipPadH = AppTokens.spaceXs;
-
-/// 胶囊与格子左右边缘的**硬边距**。
-///
-/// 简称是用户可改的（两个字、甚至三个字），胶囊宽度会随字号缩放长到「内容宽」
-/// 为止 —— 那样它就**贴住格子边**，与选中滑块一起看很挤（用户实测反馈）。
-/// 这里两侧各留一条硬边距，放不下就由胶囊内的 `FittedBox` 缩文字，而不是撑满。
-const double _chipSideGap = 4;
-
-/// 画胶囊所需的最小内容宽度。单字胶囊在设计尺寸下自然宽
-/// `_chipPadH`×2 + 描边 1×2 + 13 = 27，留一点余量取 34。
-/// 小窗（200 宽）格子内容宽只有 21，落到这条线以下就退回纯色文字。
-const double _chipMinContentW = 34;
 
 /// 格子高的下限 = **格子里的三行字实测要多高**。
 ///
@@ -3022,4 +2491,3 @@ class _MonthPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) => child;
 }
-

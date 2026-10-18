@@ -176,8 +176,8 @@ bool alarmFallsOnPreviousDay(ShiftClass shift, ShiftAlarm alarm) {
     // 里「回绕式存法的跨午夜班」与「两种存法同解」两条是它的护栏）。
     final span = e > s ? e - s : e - s + _dayMinutes;
     final rel = ((alarm.minute - s) % _dayMinutes + _dayMinutes) % _dayMinutes;
-    // 边界：闹钟恰好在下班时刻（rel == span）不算前一天
-    if (rel <= span) return false;
+    // 值班窗口是 [start, end)：恰好等于下班时刻已在窗口外，按旧规则回退判断。
+    if (rel < span) return false;
   }
   return alarm.minute > s;
 }

@@ -8,7 +8,8 @@
 // 去接，就成了未处理异步错误 —— `flutter_test` 直接判整个用例失败，报的还是
 // 「Multiple exceptions were detected」这种与真因隔了三层的消息。
 //
-// 统一返回 null 等价于「权限一个都没给」，界面落在一个确定的状态上。
+// 默认等价于「权限一个都没给」；交互测试可显式授予悬浮窗权限，避免启动引导
+// 的模态遮罩拦截与权限无关的手势。
 //
 // 原本长在 `tool/visual/visual_harness.dart` 里。`test/` 下凡是要 pump 主壳的用例
 // 都需要它（主壳首帧后必请求权限），所以抽到这里共用 —— 与 `source_scan.dart`
@@ -27,11 +28,19 @@ const List<String> kStubbedChannels = <String>[
 ///
 /// **必须在 `testWidgets` 体里调**（要 binding 已初始化）—— 放 `setUpAll` 里
 /// 有些顺序下 binding 还没起来。
-void stubPluginChannels() {
+void stubPluginChannels({bool overlayPermissionGranted = false}) {
   final messenger =
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
   for (final name in kStubbedChannels) {
     messenger.setMockMethodCallHandler(
-        MethodChannel(name), (call) async => null);
+      MethodChannel(name),
+      (call) async {
+        if (name == 'com.daoban.shiftassistantpro/settings' &&
+            call.method == 'checkOverlayPermission') {
+          return overlayPermissionGranted;
+        }
+        return null;
+      },
+    );
   }
 }

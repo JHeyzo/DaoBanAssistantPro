@@ -15,7 +15,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:shiftassistantpro/core/l10n.dart';
 import 'package:shiftassistantpro/data/app_repository.dart';
 import 'package:shiftassistantpro/domain/shift_rotation.dart';
 import 'package:shiftassistantpro/features/calendar/calendar_screen.dart';
@@ -106,16 +105,6 @@ void main() {
     await _disposeCalendar(tester);
     expect(n, 0, reason: '触觉开关不参与主题、不参与语言、不影响任何渲染 —— '
         '全量 watch 时它会把整页白重建一遍。实测重建 $n 次');
-  });
-
-  testWidgets('拨液态玻璃开关：日历页不该重建', (WidgetTester tester) async {
-    await _pumpCalendar(tester);
-    final int n = await _calendarRebuilds(
-        tester, () => _notifier(tester).setLiquidGlass(true));
-    await _disposeCalendar(tester);
-    expect(n, 0,
-        reason: '液态档靠模块级标志（`liquidGlassActive`）驱动重算，'
-            '日历页不需要为它重建。实测重建 $n 次');
   });
 
   testWidgets('对照：切语言**必须**重建日历页', (WidgetTester tester) async {

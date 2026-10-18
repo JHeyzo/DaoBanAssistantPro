@@ -43,8 +43,7 @@ void main() {
   for (final screen in visualScreens) {
     // 对比度与画布尺寸无关：只跑竖屏那三张，横屏/小窗两张跳过，
     // 免得白烧一倍的时间。
-    for (final variant
-        in visualVariants.where((v) => v.size == kVisualSize)) {
+    for (final variant in visualVariants.where((v) => v.size == kVisualSize)) {
       testWidgets('${screen.title} · ${variant.label}', (tester) async {
         final db = await makeVisualDatabase();
         addTearDown(db.close);
@@ -55,10 +54,9 @@ void main() {
           overrides: <Override>[databaseProvider.overrideWithValue(db)],
           brightness: variant.brightness,
           language: variant.language,
-          extraPrefs: <String, Object>{
-            ...(screen.needsOnboardingPrefs ? onboardingPrefs : const {}),
-            ...screenExtraPrefs(screen.slug),
-          },
+          extraPrefs: screen.needsOnboardingPrefs
+              ? onboardingPrefs
+              : const <String, Object>{},
         );
 
         // textContrastGuideline 用的是 WCAG AA 阈值（普通文字 4.5:1、大字 3:1）。

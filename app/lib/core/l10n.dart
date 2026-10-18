@@ -215,14 +215,14 @@ class L10n {
       '· 排班表、日程与待办\n'
       '· 自定义闹钟、你的模板\n'
       '· 你保存的铃声\n'
-      '外观设置（主题 / 主色调 / 语言 / 液态玻璃 / 触觉）也一并回到默认。\n'
+      '外观设置（主题 / 主色调 / 语言 / 触觉）也一并回到默认。\n'
       '此操作不可撤销。',
       'The app goes back to a fresh install. This clears:\n'
       '· schedules, events and todos\n'
       '· custom alarms and your templates\n'
       '· any ringtone you saved\n'
-      'Appearance settings (theme, accent colour, language, liquid glass, '
-          'haptics) return to their defaults too.\n'
+      'Appearance settings (theme, accent colour, language and haptics) '
+          'return to their defaults too.\n'
       'This cannot be undone.');
   static String get confirmResetAction => t('确认清空', 'Clear');
   static String get resetDone => t('已恢复到刚安装的样子', 'Back to a fresh install');
@@ -799,8 +799,6 @@ class L10n {
   static List<String> get guideAppearanceDesc => [
         t('「我的 → 外观」可切跟随系统 / 浅色 / 深色，选 5 种主色调，中英文切换',
             'Me → Appearance: follow the system / light / dark, pick one of 5 accent colours, switch between Chinese and English'),
-        t('「液态玻璃」给玻璃边缘加光、滑块与开关按下时鼓起成透镜；关掉更省电',
-            '"Liquid glass" lights up the glass rim, and the slider and switch swell into a lens while you press them — turn it off to save battery'),
         t('「触觉反馈」控制开关、选中、拖选与改班时的轻微震动，默认开',
             'Haptic feedback (a light buzz when you flip a switch, pick an option, drag-select or apply a day change) is on by default and lives here too'),
       ];
@@ -850,24 +848,6 @@ class L10n {
   static String get swipeUpToDismiss => t('上滑关闭', 'Swipe up to dismiss');
 
   // 外观设置
-  static String get liquidGlass => t('液态玻璃', 'Liquid glass');
-  /// 「我的 → 外观 → 液态玻璃」那一行的副标题。
-  ///
-  /// ⚠️ **它必须说的只有底栏**（v0.10.3 定的范围；v0.10.9 / v0.10.15 起其实已经
-  /// 铺到分段器、开关与日历上那枚选中的块）：这一句仍然只点**最先做、也最好认**的
-  /// 那处。上一版写的是「玻璃边缘带光、按下时鼓起成透镜」—— 那是全局描述，在
-  /// v0.10.3 那个范围下是**假的**（卡片、顶部胶囊上都没有那圈光），所以收成了这一句。
-  /// ⚠️ **长度是量的**：420dp 下这一行只放得下约 21 个汉字，多一个字就折行、
-  /// 把「我的」页整体推下去一行（改文案时工装那 27 张差异屏里有 7 张就是它）。
-  /// 要把那几处也写进去，先按这条量一遍宽度再动。
-  static String get liquidGlassHint => t(
-      '按住底栏滑块提起成透镜；关掉是磨砂玻璃',
-      'Hold the tab pill to lift it into a lens; off is frosted glass');
-
-  /// 低内存机器上那一行改说这句（开关同时置灰）。
-  static String get liquidGlassUnsupportedHint => t(
-      '这台设备内存较小，始终使用磨砂玻璃',
-      'Low-memory device — frosted glass is always used');
   static String get hapticFeedback => t('触觉反馈', 'Haptic feedback');
   static String get hapticFeedbackHint => t(
       '开关翻转、选中、拖选与改班时轻微震动（普通点击不震）',

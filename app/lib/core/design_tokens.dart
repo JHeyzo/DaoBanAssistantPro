@@ -93,169 +93,6 @@ class AppTokens {
   static const double pressScale = 0.96;
   static const double pillGrow = 1.06;
 
-  /// 液态档透镜的弹簧：**三条分开**，因为它们各自要的手感不同。
-  ///
-  /// 提起与落下用的是 **Apple 自己的数字**（UIKitCore 逆向出来的：Lift ζ=0.625 /
-  /// response 0.27s，Unlift ζ=0.7 / response 0.5s；`ω = 2π / response`）。
-  /// **两条方向不同是有意的** —— 提起要跟手、落下要从容，苹果自己也是这么分的。
-  /// 用户 2026-10-01 的原话是「点按吸附过去太快、不够优雅」，而在此之前我用的是
-  /// 一条 ω=38（≈快一倍）的弹簧。
-  ///
-  /// 位置那条（点按换页时滑过去）取 ω=26 / ζ=0.68：落回约 200ms，是用户挑的档。
-  ///
-  /// ⚠️ **别拿连续解的理论公式去调**：按 16ms 一帧的半隐式欧拉跑出来阻尼比理论重
-  /// 得多（照公式填的 ζ=0.72 过冲实测是 0.00%）。这几个数是在**与实现同一套离散
-  /// 格式**上扫出来的，护栏在 `test/liquid_lens_test.dart`。
-  static const double lensLiftOmega = 23.3; // 2π / 0.27s（Apple Lift）
-  static const double lensLiftZeta = 0.625;
-  static const double lensDropOmega = 12.6; // 2π / 0.50s（Apple Unlift）
-  static const double lensDropZeta = 0.70;
-  static const double lensSlideOmega = 26.0;
-  static const double lensSlideZeta = 0.68;
-
-  /// 形变强度那条弹簧。
-  ///
-  /// **形变不能直接用瞬时速度。** 瞬时速度是一根毛刺，直接拿它当形变，观感就是
-  /// 「起步啪一下到满、停下啪一下归零」—— 机械感的全部来源。过一条弹簧，形变就有
-  /// 惯性和回弹：起步时冲一点、停下时拖一条尾巴，那才读作「Q 弹」。
-  ///
-  /// ω=30 / ζ=0.62：过冲约 9.5%，包络衰减到 2% 约 210ms —— 尾够长但不拖沓。
-  /// ζ 取 0.62 而不是临界阻尼 1.0，正是为了留下那点过冲。
-  static const double lensStretchOmega = 30.0;
-  static const double lensStretchZeta = 0.62;
-
-  /// 图标的「被透镜边缘挤过去」有多少：横向压扁 / 纵向拉长各这么多（峰在边缘）。
-  static const double lensIconPinch = 0.20;
-
-  /// 图标被朝远离透镜中心的方向推多少（逻辑 px，峰在边缘）。
-  static const double lensIconPush = 5.0;
-
-  /// 边缘权重的高斯宽度（以「到透镜边缘的距离 ÷ 半宽」为单位）。
-  ///
-  /// **峰值在边缘、不在中心** —— 厚透镜中间是平的、只有边缘那圈曲率在折光，
-  /// 所以图标躺在透镜正中时几乎不变形（用户 2026-10-01 指出的）。
-  /// 0.45 让「有值」的范围落在 t ∈ [0.55, 1.45]，也就是透镜边缘那一圈。
-  static const double lensIconRingSigma = 0.45;
-
-  /// 光谱环的线宽（与压在它上面的白芯）。
-  ///
-  /// **4.5 → 2.4**（2026-10-01）：它原来是一条**等宽**的彩色描边，而用户的原话是
-  /// 「现在给我的感觉就像在这个滑块的边缘加了一层彩带一样。我们想要的是加一层
-  /// 折射的光晕」。等宽 + 硬边正是「彩带」读感的来源，所以这条收细、让位给
-  /// 底下那两层光晕（见 [lensHaloWidth]）。
-  static const double lensRingWidth = 2.4;
-  static const double lensRingCoreWidth = 1.0;
-
-  /// **折射光晕**：同一条扫掠渐变，画得又宽又糊。
-  ///
-  /// 这一层是消掉「彩带」读感的关键 —— 一条等宽、带硬边的彩色描边读作「贴在表面
-  /// 的彩带」；**从边缘往里化开、没有硬边**的一层才读作「光在玻璃里」。
-  ///
-  /// 它挂在本体那层 `ClipPath` 底下（`LiquidLens` 的 `body`），所以外半边被裁掉，
-  /// **只往轮廓里面散**；往外那一份由 [lensGlowWidth] 那层单独负责。
-  ///
-  /// 两层、色相各偏一点（−30° 与 +22°）：真色散会把光谱**摊开**，同一处边缘能
-  /// 看到相邻的两个色调。一层的话仍然只是「一个颜色一个位置」。
-  static const double lensHaloWidth = 10;
-  static const double lensHaloBlur = 3;
-  static const double lensHaloInnerWidth = 6;
-  static const double lensHaloInnerBlur = 2;
-
-  /// **外溢光晕**：画在裁剪**之外**那一层，往外也散一点。
-  ///
-  /// 本体画不到轮廓外面（那正是「只往内散」的实现方式），所以要单开一层 ——
-  /// 与浮起阴影同一层位。用户 2026-10-01：「往外也散一点」。
-  ///
-  /// 代价是那枚水滴的轮廓会被一圈很淡的颜色裹住 —— 那是**有意**的，真的折射也会
-  /// 在玻璃边外侧留下一条亮边。
-  static const double lensGlowWidth = 8;
-  static const double lensGlowBlur = 3;
-
-  /// 彩边与光晕「**亮起来**」那条弹簧。
-  ///
-  /// 用户 2026-10-01：「彩边出现得太突然了。我的手不动它时没有，一动它就突然
-  /// 出来了。能不能给它加个过渡动画，或者让它渐变出来？以及咱们手停下来的时候，
-  /// 也得有点过渡，不要突然就没了。」
-  ///
-  /// 所以亮度也**不能直接跟瞬时速度走** —— 那是个「在不在动」的开关，一两帧就
-  /// 跨过去了。过一条弹簧才有渐入渐出。
-  ///
-  /// **亮起与熄灭是两条**（和「提起 / 落下」同一条老规矩，Apple 也是这么分的）：
-  ///   亮起 ω=26 / ζ=0.72 —— 上升约 90ms（跟手，不拖沓）；
-  ///   熄灭 ω=12 / ζ=0.85 —— 包络 τ ≈ 100ms，约 320ms 淡尽（从容，不「啪」地断）。
-  static const double lensLitOmega = 26.0;
-  static const double lensLitZeta = 0.72;
-  static const double lensUnlitOmega = 12.0;
-  static const double lensUnlitZeta = 0.85;
-
-  /// 光谱环「一动就满」的速度阈值（px/s）。
-  ///
-  /// 用户 2026-10-01：「彩色边缘不明显，还是恢复成一动就直接达到满效果吧。现在是
-  /// 跟随速度越快效果才越明显，但这样几乎看不出来。本来它这个效果范围就不大。」
-  ///
-  /// 在此之前环的亮度是 `× clamp(|v| / lensVelocityRef)` —— 要甩到 700px/s 才满，
-  /// 而常态拖动就在那个数上下，于是它长期停在半亮，等于一直是淡的。
-  ///
-  /// **这个数说的是「动不动」，不是「多快」**：60px/s（约合一格滑 1.5 秒）就封顶。
-  /// 门因此从「速度表」换成了「开关」；留一小段斜坡只是不让慢速收尾时眨一下，
-  /// 不是「越慢越淡」。
-  static const double lensRingFullSpeed = 60;
-
-  /// 弹簧一步积分允许的最大时间跨度。
-  ///
-  /// **它住在令牌表里不是因为它是个「时长」** —— 它是数值积分的步长上限，
-  /// 与 durFast / durMed 那种过渡时长毫无关系。搬进来的唯一理由是
-  /// `design_tokens_test` 会扫 `lib/core/glass/`，而它扫的是**写法**
-  /// （`Duration(milliseconds: …)`），不是语义。
-  ///
-  /// **16ms** —— 也就是「一步最多积分一帧」。
-  ///
-  /// ⚠️ **别按「半隐式欧拉的失稳门槛」去定它。** 那个门槛（`dt > 2 / ω`，ω = 38
-  /// 时是 53ms）只是**临界**，实际可用的步长要严得多。第一版按它取了 48ms，结果
-  /// 在 40ms 一帧的测试里**弹簧直接发散**：实测速度冲到 2528 格/s（≈ 22.7 万 px/s），
-  /// 透镜被甩到屏幕外几千像素去。生产上 60Hz 是 16.7ms，而**掉帧时 40ms 就会炸** ——
-  /// 那正是这个封顶存在的理由。
-  ///
-  /// 取 16ms 之后：满载掉帧时动画走得慢一点（那正是想要的），120Hz 下完全不受影响。
-  static const Duration lensMaxStep = Duration(milliseconds: 16);
-
-  /// 透镜按住时比静止宽多少（逻辑 px）。
-  ///
-  /// 与 [navLensProtrude]（10，纵向）**同量级是有意的**：透镜是一枚「鼓起来的
-  /// 水滴」，不是一张「被拉长成条」的贴纸 —— 纵横两个方向一起长，才读得出体积。
-  static const double lensLiftWidth = 10;
-
-  /// 拖动时形状拉伸的**归一化速度**（px/s）。
-  ///
-  /// 速度到这个值时拉伸达到满档（宽 +[lensStretch]、高 −[lensSquash]）；再快也不更多
-  /// —— 甩得越猛形状越夸张并不是更真，只是更闹。
-  ///
-  /// **1500 → 700 → 900**（2026-10-01）。中间那一次 700 其实**从来没生效过**：
-  /// `_onTick` 里那个 `max(dt, 16ms)` 的地板在 120Hz 上把速度算成了真实值的一半，
-  /// 于是 700 在这台机器上表现为 1400。地板撤掉之后 700 才会真正落到手上，
-  /// 那比用户见过的任何一版都强一倍，所以取 900 —— 约合「一格在 100ms 内划过」，
-  /// 常态拖动就到得了。**这是这一版唯一一个凭手感定的数**，一改就见效。
-  static const double lensVelocityRef = 900;
-
-  /// 形变：沿运动方向拉长多少、垂直方向压扁多少（比例）。
-  ///
-  /// 压扁这一档 **0.12 → 0.08**（2026-10-01），因为原来的乘法顺序有个几何缺陷：
-  /// 凸出被乘在压扁里面，于是速度一上来透镜就沉回胶囊（见 [navLensProtrude]）。
-  /// 顺序修好之后 0.12 仍然会在满速时把凸出吃到只剩 0.88px，所以一并收小。
-  static const double lensStretch = 0.20;
-  static const double lensSquash = 0.08;
-
-  /// 按住多久才算「提起」。
-  ///
-  /// 这一条是**交互契约的闸门**（用户 2026-10-01）：「点一下滑块自动过来、然后切页；
-  /// 长按滑块自动吸附、松手才切到它最终所在的区域」。110ms 落在一次干脆的点按
-  /// （约 60–90ms）与一次有意的按住之间 —— 短于它，透镜只是**滑过去**、不提起；
-  /// 长于它，才吸附到手上、放大、凸出胶囊。
-  ///
-  /// **「凸出胶囊」因此是「按住」的专属信号** —— 这正是用户那句「应该是按住的
-  /// 时候，它比胶囊大」的可执行形式。
-  static const Duration lensHoldDelay = Duration(milliseconds: 110);
-
   // ── 排版：角色令牌 ──
   //
   // 令牌即完整样式（字号 + 字重 + 行高）。界面层只写角色名，不写 fontSize /
@@ -439,50 +276,6 @@ class AppTokens {
     return isDark ? 1.6 : 1.2;
   }
 
-  /// 探针：凸出的透镜探出胶囊多少（逻辑 px）。
-  ///
-  /// 滑块原来只有 `capsuleH - 2 * _innerPad`（64 − 12 = 52）高，整个躺在胶囊里 ——
-  /// 它的边是**玻璃对玻璃**，而折射只发生在「玻璃 ↔ 背景」的边界上（Apple 那条
-  /// 「玻璃不能采样玻璃」说的就是这件事）。凸出来才有那条边界。
-  /// 10 让透镜高 72（胶囊 64），上下各探出 4。
-  ///
-  /// ⚠️ **它必须加在「压扁之后」的基准上，不许乘进形变里**（2026-10-01）。
-  /// 原式是 `(基准 + 2·凸出·lift) × (1 − 0.12·s)`：压扁乘在凸出上，于是
-  /// lift=1 / 700px/s 时透镜高只有 63.4，而胶囊高 64 —— **透镜整个沉回胶囊里面**，
-  /// 按住拖动时「一枚浮起来的玻璃滴」直接掉回「一枚躺着药丸」。
-  /// 实测扫出来的（见 `test/liquid_lens_test.dart` 的折边参数扫描）。
-  static const double navLensProtrude = 10;
-
-  /// 透镜外扩 / 凸出相对胶囊高度的比例（10 ÷ 64）。
-  ///
-  /// **只有 `LiquidLensMetrics.forCapsule` 用它。** 底栏那两个数（`navLensProtrude` /
-  /// `lensLiftWidth`）是**冻住的** —— 矮屏那一档胶囊只有 52 高，跟着比例取会变成 8.1，
-  /// 横屏与小窗两档的画面就变了，而「底栏逐像素不变」是抽共享件这一路的验收。
-  static const double lensLiftRatio = 0.15625;
-
-  /// 光谱层（环 / 白芯 / 两层内晕 / 外溢）与浮起阴影的宽度，是照**这个高度的胶囊**量的。
-  ///
-  /// 它是 [lensHaloWidth] 那四个数的分母：`rimScale = capsuleH / 它`。不按尺寸缩放的
-  /// 话，那 10px 宽、还带 3px 模糊的内晕摆到开关那枚基准高 24 的钮上**比钮本身还粗**
-  /// —— 用户 2026-10-01 看到的「像两个半圆一样」就是它（那道带糊的光晕把钮从中间
-  /// 劈成上下两团弧）。他更早（v0.10.8）已经说过同一条道理：「彩边范围一旦太大，
-  /// 就容易造成光污染」。
-  ///
-  /// **底栏不走这条缩放**（它显式传 `rimScale: 1.0`）—— 矮屏那一档胶囊只有 52 高，
-  /// 跟着缩会改到横屏与小窗的画面。
-  static const double lensRimRefCapsuleH = 64;
-
-  /// 「胶囊那条边被折进去」淡入所需的凸出量（逻辑 px）。
-  ///
-  /// 这条折线的早退条件原来写的是「**两个端头半径都**大于胶囊半高」，而速度一上来
-  /// 后缘半径（`×(1 − 0.35·stretch)`）必然先掉下去 —— 于是**整条折边被一票否决**。
-  /// 实测：lift=1 时只要超过约 150px/s 它就完全消失，而常态拖动是 300~1000px/s。
-  /// 也就是说这个效果**只在「按住而且手指不动」时存在**，恰好是唯一不会去拖的状态。
-  ///
-  /// 现在门开在「至少一端够到」，并且**按凸出量连续淡入**：凸出 0 → 3px 走 0 → 满。
-  /// 于是它既不会在高速下开天窗，也不会「啪」地出现或消失。
-  static const double lensEdgeFade = 3;
-
   static List<Color> glassHighlight(bool isDark) => [
         Colors.white.withValues(alpha: isDark ? 0.18 : 0.55),
         Colors.white.withValues(alpha: 0.0),
@@ -553,12 +346,10 @@ class AppTokens {
   static const double inkFaintAlpha = 0.35;
 
   static Color inkMuted(BuildContext context) =>
-      Theme.of(context).colorScheme.onSurface
-          .withValues(alpha: inkMutedAlpha);
+      Theme.of(context).colorScheme.onSurface.withValues(alpha: inkMutedAlpha);
 
   static Color inkFaint(BuildContext context) =>
-      Theme.of(context).colorScheme.onSurface
-          .withValues(alpha: inkFaintAlpha);
+      Theme.of(context).colorScheme.onSurface.withValues(alpha: inkFaintAlpha);
 
   // ── 文字可读性 ──
 
