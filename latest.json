@@ -6,10 +6,10 @@
     "version": ""
   },
   "stable": {
-    "asset": "app-release.apk",
+    "asset": "DaoBanAssistantPro-v0.12.0+152-liquid-removed-arm64-release.apk",
     "prerelease": false,
-    "url": "https://github.com/JHeyzo/DaoBanAssistantPro/releases/download/v0.11.4/app-release.apk",
-    "version": "0.11.4"
+    "url": "https://github.com/JHeyzo/DaoBanAssistantPro/releases/download/v0.12.0/DaoBanAssistantPro-v0.12.0%2B152-liquid-removed-arm64-release.apk",
+    "version": "0.12.0"
   },
-  "updatedAt": "2026-10-17T13:38:43Z"
+  "updatedAt": "2026-10-18T12:36:45Z"
 }
