@@ -251,14 +251,11 @@ class _HomeShellState extends ConsumerState<HomeShell>
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(activeScheduleProvider, (_, __) => _tryStartupReschedule(),
-        fireImmediately: false);
-    ref.listen(customAlarmsProvider, (_, __) => _tryStartupReschedule(),
-        fireImmediately: false);
+    ref.listen(activeScheduleProvider, (_, __) => _tryStartupReschedule());
+    ref.listen(customAlarmsProvider, (_, __) => _tryStartupReschedule());
     // 待办的流也要听：三个流谁最后到齐都要能触发那次重排，漏掉这一个会出现
     // 「待办先到、另两个后到，于是重排跑了但没排待办」——不报错，只是提醒不发。
-    ref.listen(eventsProvider, (_, __) => _tryStartupReschedule(),
-        fireImmediately: false);
+    ref.listen(eventsProvider, (_, __) => _tryStartupReschedule());
     ref.watch(appSettingsProvider.select((s) => s.language)); // 语言切换时重建导航标签（只订阅语言）
     return Scaffold(
       extendBody: true,
