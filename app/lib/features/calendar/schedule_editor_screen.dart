@@ -849,6 +849,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: AppTokens.spaceSm,
+                                  // design-tokens-ignore: Scheme A 标签垂直内边距 6px 为视觉微调（4 太挤、8 太松）
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
@@ -896,6 +897,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: AppTokens.spaceSm,
+                                  // design-tokens-ignore: Scheme A 标签垂直内边距 6px 为视觉微调（4 太挤、8 太松）
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
