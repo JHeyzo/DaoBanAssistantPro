@@ -21,10 +21,12 @@ import 'package:shiftassistantpro/core/l10n.dart';
 import 'package:shiftassistantpro/features/profile/app_dialogs.dart';
 
 /// 更新日志里出现的版本号，按出现顺序。
-List<String> _versions() => RegExp(r'^v(\d+\.\d+\.\d+)$', multiLine: true)
-    .allMatches(appChangelog)
-    .map((m) => m.group(1)!)
-    .toList();
+/// 标题可能是 `v0.12.0`（稳定版）或 `v0.11.4（测试版）` / `v0.11.4(Beta)`（测试版）。
+List<String> _versions() =>
+    RegExp(r'^v(\d+\.\d+\.\d+)(（测试版）|\(Beta\))?$', multiLine: true)
+        .allMatches(appChangelog)
+        .map((m) => m.group(1)!)
+        .toList();
 
 void main() {
   for (final locale in const ['zh', 'en']) {
