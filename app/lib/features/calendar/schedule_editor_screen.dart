@@ -1737,7 +1737,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                             '${a.label} (${formatClock(a.minute)})',
                             style: AppTokens.rowPrimary,
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: AppTokens.gapHair),
                           Text(
                             '${item.className} · ${ruleText(a)}',
                             style: AppTokens.rowSecondary.copyWith(
@@ -1747,7 +1747,8 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                         ],
                       ),
                     ),
-                    Icon(Icons.chevron_right_outlined, color: muted, size: 20),
+                    Icon(Icons.chevron_right_outlined,
+                        color: muted, size: AppTokens.iconMd),
                   ],
                 ),
               ),

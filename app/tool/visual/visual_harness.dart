@@ -163,9 +163,9 @@ Future<void> ensureVisualFonts() async {
       ? '[visual] 字体就绪：Roboto + MaterialIcons + ${loadedCjkFont!}'
       : '[visual] 字体缺 ${missing.join(" / ")}，缺的部分会渲染成方块');
 
-  // 玻璃拨到默认的「标准」档再出图 —— 否则看到的是省电档那个不透明填充，
-  // 不是真实观感。
-  useStandardGlassTier();
+  // 基线截图使用完整的普通玻璃外观；只关闭低端机省电降级，不存在液态档位。
+  lowEndDevice = false;
+  recomputeGlassTiers();
 
   // 每个用例各建一个内存库是有意为之（互不污染），drift 的「重复建库」告警
   // 在这个用法下纯属噪音。
@@ -187,28 +187,6 @@ ThemeData _applyVisualFonts(ThemeData theme) {
         .apply(fontFamily: latin, fontFamilyFallback: cjk),
   );
 }
-
-// ---------------------------------------------------------------------------
-// 玻璃档位
-// ---------------------------------------------------------------------------
-
-/// 把玻璃拨到「标准」档（默认档）：省电关、液态关。
-///
-/// 出图与对比度审计的**默认状态**，由 `ensureVisualFonts()` 调一次。不拨的话，
-/// 低端机自动降级会让玻璃退化成不透明填充，拍出来的不是真实观感。
-void useStandardGlassTier() {
-  lowEndDevice = false;
-  liquidGlassEnabled.value = false;
-  recomputeGlassTiers();
-}
-
-/// 把玻璃拨到「液态」档。给液态档的屏单与对比度审计用。
-void useLiquidGlassTier() {
-  lowEndDevice = false;
-  liquidGlassEnabled.value = true;
-  recomputeGlassTiers();
-}
-
 
 // ---------------------------------------------------------------------------
 // 测试桩
@@ -819,13 +797,7 @@ Future<GlobalKey> pumpScreen(
 
   if (beforeCapture != null) {
     await beforeCapture(tester);
-    // ⚠️ **默认要稳住，但有些屏必须不稳住。**
-    //
-    // `settleVisual` 会推 60 帧；`beforeCapture` 里按住不放的那根手指**停在原地**，
-    // 于是透镜速度衰减到 0 —— 而**光谱环、折边、形变全都由速度驱动**。
-    // `40_nav_lens_dragging` 就是这么渲染的：它拍到的其实是「按住但静止」，
-    // 恰好是这个档位唯一一切都正常的那个状态。**那一屏至今没拍到过彩虹边。**
-    // 要拍「真的在动」必须传 `settleAfterCapture: false`。
+    // 默认稳住画面；动画特写可传 `settleAfterCapture: false` 保留交互后的中间状态。
     if (settleAfterCapture) await settleVisual(tester);
   }
   return boundaryKey;

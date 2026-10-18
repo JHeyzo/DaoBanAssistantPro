@@ -14,8 +14,6 @@ import 'package:flutter/widgets.dart';
 /// `ValueNotifier` 的 `value` setter 只有「记值 + 通知」一条路（`_value` 是私有的，
 /// 子类碰不到），所以这里自己实现一个。
 ///
-/// **它不读档位**（`liquidGlassActive`）—— 判据归调用点，与本仓既有纪律一致
-/// （`liquid_scope_guard_test.dart` 扫源码守着）。
 class FrameNotifier<T> extends ChangeNotifier implements ValueListenable<T> {
   FrameNotifier(this._value);
 

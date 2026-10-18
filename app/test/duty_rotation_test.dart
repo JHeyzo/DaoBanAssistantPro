@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('DutyRotation JSON', () {
     test('toJson/fromJson round-trip', () {
-      const r = DutyRotation(
+      final r = DutyRotation(
         sequence: ['1234', '3421'],
         period: RotationPeriod.quarterly,
         sequenceStartDate: _d(2026, 1, 1),
@@ -42,7 +42,7 @@ void main() {
     });
 
     test('第一轮（1234）offsets 不变', () {
-      final s = scheduleWithRotation(const DutyRotation(
+      final s = scheduleWithRotation(DutyRotation(
         sequence: ['1234', '3421', '2143', '4312'],
         period: RotationPeriod.quarterly,
         sequenceStartDate: _d(2026, 1, 1),
@@ -52,7 +52,7 @@ void main() {
     });
 
     test('第二轮（3421）offsets 重排', () {
-      final s = scheduleWithRotation(const DutyRotation(
+      final s = scheduleWithRotation(DutyRotation(
         sequence: ['1234', '3421', '2143', '4312'],
         period: RotationPeriod.quarterly,
         sequenceStartDate: _d(2026, 1, 1),
@@ -79,7 +79,7 @@ void main() {
     });
 
     test('切换日当天用新顺序', () {
-      final s = scheduleWithRotation(const DutyRotation(
+      final s = scheduleWithRotation(DutyRotation(
         sequence: ['1234', '3421'],
         period: RotationPeriod.quarterly,
         sequenceStartDate: _d(2026, 1, 1),
@@ -94,7 +94,7 @@ void main() {
     });
 
     test('月度轮换', () {
-      final s = scheduleWithRotation(const DutyRotation(
+      final s = scheduleWithRotation(DutyRotation(
         sequence: ['1234', '2341'],
         period: RotationPeriod.monthly,
         sequenceStartDate: _d(2026, 1, 1),
