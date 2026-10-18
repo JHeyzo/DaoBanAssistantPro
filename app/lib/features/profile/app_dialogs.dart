@@ -39,14 +39,14 @@ void showAppInfoDialog(
   );
 }
 
-const String _changelogZh = 'v0.11.4\n'
+const String _changelogZh = 'v0.11.4（测试版）\n'
     '· 闹钟规则引擎：每条闹钟可单独设「值班次日时间」（值班次日改用此时刻，不设则跟平时一样）与「值班当天跳过」（值班当天这条不响）；在班次编辑器里点闹钟行的展开箭头设置\n'
     '· 删掉「闹钟」页的全局「值班次日闹钟」卡片（只换第一条的逻辑已由按条规则替代）\n'
     '· 班次结束时间选择器加「次日」开关：跨天的结束时间不再写死，可切回当天\n'
     '· 法定节假日在日历上改标绿「休」字（与调休「班」统一格式），不再标红\n'
     '\n'
 
-    'v0.11.3\n'
+    'v0.11.3（测试版）\n'
     '· 排班模型重做：一天可叠多个班次（如白班+值班同日）；班次新增「工作/值班/休息」语义标记，改名调序不再弄断闹钟与休息规则\n'
     '· 新增「休息规则」：跟随值班（周几值→周几休，可选预设）/ 固定星期 / 不用规则；休息日由规则自动算出，不用手排28天\n'
     '· 模板系统拆除：内置模板库与「我的模板」删除，新建只留「空白模板」+「导入配置文件」，编辑页可「导出配置文件」\n'
@@ -55,13 +55,13 @@ const String _changelogZh = 'v0.11.4\n'
     '· 新增「黄历宜忌」开关（我的→设置，默认关）\n'
     '\n'
 
-    'v0.11.2\n'
+    'v0.11.2（测试版）\n'
     '· 去掉每次打开 App 都会跳出来的「全屏通知」授权：ColorOS 适配版的闹钟走系统时钟响，本来就不需要这个权限，之前是每次冷启动白跳一次设置页\n'
     '· 新增「值班次日闹钟」：前一天是值班时，次日第一条班次闹钟自动改用单独设的时间（只换起床那条）。在「闹钟」页开关、设时间、认值班班种；排定与闹钟页显示是同一套算法，不会对不上\n'
     '· 从模板新建排班时，可以选「周期第 1 天是几号」了（默认今天，可拨到昨天/明天/任意天）—— 此前写死当天，值班相位对不上只能去编辑器里手动挪\n'
     '\n'
 
-    'v0.11.1\n'
+    'v0.11.1（测试版）\n'
     '· 系统闹钟通道（ColorOS 适配）：App 不再自己响铃 —— 每天 00:30 按排班表把当天闹钟静默写入系统时钟，由系统时钟响铃；OPPO 手表通过「手机闹钟提醒」同步（免打扰+睡眠模式下仍跟随）\n'
     '· 新增 28 天排班模板「长白班，每 4 天值一次班，每周休一天」：白班 08:30–17:00、值班 17:00–次日 08:30，每 4 天一值、每周休一天（周六/周日）；28 天循环自动延展，配一年只需按季度衔接多套（周期起始日须锚定周一）\n'
     '· 待办提醒统一走普通通知（不再有全屏响铃样式）\n'
@@ -70,14 +70,14 @@ const String _changelogZh = 'v0.11.4\n'
 
 ;
 
-const String _changelogEn = 'v0.11.4\n'
+const String _changelogEn = 'v0.11.4(Beta)\n'
     '· Per-alarm duty rules: each alarm can have its own "post-duty time" (used on the day after a duty day; unset = same as usual) and "skip on duty day"; tap the expand arrow on an alarm row in the schedule editor\n'
     '· Removed the global "post-duty alarm" card from the Alarm tab (replaced by per-alarm rules)\n'
     '· Shift end-time picker gains a "next day" toggle: overnight end times are no longer sticky\n'
     '· Legal holidays show a green 休 marker on the calendar (same format as makeup-workday 班), no longer red\n'
     '\n'
 
-    'v0.11.3\n'
+    'v0.11.3(Beta)\n'
     '· Schedule model rework: multiple shifts per day (e.g. day + duty on the same day); shifts now carry a Work/Duty/Rest semantic tag — renaming or reordering no longer breaks alarms and rest rules\n'
     '· New "Rest rule": follow-duty (which weekday to rest after a duty on a given weekday, with presets) / fixed weekdays / no rule; rest days are computed automatically, no more hand-laying 28 days\n'
     '· Template system removed: built-in library and "My templates" deleted; creating a schedule offers "Blank template" + "Import config file", the editor can "Export config file"\n'
@@ -86,13 +86,13 @@ const String _changelogEn = 'v0.11.4\n'
     '· New "Daily almanac" toggle (Profile → Settings, off by default)\n'
     '\n'
 
-    'v0.11.2\n'
+    'v0.11.2(Beta)\n'
     '· Removed the full-screen notification permission prompt that popped up on every launch: the ColorOS build rings via the system clock and never needed that permission — it was a dead settings page every cold start\n'
     '· New \"Post-duty alarm\": when the previous day was a duty shift, the first shift alarm the next day automatically uses a separate time (only the wake-up one). Toggle it, set the time and pick the duty shift on the Alarm tab; scheduling and display share the same logic\n'
     '· Creating a schedule from a template now asks \"which date is day 1 of the cycle?\" (defaults to today, can be yesterday / tomorrow / any day) — it used to be hard-coded to today, forcing phase fixes through the editor\n'
     '\n'
 
-    'v0.11.1\n'
+    'v0.11.1(Beta)\n'
     '· System alarm channel (ColorOS): the app no longer rings by itself — every day at 00:30 it silently writes that day\'s alarms into the system clock, which rings instead; OPPO watches sync via "phone alarm alerts" (follows even under DND + sleep mode)\n'
     '· New 28-day template "Day shift, on duty every 4 days, one rest day per week": day 08:30–17:00, duty 17:00–08:30 next day, duty every 4 days, one rest day (Sat/Sun) per week; the 28-day cycle extends indefinitely — chain quarterly sets to cover a year (cycle start must anchor on Monday)\n'
     '· Todo reminders are plain notifications now (no more full-screen ringing style)\n'
