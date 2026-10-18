@@ -77,6 +77,12 @@ class $ShiftScheduleRowsTable extends ShiftScheduleRows
   late final GeneratedColumn<String> restRule = GeneratedColumn<String>(
       'rest_rule', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _dutyRotationMeta =
+      const VerificationMeta('dutyRotation');
+  @override
+  late final GeneratedColumn<String> dutyRotation = GeneratedColumn<String>(
+      'duty_rotation', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -87,7 +93,8 @@ class $ShiftScheduleRowsTable extends ShiftScheduleRows
         teamNames,
         ourTeamIndex,
         teamOffsets,
-        restRule
+        restRule,
+        dutyRotation
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -144,6 +151,12 @@ class $ShiftScheduleRowsTable extends ShiftScheduleRows
       context.handle(_restRuleMeta,
           restRule.isAcceptableOrUnknown(data['rest_rule']!, _restRuleMeta));
     }
+    if (data.containsKey('duty_rotation')) {
+      context.handle(
+          _dutyRotationMeta,
+          dutyRotation.isAcceptableOrUnknown(
+              data['duty_rotation']!, _dutyRotationMeta));
+    }
     return context;
   }
 
@@ -171,6 +184,8 @@ class $ShiftScheduleRowsTable extends ShiftScheduleRows
           .read(DriftSqlType.string, data['${effectivePrefix}team_offsets'])!,
       restRule: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}rest_rule']),
+      dutyRotation: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}duty_rotation']),
     );
   }
 
@@ -194,6 +209,10 @@ class ShiftScheduleRow extends DataClass
   /// 休息规则（JSON；见 `RestRule.toJson`/`fromJson`）。
   /// null = 不用规则（`RestRuleMode.none`，休息日写进周期里）。
   final String? restRule;
+
+  /// 值班顺序轮换（JSON；见 `DutyRotation.toJson`/`fromJson`）。
+  /// null = 不轮换。
+  final String? dutyRotation;
   const ShiftScheduleRow(
       {required this.id,
       required this.name,
@@ -203,7 +222,8 @@ class ShiftScheduleRow extends DataClass
       required this.teamNames,
       required this.ourTeamIndex,
       required this.teamOffsets,
-      this.restRule});
+      this.restRule,
+      this.dutyRotation});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -217,6 +237,9 @@ class ShiftScheduleRow extends DataClass
     map['team_offsets'] = Variable<String>(teamOffsets);
     if (!nullToAbsent || restRule != null) {
       map['rest_rule'] = Variable<String>(restRule);
+    }
+    if (!nullToAbsent || dutyRotation != null) {
+      map['duty_rotation'] = Variable<String>(dutyRotation);
     }
     return map;
   }
@@ -234,6 +257,9 @@ class ShiftScheduleRow extends DataClass
       restRule: restRule == null && nullToAbsent
           ? const Value.absent()
           : Value(restRule),
+      dutyRotation: dutyRotation == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dutyRotation),
     );
   }
 
@@ -250,6 +276,7 @@ class ShiftScheduleRow extends DataClass
       ourTeamIndex: serializer.fromJson<int>(json['ourTeamIndex']),
       teamOffsets: serializer.fromJson<String>(json['teamOffsets']),
       restRule: serializer.fromJson<String?>(json['restRule']),
+      dutyRotation: serializer.fromJson<String?>(json['dutyRotation']),
     );
   }
   @override
@@ -265,6 +292,7 @@ class ShiftScheduleRow extends DataClass
       'ourTeamIndex': serializer.toJson<int>(ourTeamIndex),
       'teamOffsets': serializer.toJson<String>(teamOffsets),
       'restRule': serializer.toJson<String?>(restRule),
+      'dutyRotation': serializer.toJson<String?>(dutyRotation),
     };
   }
 
@@ -277,7 +305,8 @@ class ShiftScheduleRow extends DataClass
           String? teamNames,
           int? ourTeamIndex,
           String? teamOffsets,
-          Value<String?> restRule = const Value.absent()}) =>
+          Value<String?> restRule = const Value.absent(),
+          Value<String?> dutyRotation = const Value.absent()}) =>
       ShiftScheduleRow(
         id: id ?? this.id,
         name: name ?? this.name,
@@ -288,6 +317,8 @@ class ShiftScheduleRow extends DataClass
         ourTeamIndex: ourTeamIndex ?? this.ourTeamIndex,
         teamOffsets: teamOffsets ?? this.teamOffsets,
         restRule: restRule.present ? restRule.value : this.restRule,
+        dutyRotation:
+            dutyRotation.present ? dutyRotation.value : this.dutyRotation,
       );
   ShiftScheduleRow copyWithCompanion(ShiftScheduleRowsCompanion data) {
     return ShiftScheduleRow(
@@ -304,6 +335,9 @@ class ShiftScheduleRow extends DataClass
       teamOffsets:
           data.teamOffsets.present ? data.teamOffsets.value : this.teamOffsets,
       restRule: data.restRule.present ? data.restRule.value : this.restRule,
+      dutyRotation: data.dutyRotation.present
+          ? data.dutyRotation.value
+          : this.dutyRotation,
     );
   }
 
@@ -318,14 +352,15 @@ class ShiftScheduleRow extends DataClass
           ..write('teamNames: $teamNames, ')
           ..write('ourTeamIndex: $ourTeamIndex, ')
           ..write('teamOffsets: $teamOffsets, ')
-          ..write('restRule: $restRule')
+          ..write('restRule: $restRule, ')
+          ..write('dutyRotation: $dutyRotation')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode => Object.hash(id, name, anchorDate, isCurrent, teamCount,
-      teamNames, ourTeamIndex, teamOffsets, restRule);
+      teamNames, ourTeamIndex, teamOffsets, restRule, dutyRotation);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -338,7 +373,8 @@ class ShiftScheduleRow extends DataClass
           other.teamNames == this.teamNames &&
           other.ourTeamIndex == this.ourTeamIndex &&
           other.teamOffsets == this.teamOffsets &&
-          other.restRule == this.restRule);
+          other.restRule == this.restRule &&
+          other.dutyRotation == this.dutyRotation);
 }
 
 class ShiftScheduleRowsCompanion extends UpdateCompanion<ShiftScheduleRow> {
@@ -351,6 +387,7 @@ class ShiftScheduleRowsCompanion extends UpdateCompanion<ShiftScheduleRow> {
   final Value<int> ourTeamIndex;
   final Value<String> teamOffsets;
   final Value<String?> restRule;
+  final Value<String?> dutyRotation;
   const ShiftScheduleRowsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -361,6 +398,7 @@ class ShiftScheduleRowsCompanion extends UpdateCompanion<ShiftScheduleRow> {
     this.ourTeamIndex = const Value.absent(),
     this.teamOffsets = const Value.absent(),
     this.restRule = const Value.absent(),
+    this.dutyRotation = const Value.absent(),
   });
   ShiftScheduleRowsCompanion.insert({
     this.id = const Value.absent(),
@@ -372,6 +410,7 @@ class ShiftScheduleRowsCompanion extends UpdateCompanion<ShiftScheduleRow> {
     this.ourTeamIndex = const Value.absent(),
     this.teamOffsets = const Value.absent(),
     this.restRule = const Value.absent(),
+    this.dutyRotation = const Value.absent(),
   })  : name = Value(name),
         anchorDate = Value(anchorDate);
   static Insertable<ShiftScheduleRow> custom({
@@ -384,6 +423,7 @@ class ShiftScheduleRowsCompanion extends UpdateCompanion<ShiftScheduleRow> {
     Expression<int>? ourTeamIndex,
     Expression<String>? teamOffsets,
     Expression<String>? restRule,
+    Expression<String>? dutyRotation,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -395,6 +435,7 @@ class ShiftScheduleRowsCompanion extends UpdateCompanion<ShiftScheduleRow> {
       if (ourTeamIndex != null) 'our_team_index': ourTeamIndex,
       if (teamOffsets != null) 'team_offsets': teamOffsets,
       if (restRule != null) 'rest_rule': restRule,
+      if (dutyRotation != null) 'duty_rotation': dutyRotation,
     });
   }
 
@@ -407,7 +448,8 @@ class ShiftScheduleRowsCompanion extends UpdateCompanion<ShiftScheduleRow> {
       Value<String>? teamNames,
       Value<int>? ourTeamIndex,
       Value<String>? teamOffsets,
-      Value<String?>? restRule}) {
+      Value<String?>? restRule,
+      Value<String?>? dutyRotation}) {
     return ShiftScheduleRowsCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
@@ -418,6 +460,7 @@ class ShiftScheduleRowsCompanion extends UpdateCompanion<ShiftScheduleRow> {
       ourTeamIndex: ourTeamIndex ?? this.ourTeamIndex,
       teamOffsets: teamOffsets ?? this.teamOffsets,
       restRule: restRule ?? this.restRule,
+      dutyRotation: dutyRotation ?? this.dutyRotation,
     );
   }
 
@@ -451,6 +494,9 @@ class ShiftScheduleRowsCompanion extends UpdateCompanion<ShiftScheduleRow> {
     if (restRule.present) {
       map['rest_rule'] = Variable<String>(restRule.value);
     }
+    if (dutyRotation.present) {
+      map['duty_rotation'] = Variable<String>(dutyRotation.value);
+    }
     return map;
   }
 
@@ -465,7 +511,8 @@ class ShiftScheduleRowsCompanion extends UpdateCompanion<ShiftScheduleRow> {
           ..write('teamNames: $teamNames, ')
           ..write('ourTeamIndex: $ourTeamIndex, ')
           ..write('teamOffsets: $teamOffsets, ')
-          ..write('restRule: $restRule')
+          ..write('restRule: $restRule, ')
+          ..write('dutyRotation: $dutyRotation')
           ..write(')'))
         .toString();
   }
@@ -3868,6 +3915,7 @@ typedef $$ShiftScheduleRowsTableCreateCompanionBuilder
   Value<int> ourTeamIndex,
   Value<String> teamOffsets,
   Value<String?> restRule,
+  Value<String?> dutyRotation,
 });
 typedef $$ShiftScheduleRowsTableUpdateCompanionBuilder
     = ShiftScheduleRowsCompanion Function({
@@ -3880,6 +3928,7 @@ typedef $$ShiftScheduleRowsTableUpdateCompanionBuilder
   Value<int> ourTeamIndex,
   Value<String> teamOffsets,
   Value<String?> restRule,
+  Value<String?> dutyRotation,
 });
 
 class $$ShiftScheduleRowsTableFilterComposer
@@ -3917,6 +3966,9 @@ class $$ShiftScheduleRowsTableFilterComposer
 
   ColumnFilters<String> get restRule => $composableBuilder(
       column: $table.restRule, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get dutyRotation => $composableBuilder(
+      column: $table.dutyRotation, builder: (column) => ColumnFilters(column));
 }
 
 class $$ShiftScheduleRowsTableOrderingComposer
@@ -3955,6 +4007,10 @@ class $$ShiftScheduleRowsTableOrderingComposer
 
   ColumnOrderings<String> get restRule => $composableBuilder(
       column: $table.restRule, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get dutyRotation => $composableBuilder(
+      column: $table.dutyRotation,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$ShiftScheduleRowsTableAnnotationComposer
@@ -3992,6 +4048,9 @@ class $$ShiftScheduleRowsTableAnnotationComposer
 
   GeneratedColumn<String> get restRule =>
       $composableBuilder(column: $table.restRule, builder: (column) => column);
+
+  GeneratedColumn<String> get dutyRotation => $composableBuilder(
+      column: $table.dutyRotation, builder: (column) => column);
 }
 
 class $$ShiftScheduleRowsTableTableManager extends RootTableManager<
@@ -4031,6 +4090,7 @@ class $$ShiftScheduleRowsTableTableManager extends RootTableManager<
             Value<int> ourTeamIndex = const Value.absent(),
             Value<String> teamOffsets = const Value.absent(),
             Value<String?> restRule = const Value.absent(),
+            Value<String?> dutyRotation = const Value.absent(),
           }) =>
               ShiftScheduleRowsCompanion(
             id: id,
@@ -4042,6 +4102,7 @@ class $$ShiftScheduleRowsTableTableManager extends RootTableManager<
             ourTeamIndex: ourTeamIndex,
             teamOffsets: teamOffsets,
             restRule: restRule,
+            dutyRotation: dutyRotation,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -4053,6 +4114,7 @@ class $$ShiftScheduleRowsTableTableManager extends RootTableManager<
             Value<int> ourTeamIndex = const Value.absent(),
             Value<String> teamOffsets = const Value.absent(),
             Value<String?> restRule = const Value.absent(),
+            Value<String?> dutyRotation = const Value.absent(),
           }) =>
               ShiftScheduleRowsCompanion.insert(
             id: id,
@@ -4064,6 +4126,7 @@ class $$ShiftScheduleRowsTableTableManager extends RootTableManager<
             ourTeamIndex: ourTeamIndex,
             teamOffsets: teamOffsets,
             restRule: restRule,
+            dutyRotation: dutyRotation,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
