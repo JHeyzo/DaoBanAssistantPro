@@ -10,6 +10,7 @@ import '../../core/app_info.dart';
 import '../../core/design_tokens.dart';
 import '../../core/l10n.dart';
 import '../../core/update_checker.dart';
+import '../../core/widgets/glass_dialog.dart';
 import '../../data/app_repository.dart';
 import '../../domain/shift_rotation.dart';
 import '../../state/app_settings.dart';
@@ -136,11 +137,11 @@ class _HomeShellState extends ConsumerState<HomeShell>
     if (sp.getString('lastOverlayPromptDay') == todayKey) return;
     await sp.setString('lastOverlayPromptDay', todayKey);
     if (!mounted) return;
-    showDialog(
+    showGlassDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        title: const Text('需要悬浮窗权限'),
+      builder: (ctx) => GlassDialog(
+        title: '需要悬浮窗权限',
         content: const Text(
           '用途：每天 00:30 在后台静默创建明天的系统闹钟（用于 OPPO 手表同步）。\n\n'
           '为什么需要：Android 10+ 禁止后台直接建系统闹钟，有悬浮窗权限才能经由前台通道静默创建，不打扰你睡觉。\n\n'
