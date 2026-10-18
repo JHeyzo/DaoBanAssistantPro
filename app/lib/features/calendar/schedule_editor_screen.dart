@@ -810,25 +810,6 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                       ),
                       // 方案三：行内小标签 —— 不用展开，直接显示两个规则标签。
                       // 点「次日」标签改时间，点「值班跳过」切换开关。
-                        Padding(
-                          padding: const EdgeInsets.only(
-                            top: AppTokens.spaceXs,
-                            left: AppTokens.spaceMd,
-                          ),
-                          child: Column(
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _timeChip(
-                                      context,
-                                      label: '值班次日',
-                                      minutes: c.alarms[k].postDutyMinute,
-                                      valueText: c.alarms[k].postDutyMinute ==
-                                              null
-                                          ? '跟平时一样'
-                                          : null,
-                                      onPick: (m) => setState(() =>
                       // 方案三：行内小标签 —— 不用展开，直接显示两个规则标签。
                       // 点「次日」标签改时间，点「值班跳过」切换开关。
                       Padding(
@@ -843,7 +824,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                               onTap: () async {
                                 final picked = await showGlassTimePicker(
                                   context,
-                                  initial: c.alarms[k].postDutyMinute == null
+                                  initialTime: c.alarms[k].postDutyMinute == null
                                       ? TimeOfDay.fromDateTime(DateTime.now())
                                       : TimeOfDay(
                                           hour: c.alarms[k].postDutyMinute! ~/ 60,
@@ -874,7 +855,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                                   color: c.alarms[k].postDutyMinute == null
                                       ? AppTokens.chipWorkBase
                                       : AppTokens.chipWorkText.withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(AppTokens.radiusFull),
+                                  borderRadius: BorderRadius.circular(AppTokens.radiusXL),
                                   border: Border.all(
                                     color: c.alarms[k].postDutyMinute == null
                                         ? AppTokens.chipWorkBorder
@@ -921,7 +902,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                                   color: c.alarms[k].skipOnDutyDay
                                       ? AppTokens.danger.withOpacity(0.1)
                                       : AppTokens.chipWorkBase,
-                                  borderRadius: BorderRadius.circular(AppTokens.radiusFull),
+                                  borderRadius: BorderRadius.circular(AppTokens.radiusXL),
                                   border: Border.all(
                                     color: c.alarms[k].skipOnDutyDay
                                         ? AppTokens.danger
@@ -945,7 +926,6 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                           ],
                         ),
                       ),
-                        ),
                     ],
                   ),
                 ),
@@ -1708,14 +1688,14 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
               '按周期自动切换值班顺序（如 1234→3421），不用手动建多套排班。周期起始日所在排班走完后自动切。',
               'Auto-rotate duty order by period (e.g. 1234→3421), no need for multiple schedules.',
             ),
-            style: AppTokens.hintText.copyWith(color: muted),
+            style: AppTokens.microText.copyWith(color: muted),
           ),
           if (enabled) ...[
             const SizedBox(height: AppTokens.spaceSm),
             // 轮换序列输入
             Text(
               L10n.t('轮换序列（逗号分隔，如 1234,3421）', 'Rotation sequence (comma-separated)'),
-              style: AppTokens.labelText,
+              style: AppTokens.rowPrimary,
             ),
             const SizedBox(height: AppTokens.spaceXs),
             TextField(
@@ -1746,7 +1726,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
               children: [
                 Text(
                   L10n.t('轮换周期', 'Rotation period'),
-                  style: AppTokens.labelText,
+                  style: AppTokens.rowPrimary,
                 ),
                 const SizedBox(width: AppTokens.spaceSm),
                 SegmentedButton<RotationPeriod>(
@@ -1776,7 +1756,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
               children: [
                 Text(
                   L10n.t('序列起始日', 'Sequence start date'),
-                  style: AppTokens.labelText,
+                  style: AppTokens.rowPrimary,
                 ),
                 const SizedBox(width: AppTokens.spaceSm),
                 TextButton(
@@ -1794,7 +1774,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                     }
                   },
                   child: Text(
-                    L10n.formatDate(_dutyRotation!.sequenceStartDate),
+                    L10n.yearMonthDay(_dutyRotation!.sequenceStartDate),
                   ),
                 ),
               ],
