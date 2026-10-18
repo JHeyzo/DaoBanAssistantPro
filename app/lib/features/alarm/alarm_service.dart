@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/l10n.dart';
 import '../../data/app_repository.dart';
@@ -526,11 +527,31 @@ class AlarmService {
     List<int>? days,
   }) async {
     try {
+      // 去重：系统闹钟建了删不掉（ACTION_SET_ALARM 无删除 API），
+      // 重复排定会叠加。用 SharedPreferences 记录已建的，同一天相同时分+文案只建一次。
+      // （用户 2026-10-18 报：每次保存都多推一个闹钟进去）
+      if (days == null) {
+        final prefs = await SharedPreferences.getInstance();
+        final now = DateTime.now();
+        final key = 'sys_alarm_${now.year}-${now.month}-${now.day}_${hour}_${minute}_$message';
+        if (prefs.getBool(key) == true) {
+          return true; // 已建过，跳过
+        }
+        final ok = await _settingsChannel.invokeMethod<bool>('createSystemAlarm', {
+          'hour': hour,
+          'minute': minute,
+          'message': message,
+        });
+        if (ok == true) {
+          await prefs.setBool(key, true);
+        }
+        return ok ?? false;
+      }
       final ok = await _settingsChannel.invokeMethod<bool>('createSystemAlarm', {
         'hour': hour,
         'minute': minute,
         'message': message,
-        if (days != null) 'days': days,
+        'days': days,
       });
       return ok ?? false;
     } catch (e) {
@@ -1042,8 +1063,6 @@ class AlarmService {
       }
     }
   }
-
-
 
   /// 下一次匹配 [weekdays] 位掩码（1<<(周一=0)…）中任意一天的 [hour]:[minute]。
 
