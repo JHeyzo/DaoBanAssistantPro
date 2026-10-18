@@ -1,9 +1,5 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 import '../../core/widgets/centered_content.dart';
 import '../../core/design_tokens.dart';
 import '../../core/glass/glass.dart';
@@ -2172,23 +2168,48 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
       name: _name.trim().isEmpty ? L10n.newSchedule : _name.trim(),
     );
     final json = template.toConfigJson();
-    try {
-      // 写到临时文件，走系统分享（微信/文件管理/QQ 任选）
-      final dir = await getTemporaryDirectory();
-      final safeName = _name.trim().isEmpty
-          ? 'schedule'
-          : _name.trim().replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
-      final file = File('${dir.path}/$safeName.json');
-      await file.writeAsString(json);
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        text: L10n.t('排班配置文件', 'Schedule config file'),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      showGlassSnack(context, L10n.t('导出失败：$e', 'Export failed: $e'),
-          icon: Icons.error_outline);
-    }
+    if (!mounted) return;
+    await showGlassDialog(
+      context: context,
+      builder: (dialogContext) => GlassDialog(
+        title: L10n.exportConfig,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              L10n.exportConfigHint,
+              style: AppTokens.rowSecondary.copyWith(
+                color: AppTokens.inkMuted(context),
+              ),
+            ),
+            const SizedBox(height: AppTokens.spaceMd),
+            Container(
+              constraints: const BoxConstraints(maxHeight: 200),
+              padding: const EdgeInsets.all(AppTokens.spaceSm),
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(AppTokens.radiusS),
+              ),
+              child: SingleChildScrollView(
+                child: SelectableText(
+                  json,
+                  style: AppTokens.microText,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          GlassActionButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            label: L10n.close,
+          ),
+        ],
+      ),
+    );
   }
   void _addClass() {    setState(() {
       final idx = _classes.length;
