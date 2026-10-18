@@ -21,6 +21,8 @@ dependencies:
   sqlite3_flutter_libs: ^0.5.28
   path_provider: ^2.1.5
   path: ^1.9.1
+  file_picker: ^8.0.0
+  share_plus: ^10.0.2
 
   # 闹钟 / 通知
   flutter_local_notifications: ^17.2.4

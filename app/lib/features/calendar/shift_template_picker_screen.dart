@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/design_tokens.dart';
@@ -127,27 +130,27 @@ class ShiftTemplatePickerScreen extends ConsumerWidget {
   }
 
   /// 选文件并解析配置文件。解析失败弹提示，返回 null。
-  ///
-  /// TODO(v0.11.3): 文件选择器接入（file_picker）。现在先占位。
   Future<ScheduleTemplate?> _pickAndParseConfig(
     BuildContext context,
     WidgetRef ref,
   ) async {
-    if (!context.mounted) return null;
-    await showGlassDialog(
-      context: context,
-      builder: (context) => GlassDialog(
-        title: L10n.importConfig,
-        content: Text(L10n.importNotImplemented),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(L10n.ok),
-          ),
-        ],
-      ),
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['json'],
+      dialogTitle: L10n.importConfig,
     );
-    return null;
+    if (result == null || result.files.single.path == null) return null;
+    try {
+      final file = File(result.files.single.path!);
+      final jsonStr = await file.readAsString();
+      final template = ScheduleTemplate.fromConfigJson(jsonStr);
+      return template;
+    } catch (e) {
+      if (!context.mounted) return null;
+      showGlassSnack(context, L10n.t('配置文件解析失败：$e', 'Failed to parse config: $e'),
+          icon: Icons.error_outline);
+      return null;
+    }
   }
 }
 
